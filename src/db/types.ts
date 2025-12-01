@@ -1,4 +1,4 @@
-import { InferSelectModel, InferInsertModel } from 'drizzle-orm';
+import type { InferSelectModel, InferInsertModel } from 'drizzle-orm';
 import { budgets, transactions } from './schema';
 
 export type Budget = InferSelectModel<typeof budgets>;

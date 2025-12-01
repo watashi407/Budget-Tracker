@@ -62,12 +62,9 @@ export class SupabaseTransactionRepository implements ITransactionRepository {
      * Create a new transaction
      */
     async create(userId: string, input: CreateTransactionInput): Promise<Transaction> {
-        // Create a promise that rejects after 30 seconds
-        const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Request timed out. Please check your internet connection.')), 30000)
-        )
+        console.log('[SupabaseTransactionRepository] Creating transaction for user:', userId)
 
-        const dbPromise = supabase
+        const { data, error } = await supabase
             .from(this.tableName)
             .insert({
                 user_id: userId,
@@ -81,9 +78,10 @@ export class SupabaseTransactionRepository implements ITransactionRepository {
             .select()
             .single()
 
-        const { data, error } = await Promise.race([dbPromise, timeoutPromise]) as any
-
-        if (error) throw error
+        if (error) {
+            console.error('[SupabaseTransactionRepository] Error creating transaction:', error)
+            throw error
+        }
 
         // Update budget spent amount if budget_id is provided
         if (input.budgetId && input.type === 'expense') {

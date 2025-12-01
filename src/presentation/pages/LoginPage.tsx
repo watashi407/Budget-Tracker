@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { Button } from '@/presentation/components/ui/button'
@@ -13,12 +13,20 @@ import { Wallet, Loader2 } from 'lucide-react'
  * Part of the Presentation layer in Clean Architecture.
  */
 export function LoginPage() {
+    const { signIn, user } = useAuth()
     const navigate = useNavigate()
-    const { signIn } = useAuth()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
+
+    // Redirect to dashboard when user is authenticated
+    useEffect(() => {
+        if (user) {
+            console.log('[LoginPage] User authenticated, navigating to /')
+            navigate({ to: '/' })
+        }
+    }, [user, navigate])
 
     /**
      * Handle form submission
@@ -29,11 +37,13 @@ export function LoginPage() {
         setLoading(true)
 
         try {
+            console.log('[LoginPage] Attempting sign in with:', email)
             await signIn(email, password)
-            navigate({ to: '/' })
+            console.log('[LoginPage] Sign in successful')
+            // Navigation handled by useEffect
         } catch (err: any) {
+            console.error('[LoginPage] Sign in error:', err)
             setError(err.message || 'Failed to sign in')
-        } finally {
             setLoading(false)
         }
     }

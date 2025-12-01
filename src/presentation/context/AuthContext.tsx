@@ -35,11 +35,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Safety timeout to ensure loading doesn't stick forever
         const timeoutId = setTimeout(() => {
-            if (mounted && loading) {
-                console.warn('[AuthContext] Auth check timed out, forcing loading false')
+            if (mounted) {
+                console.warn('[AuthContext] Auth initialization timed out, forcing loading to false')
                 setLoading(false)
             }
-        }, 5000)
+        }, 3000) // 3 second timeout
+
+        // Check initial session
+        async function initAuth() {
+            try {
+                console.log('[AuthContext] Initializing auth...')
+
+                // First check if there's a session
+                const { data: { session } } = await supabase.auth.getSession()
+
+                if (session?.user) {
+                    console.log('[AuthContext] Found existing session for:', session.user.email)
+                    const currentUser = await authRepository.getCurrentUser()
+                    if (mounted) {
+                        setUser(currentUser)
+                        setLoading(false)
+                        clearTimeout(timeoutId)
+                    }
+                } else {
+                    console.log('[AuthContext] No existing session')
+                    if (mounted) {
+                        setUser(null)
+                        setLoading(false)
+                        clearTimeout(timeoutId)
+                    }
+                }
+            } catch (err) {
+                console.error('[AuthContext] Error initializing auth:', err)
+                if (mounted) {
+                    setUser(null)
+                    setLoading(false)
+                    clearTimeout(timeoutId)
+                }
+            }
+        }
+
+        initAuth()
 
         // Listen for auth state changes
         const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -49,14 +85,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 if (session?.user) {
                     try {
                         const currentUser = await authRepository.getCurrentUser()
-                        if (mounted) setUser(currentUser)
+                        if (mounted) {
+                            setUser(currentUser)
+                            setLoading(false)
+                        }
                     } catch (err) {
                         console.error('[AuthContext] Error getting current user:', err)
+                        if (mounted) setLoading(false)
                     }
                 } else {
                     setUser(null)
+                    setLoading(false)
                 }
-                setLoading(false)
             }
         })
 
@@ -73,8 +113,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
      * Sign in with email and password
      */
     async function signIn(email: string, password: string) {
-        const user = await authRepository.signIn(email, password)
-        setUser(user)
+        try {
+            console.log('[AuthContext] Signing in user:', email)
+            const user = await authRepository.signIn(email, password)
+            console.log('[AuthContext] Sign in successful, user:', user.email)
+            setUser(user)
+            setLoading(false) // Ensure loading is false after setting user
+        } catch (error) {
+            console.error('[AuthContext] Sign in failed:', error)
+            setLoading(false) // Also set loading false on error
+            throw error
+        }
     }
 
     /**
@@ -118,7 +167,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
     const context = useContext(AuthContext)
     if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider')
+        console.error('[useAuth] Called outside of AuthProvider. Check that AuthProvider wraps your component tree.')
+        throw new Error('useAuth must be used within an AuthProvider. Make sure AuthProvider wraps your entire app in main.tsx')
     }
     return context
 }

@@ -70,6 +70,7 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
                 startDate: now,
                 endDate,
                 color,
+                icon: 'wallet', // Default icon
             }
 
             await createBudget(input)

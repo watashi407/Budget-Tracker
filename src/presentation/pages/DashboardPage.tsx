@@ -4,15 +4,15 @@ import { useAuth } from '@/presentation/context/AuthContext'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
 import { Button } from '@/presentation/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card'
+
 import { Separator } from '@/presentation/components/ui/separator'
 import { CreateBudgetDialog } from '@/presentation/components/CreateBudgetDialog'
 import { CreateTransactionDialog } from '@/presentation/components/CreateTransactionDialog'
 import { BudgetCard } from '@/presentation/components/BudgetCard'
 import { TransactionList } from '@/presentation/components/TransactionList'
 import { AIInsightsPanel } from '@/presentation/components/AIInsightsPanel'
-import { PlusCircle, Wallet, TrendingUp, TrendingDown, Activity, Calendar, Filter } from 'lucide-react'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
+import { PlusCircle, Wallet, TrendingUp, TrendingDown, Activity } from 'lucide-react'
+
 
 type DateFilter = 'ALL' | 'MTD' | 'YTD'
 

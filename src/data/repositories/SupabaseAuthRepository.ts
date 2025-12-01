@@ -39,14 +39,22 @@ export class SupabaseAuthRepository implements IAuthRepository {
      * Sign in an existing user
      */
     async signIn(email: string, password: string): Promise<User> {
+        console.log('[SupabaseAuthRepository] Calling signInWithPassword for:', email)
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
         })
 
-        if (error) throw error
-        if (!data.user) throw new Error('Sign in failed')
+        if (error) {
+            console.error('[SupabaseAuthRepository] Supabase auth error:', error)
+            throw error
+        }
+        if (!data.user) {
+            console.error('[SupabaseAuthRepository] No user data returned')
+            throw new Error('Sign in failed')
+        }
 
+        console.log('[SupabaseAuthRepository] Sign in successful, user ID:', data.user.id)
         return {
             id: data.user.id,
             email: data.user.email!,

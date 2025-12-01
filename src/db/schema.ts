@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, decimal, timestamp, check } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 
 export const budgets = pgTable('budgets', {
     id: uuid('id').defaultRandom().primaryKey(),
@@ -15,8 +15,8 @@ export const budgets = pgTable('budgets', {
     icon: text('icon'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-}, (table) => ({
-    periodCheck: check('period_check', `period IN ('daily', 'weekly', 'monthly', 'yearly')`),
+}, (_) => ({
+    periodCheck: check('period_check', sql`period IN ('daily', 'weekly', 'monthly', 'yearly')`),
 }));
 
 export const transactions = pgTable('transactions', {
@@ -30,8 +30,8 @@ export const transactions = pgTable('transactions', {
     date: timestamp('date', { withTimezone: true }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-}, (table) => ({
-    typeCheck: check('type_check', `type IN ('income', 'expense')`),
+}, (_) => ({
+    typeCheck: check('type_check', sql`type IN ('income', 'expense')`),
 }));
 
 export const profiles = pgTable('profiles', {

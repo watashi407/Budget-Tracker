@@ -43,37 +43,38 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
         return this.mapToDomain(data)
     }
 
-    /**
-     * Create a new budget
-     */
     async create(userId: string, input: CreateBudgetInput): Promise<Budget> {
-        // Create a promise that rejects after 30 seconds
-        const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Request timed out. Please check your internet connection.')), 30000)
-        )
+        console.log('[SupabaseBudgetRepository] Creating budget for user:', userId, 'Input:', input)
 
-        const dbPromise = supabase
-            .from(this.tableName)
-            .insert({
-                user_id: userId,
-                name: input.name,
-                category: input.category,
-                amount: input.amount,
-                spent: 0,
-                period: input.period,
-                start_date: input.startDate.toISOString(),
-                end_date: input.endDate.toISOString(),
-                color: input.color,
-                icon: input.icon,
-            })
-            .select()
-            .single()
+        try {
+            const { data, error } = await supabase
+                .from(this.tableName)
+                .insert({
+                    user_id: userId,
+                    name: input.name,
+                    category: input.category,
+                    amount: Number(input.amount),
+                    spent: 0,
+                    period: input.period,
+                    start_date: input.startDate.toISOString(),
+                    end_date: input.endDate.toISOString(),
+                    color: input.color || null,
+                    icon: input.icon || 'wallet', // Default icon
+                })
+                .select()
+                .single()
 
-        const { data, error } = await Promise.race([dbPromise, timeoutPromise]) as any
+            if (error) {
+                console.error('[SupabaseBudgetRepository] Error creating budget:', error)
+                throw new Error(`Failed to create budget: ${error.message} (Code: ${error.code})`)
+            }
 
-        if (error) throw error
-
-        return this.mapToDomain(data)
+            console.log('[SupabaseBudgetRepository] Budget created successfully:', data)
+            return this.mapToDomain(data)
+        } catch (err: any) {
+            console.error('[SupabaseBudgetRepository] Exception:', err)
+            throw err
+        }
     }
 
     /**

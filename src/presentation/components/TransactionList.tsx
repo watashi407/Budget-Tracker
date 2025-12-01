@@ -1,7 +1,7 @@
 import { useTransition } from 'react'
 import { Trash2, ArrowUpRight, ArrowDownLeft } from 'lucide-react'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
-import { Transaction } from '@/domain/entities/Transaction'
+import type { Transaction } from '@/domain/entities/Transaction'
 
 interface TransactionListProps {
     budgetId?: string

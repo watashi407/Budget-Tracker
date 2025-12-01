@@ -1,9 +1,9 @@
 import { useTransition } from 'react'
 import type { Budget } from '@/domain/entities/Budget'
-import { Card, CardContent, CardHeader, CardTitle } from '@/presentation/components/ui/card'
+
 import { Badge } from '@/presentation/components/ui/badge'
 import { Button } from '@/presentation/components/ui/button'
-import { Trash2, Edit, AlertTriangle } from 'lucide-react'
+import { Trash2, Edit } from 'lucide-react'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 
 interface BudgetCardProps {
@@ -13,7 +13,7 @@ interface BudgetCardProps {
 
 export function BudgetCard({ budget, onEdit }: BudgetCardProps) {
     const { deleteBudget } = useBudgets()
-    const [isPending, startTransition] = useTransition()
+    const [, startTransition] = useTransition()
 
     const progress = budget.amount > 0 ? (budget.spent / budget.amount) * 100 : 0
     const isOverBudget = progress > 100
