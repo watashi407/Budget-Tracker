@@ -45,10 +45,13 @@ export function useBudgets() {
         if (!user) throw new Error('User not authenticated')
 
         try {
+            console.log('[useBudgets] createBudget called')
             const newBudget = await budgetRepository.create(user.id, input)
+            console.log('[useBudgets] Repository created budget, updating state')
             setBudgets(prev => [newBudget, ...prev])
             return newBudget
         } catch (err) {
+            console.error('[useBudgets] Error creating budget:', err)
             setError(err as Error)
             throw err
         }

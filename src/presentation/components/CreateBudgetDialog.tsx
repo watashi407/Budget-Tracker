@@ -34,6 +34,7 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
      */
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
+        console.log('[CreateBudgetDialog] Submitting form...')
         setError('')
         setLoading(true)
 
@@ -73,7 +74,9 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
                 icon: 'wallet', // Default icon
             }
 
+            console.log('[CreateBudgetDialog] Calling createBudget...')
             await createBudget(input)
+            console.log('[CreateBudgetDialog] createBudget resolved. Closing dialog.')
 
             // Reset form
             setName('')
@@ -83,8 +86,10 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
             setColor('#3b82f6')
             onOpenChange(false)
         } catch (err: any) {
+            console.error('[CreateBudgetDialog] Error:', err)
             setError(err.message || 'Failed to create budget')
         } finally {
+            console.log('[CreateBudgetDialog] Finally block - setting loading false')
             setLoading(false)
         }
     }

@@ -84,7 +84,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (mounted) {
                 if (session?.user) {
                     try {
+                        console.log('[AuthContext] Session found, fetching current user details...')
                         const currentUser = await authRepository.getCurrentUser()
+                        console.log('[AuthContext] Current user fetched:', currentUser?.email)
                         if (mounted) {
                             setUser(currentUser)
                             setLoading(false)
@@ -94,6 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         if (mounted) setLoading(false)
                     }
                 } else {
+                    console.log('[AuthContext] No session user, clearing state')
                     setUser(null)
                     setLoading(false)
                 }
@@ -118,7 +121,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const user = await authRepository.signIn(email, password)
             console.log('[AuthContext] Sign in successful, user:', user.email)
             setUser(user)
-            setLoading(false) // Ensure loading is false after setting user
+            // We don't strictly need to set loading false here if we want to wait for the auth state change,
+            // but setting it here provides immediate feedback.
+            // Let's log the state change we are about to make.
+            console.log('[AuthContext] Manually setting user state after successful signIn')
+            setLoading(false)
         } catch (error) {
             console.error('[AuthContext] Sign in failed:', error)
             setLoading(false) // Also set loading false on error

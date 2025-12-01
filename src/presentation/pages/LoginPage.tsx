@@ -22,11 +22,12 @@ export function LoginPage() {
 
     // Redirect to dashboard when user is authenticated
     useEffect(() => {
+        console.log('[LoginPage] Auth state check - User:', user ? user.email : 'null', 'Loading:', loading)
         if (user) {
             console.log('[LoginPage] User authenticated, navigating to /')
             navigate({ to: '/' })
         }
-    }, [user, navigate])
+    }, [user, loading, navigate])
 
     /**
      * Handle form submission
