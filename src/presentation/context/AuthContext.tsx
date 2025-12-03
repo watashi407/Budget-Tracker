@@ -32,14 +32,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         let mounted = true
+        let isInitialized = false
 
         // Safety timeout to ensure loading doesn't stick forever
         const timeoutId = setTimeout(() => {
-            if (mounted) {
-                console.warn('[AuthContext] Auth initialization timed out, forcing loading to false')
+            if (mounted && !isInitialized) {
+                console.warn('[AuthContext] Auth initialization timed out (8s), forcing loading to false')
                 setLoading(false)
+                isInitialized = true
             }
-        }, 3000) // 3 second timeout
+        }, 8000) // Increased to 8 seconds to allow repository timeout (3s) to resolve first
 
         // Check initial session
         async function initAuth() {
@@ -55,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     if (mounted) {
                         setUser(currentUser)
                         setLoading(false)
+                        isInitialized = true
                         clearTimeout(timeoutId)
                     }
                 } else {
@@ -62,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     if (mounted) {
                         setUser(null)
                         setLoading(false)
+                        isInitialized = true
                         clearTimeout(timeoutId)
                     }
                 }
@@ -70,6 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 if (mounted) {
                     setUser(null)
                     setLoading(false)
+                    isInitialized = true
                     clearTimeout(timeoutId)
                 }
             }
@@ -83,22 +88,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             if (mounted) {
                 if (session?.user) {
-                    try {
-                        console.log('[AuthContext] Session found, fetching current user details...')
-                        const currentUser = await authRepository.getCurrentUser()
-                        console.log('[AuthContext] Current user fetched:', currentUser?.email)
-                        if (mounted) {
-                            setUser(currentUser)
-                            setLoading(false)
+                    // Only fetch user if we don't have one or if it's a different user
+                    // This prevents race conditions where initAuth is already working
+                    if (!user || user.email !== session.user.email) {
+                        try {
+                            console.log('[AuthContext] Session found (event), fetching current user details...')
+                            const currentUser = await authRepository.getCurrentUser()
+                            console.log('[AuthContext] Current user fetched (event):', currentUser?.email)
+                            if (mounted) {
+                                setUser(currentUser)
+                                setLoading(false)
+                                isInitialized = true
+                                clearTimeout(timeoutId)
+                            }
+                        } catch (err) {
+                            console.error('[AuthContext] Error getting current user (event):', err)
+                            if (mounted && !isInitialized) {
+                                setLoading(false)
+                                isInitialized = true
+                            }
                         }
-                    } catch (err) {
-                        console.error('[AuthContext] Error getting current user:', err)
-                        if (mounted) setLoading(false)
                     }
                 } else {
-                    console.log('[AuthContext] No session user, clearing state')
+                    console.log('[AuthContext] No session user (event), clearing state')
                     setUser(null)
                     setLoading(false)
+                    isInitialized = true
+                    clearTimeout(timeoutId)
                 }
             }
         })

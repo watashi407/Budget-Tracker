@@ -40,28 +40,36 @@ export class SupabaseAuthRepository implements IAuthRepository {
      */
     async signIn(email: string, password: string): Promise<User> {
         console.log('[SupabaseAuthRepository] Calling signInWithPassword for:', email)
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        })
 
-        if (error) {
-            console.error('[SupabaseAuthRepository] Supabase auth error:', error)
-            throw error
-        }
-        if (!data.user) {
-            console.error('[SupabaseAuthRepository] No user data returned')
-            throw new Error('Sign in failed')
-        }
+        try {
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('signIn request timed out')), 5000)
+            })
 
-        console.log('[SupabaseAuthRepository] Sign in successful, user ID:', data.user.id)
-        return {
-            id: data.user.id,
-            email: data.user.email!,
-            fullName: data.user.user_metadata.full_name,
-            avatarUrl: data.user.user_metadata.avatar_url,
-            createdAt: new Date(data.user.created_at),
-            updatedAt: new Date(data.user.updated_at || data.user.created_at),
+            const { data, error } = await Promise.race([
+                supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                }),
+                timeoutPromise.then(() => { throw new Error('Timeout') })
+            ]) as any
+
+            if (error) {
+                console.error('[SupabaseAuthRepository] Supabase auth error:', error)
+                throw error
+            }
+            if (!data.user) {
+                console.error('[SupabaseAuthRepository] No user data returned')
+                throw new Error('Sign in failed')
+            }
+
+            console.log('[SupabaseAuthRepository] Sign in successful, user ID:', data.user.id)
+            return this.mapUser(data.user)
+        } catch (err) {
+            console.error('[SupabaseAuthRepository] signIn exception:', err)
+            // If timeout but we have a session (checked via getSession), we might consider it success?
+            // But for now, let's just throw to unblock the UI
+            throw err
         }
     }
 
@@ -76,11 +84,50 @@ export class SupabaseAuthRepository implements IAuthRepository {
     /**
      * Get the currently authenticated user
      */
+    /**
+     * Get the currently authenticated user
+     */
     async getCurrentUser(): Promise<User | null> {
-        const { data: { user } } = await supabase.auth.getUser()
+        console.log('[SupabaseAuthRepository] getCurrentUser called')
+        try {
+            // Create a promise that rejects after 3 seconds
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('getUser request timed out')), 3000)
+            })
 
-        if (!user) return null
+            // Race the getUser call against the timeout
+            const { data: { user }, error } = await Promise.race([
+                supabase.auth.getUser(),
+                timeoutPromise.then(() => { throw new Error('Timeout') })
+            ]) as any
 
+            if (error) {
+                console.error('[SupabaseAuthRepository] getUser error:', error)
+                // Fallback to session user if getUser fails (e.g. network issue)
+                const { data: { session } } = await supabase.auth.getSession()
+                if (session?.user) {
+                    console.log('[SupabaseAuthRepository] Falling back to session user')
+                    return this.mapUser(session.user)
+                }
+                return null
+            }
+
+            if (!user) return null
+
+            return this.mapUser(user)
+        } catch (err) {
+            console.error('[SupabaseAuthRepository] getCurrentUser exception:', err)
+            // One last try with session
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session?.user) {
+                console.log('[SupabaseAuthRepository] Falling back to session user after exception')
+                return this.mapUser(session.user)
+            }
+            return null
+        }
+    }
+
+    private mapUser(user: any): User {
         return {
             id: user.id,
             email: user.email!,
