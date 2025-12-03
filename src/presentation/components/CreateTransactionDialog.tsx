@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useActionState, useState } from 'react'
 import type { CreateTransactionInput } from '@/domain/entities/Transaction'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
@@ -22,8 +22,6 @@ interface CreateTransactionDialogProps {
 export function CreateTransactionDialog({ open, onOpenChange }: CreateTransactionDialogProps) {
     const { createTransaction } = useTransactions()
     const { budgets } = useBudgets()
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState('')
 
     // Form state
     const [type, setType] = useState<'income' | 'expense'>('expense')
@@ -33,16 +31,18 @@ export function CreateTransactionDialog({ open, onOpenChange }: CreateTransactio
     const [budgetId, setBudgetId] = useState('')
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
 
-    /**
-     * Handle form submission
-     */
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault()
-        setError('')
-        setLoading(true)
+    const [state, formAction, isPending] = useActionState(async (_prevState: any, formData: FormData) => {
+        console.log('[CreateTransactionDialog] Submitting form via Action...')
 
         try {
-            const parsedAmount = parseFloat(amount)
+            const type = formData.get('type') as 'income' | 'expense'
+            const amountStr = formData.get('amount') as string
+            const category = formData.get('category') as string
+            const description = formData.get('description') as string
+            const budgetId = formData.get('budgetId') as string
+            const dateStr = formData.get('date') as string
+
+            const parsedAmount = parseFloat(amountStr)
             if (isNaN(parsedAmount) || parsedAmount < 0) {
                 throw new Error('Please enter a valid amount')
             }
@@ -53,7 +53,7 @@ export function CreateTransactionDialog({ open, onOpenChange }: CreateTransactio
                 category,
                 description,
                 budgetId: budgetId || undefined,
-                date: new Date(date),
+                date: new Date(dateStr),
             }
 
             await createTransaction(input)
@@ -66,12 +66,11 @@ export function CreateTransactionDialog({ open, onOpenChange }: CreateTransactio
             setBudgetId('')
             setDate(new Date().toISOString().split('T')[0])
             onOpenChange(false)
+            return { success: true, error: null }
         } catch (err: any) {
-            setError(err.message || 'Failed to create transaction')
-        } finally {
-            setLoading(false)
+            return { success: false, error: err.message || 'Failed to create transaction' }
         }
-    }
+    }, { success: false, error: null })
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -82,17 +81,22 @@ export function CreateTransactionDialog({ open, onOpenChange }: CreateTransactio
                         Record a new income or expense transaction.
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit}>
+                <form action={formAction}>
                     <div className="space-y-4 py-4">
-                        {error && (
+                        {state.error && (
                             <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-md text-sm">
-                                {error}
+                                {state.error}
                             </div>
                         )}
 
                         <div className="space-y-2">
                             <Label htmlFor="type">Type</Label>
-                            <Select value={type} onValueChange={(value: any) => setType(value)} disabled={loading}>
+                            <Select
+                                name="type"
+                                value={type}
+                                onValueChange={(value: any) => setType(value)}
+                                disabled={isPending}
+                            >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
@@ -108,6 +112,7 @@ export function CreateTransactionDialog({ open, onOpenChange }: CreateTransactio
                                 <Label htmlFor="amount">Amount</Label>
                                 <Input
                                     id="amount"
+                                    name="amount"
                                     type="number"
                                     step="0.01"
                                     min="0"
@@ -115,7 +120,7 @@ export function CreateTransactionDialog({ open, onOpenChange }: CreateTransactio
                                     value={amount}
                                     onChange={(e) => setAmount(e.target.value)}
                                     required
-                                    disabled={loading}
+                                    disabled={isPending}
                                 />
                             </div>
 
@@ -123,11 +128,12 @@ export function CreateTransactionDialog({ open, onOpenChange }: CreateTransactio
                                 <Label htmlFor="date">Date</Label>
                                 <Input
                                     id="date"
+                                    name="date"
                                     type="date"
                                     value={date}
                                     onChange={(e) => setDate(e.target.value)}
                                     required
-                                    disabled={loading}
+                                    disabled={isPending}
                                 />
                             </div>
                         </div>
@@ -136,22 +142,28 @@ export function CreateTransactionDialog({ open, onOpenChange }: CreateTransactio
                             <Label htmlFor="category">Category</Label>
                             <Input
                                 id="category"
+                                name="category"
                                 placeholder="e.g., Food, Salary, Rent"
                                 value={category}
                                 onChange={(e) => setCategory(e.target.value)}
                                 required
-                                disabled={loading}
+                                disabled={isPending}
                             />
                         </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="budget">Budget (Optional)</Label>
-                            <Select value={budgetId} onValueChange={setBudgetId} disabled={loading}>
+                            <Select
+                                name="budgetId"
+                                value={budgetId || "none"}
+                                onValueChange={(value) => setBudgetId(value === "none" ? "" : value)}
+                                disabled={isPending}
+                            >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select a budget" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">None</SelectItem>
+                                    <SelectItem value="none">None</SelectItem>
                                     {budgets.map((budget) => (
                                         <SelectItem key={budget.id} value={budget.id}>
                                             {budget.name}
@@ -165,22 +177,23 @@ export function CreateTransactionDialog({ open, onOpenChange }: CreateTransactio
                             <Label htmlFor="description">Description</Label>
                             <Textarea
                                 id="description"
+                                name="description"
                                 placeholder="Add details about this transaction..."
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 required
-                                disabled={loading}
+                                disabled={isPending}
                                 rows={3}
                             />
                         </div>
                     </div>
 
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={loading}>
-                            {loading ? 'Adding...' : 'Add Transaction'}
+                        <Button type="submit" disabled={isPending}>
+                            {isPending ? 'Adding...' : 'Add Transaction'}
                         </Button>
                     </DialogFooter>
                 </form>

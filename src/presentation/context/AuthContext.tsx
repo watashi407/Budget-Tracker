@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, use, useEffect, useState } from 'react'
 import type { User } from '@/domain/entities/User'
 import { SupabaseAuthRepository } from '@/data/repositories/SupabaseAuthRepository'
 import { supabase } from '@/lib/supabase'
@@ -181,14 +181,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         resetPassword,
     }
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+    return <AuthContext value={value}>{children}</AuthContext>
 }
 
 /**
  * Hook to use auth context
  */
 export function useAuth() {
-    const context = useContext(AuthContext)
+    const context = use(AuthContext)
     if (context === undefined) {
         console.error('[useAuth] Called outside of AuthProvider. Check that AuthProvider wraps your component tree.')
         throw new Error('useAuth must be used within an AuthProvider. Make sure AuthProvider wraps your entire app in main.tsx')
