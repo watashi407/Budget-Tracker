@@ -101,7 +101,7 @@ export function MainLayout() {
                         <div className="h-8 w-8 rounded-sm bg-black border border-primary/50 flex items-center justify-center">
                             <Wallet className="h-4 w-4 text-primary" />
                         </div>
-                        <span className="font-mono tracking-tighter text-white">AXIS</span>
+                        <span className="font-mono tracking-tighter text-white">WATASHI</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <ThemeToggle />
