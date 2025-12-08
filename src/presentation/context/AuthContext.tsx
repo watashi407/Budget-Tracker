@@ -34,96 +34,79 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         let mounted = true
-        let isInitialized = false
+        console.log('[AuthContext] AuthProvider mounted')
 
-        // Safety timeout to ensure loading doesn't stick forever
-        const timeoutId = setTimeout(() => {
-            if (mounted && !isInitialized) {
-                console.warn('[AuthContext] Auth initialization timed out (8s), forcing loading to false')
+        // Failsafe: If loading takes too long, force it to false
+        const failsafeTimeout = setTimeout(() => {
+            if (mounted && loading) {
+                console.error('[AuthContext] Failsafe triggered: Auth loading timed out after 5s. Forcing loading false.')
                 setLoading(false)
-                isInitialized = true
             }
-        }, 8000) // Increased to 8 seconds to allow repository timeout (3s) to resolve first
+        }, 5000)
 
-        // Check initial session
-        async function initAuth() {
+        // Fetch initial session immediately
+        async function getSession() {
+            console.log('[AuthContext] getSession: starting...')
             try {
-                console.log('[AuthContext] Initializing auth...')
+                // Priority Check: check session validity first
+                const sessionUser = await authRepository.getCurrentUser()
+                console.log('[AuthContext] getSession: result received', sessionUser?.email)
 
-                // First check if there's a session
-                const { data: { session } } = await supabase.auth.getSession()
-
-                if (session?.user) {
-                    console.log('[AuthContext] Found existing session for:', session.user.email)
-                    const currentUser = await authRepository.getCurrentUser()
-                    if (mounted) {
-                        setUser(currentUser)
-                        setLoading(false)
-                        isInitialized = true
-                        clearTimeout(timeoutId)
-                    }
-                } else {
-                    console.log('[AuthContext] No existing session')
-                    if (mounted) {
+                if (mounted) {
+                    if (sessionUser) {
+                        console.log('[AuthContext] Initial session found:', sessionUser.email)
+                        setUser(sessionUser)
+                    } else {
+                        console.log('[AuthContext] No initial session')
                         setUser(null)
-                        setLoading(false)
-                        isInitialized = true
-                        clearTimeout(timeoutId)
                     }
+                    setLoading(false)
                 }
-            } catch (err) {
-                console.error('[AuthContext] Error initializing auth:', err)
+            } catch (error) {
+                console.error('[AuthContext] Error getting initial session:', error)
                 if (mounted) {
                     setUser(null)
                     setLoading(false)
-                    isInitialized = true
-                    clearTimeout(timeoutId)
                 }
             }
         }
 
-        initAuth()
+        getSession()
 
         // Listen for auth state changes
         const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (!mounted) return
+
             console.log('[AuthContext] Auth state change:', event, session?.user?.email)
 
-            if (mounted) {
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
                 if (session?.user) {
-                    // Only fetch user if we don't have one or if it's a different user
-                    // This prevents race conditions where initAuth is already working
-                    if (!user || user.email !== session.user.email) {
-                        try {
-                            console.log('[AuthContext] Session found (event), fetching current user details...')
-                            const currentUser = await authRepository.getCurrentUser()
-                            console.log('[AuthContext] Current user fetched (event):', currentUser?.email)
-                            if (mounted) {
-                                setUser(currentUser)
-                                setLoading(false)
-                                isInitialized = true
-                                clearTimeout(timeoutId)
-                            }
-                        } catch (err) {
-                            console.error('[AuthContext] Error getting current user (event):', err)
-                            if (mounted && !isInitialized) {
-                                setLoading(false)
-                                isInitialized = true
-                            }
+                    // Check if we need to update user state (optimization)
+                    // If we are already loaded and have the same user, skip
+                    if (user && user.email === session.user.email) return
+
+                    try {
+                        const currentUser = await authRepository.getCurrentUser()
+                        if (mounted) {
+                            setUser(currentUser)
+                            setLoading(false)
                         }
+                    } catch (err) {
+                        console.error('[AuthContext] Error fetching user on change:', err)
                     }
-                } else {
-                    console.log('[AuthContext] No session user (event), clearing state')
+                }
+            } else if (event === 'SIGNED_OUT') {
+                if (mounted) {
                     setUser(null)
                     setLoading(false)
-                    isInitialized = true
-                    clearTimeout(timeoutId)
                 }
             }
         })
 
         return () => {
+            console.log('[AuthContext] AuthProvider unmounting')
             mounted = false
-            clearTimeout(timeoutId)
+            clearTimeout(failsafeTimeout)
             data.subscription.unsubscribe()
         }
     }, [])

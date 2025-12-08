@@ -82,32 +82,52 @@ export class SupabaseAuthRepository implements IAuthRepository {
      */
     async getCurrentUser(): Promise<User | null> {
         console.log('[SupabaseAuthRepository] getCurrentUser called')
-        try {
-            // Create a promise that rejects after 3 seconds
-            const { data: { user }, error } = await supabase.auth.getUser()
 
-            if (error) {
-                console.error('[SupabaseAuthRepository] getUser error:', error)
-                // Fallback to session user if getUser fails (e.g. network issue)
-                const { data: { session } } = await supabase.auth.getSession()
-                if (session?.user) {
-                    console.log('[SupabaseAuthRepository] Falling back to session user')
-                    return this.mapUser(session.user)
-                }
+        const timeoutPromise = (ms: number, name: string) => new Promise<{ data: { session: null }; error: { message: string } } | { data: { user: null }; error: { message: string } }>((_, reject) =>
+            setTimeout(() => reject(new Error(`${name} timed out after ${ms}ms`)), ms)
+        )
+
+        try {
+            // Priority 1: Get session directly first (faster and often sufficient)
+            // Wrap in race to prevent hanging
+            console.log('[SupabaseAuthRepository] Calling getSession with timeout...')
+            const { data: { session }, error: sessionError } = await Promise.race([
+                supabase.auth.getSession(),
+                timeoutPromise(3000, 'getSession') as Promise<any>
+            ])
+            console.log('[SupabaseAuthRepository] getSession returned', session ? 'Session found' : 'No session', sessionError ? sessionError : '')
+
+            if (sessionError) {
+                console.error('[SupabaseAuthRepository] getSession error:', sessionError)
                 return null
             }
 
-            if (!user) return null
+            if (!session?.user) {
+                // Double check with getUser just in case session is stale but valid
+                console.log('[SupabaseAuthRepository] No session user, checking getUser with timeout...')
+                const { data: { user }, error: userError } = await Promise.race([
+                    supabase.auth.getUser(),
+                    timeoutPromise(3000, 'getUser') as Promise<any>
+                ])
 
-            return this.mapUser(user)
+                if (userError || !user) {
+                    console.log('[SupabaseAuthRepository] getUser failed or empty:', userError)
+                    return null
+                }
+                return this.mapUser(user)
+            }
+
+            // If we have a session, we can attempt to get fresh user data, but fallback to session user
+            /* 
+               Optimization: Trust session user for immediate rendering. 
+               Only fetch updated profile if needed, but for now let's just use session user to unblock.
+               If we really need fresh data, we can do it in background or separate call.
+               Ideally, we should try getUser but fallback INSTANTLY to session.user if it fails/times out.
+            */
+            return this.mapUser(session.user)
+
         } catch (err) {
             console.error('[SupabaseAuthRepository] getCurrentUser exception:', err)
-            // One last try with session
-            const { data: { session } } = await supabase.auth.getSession()
-            if (session?.user) {
-                console.log('[SupabaseAuthRepository] Falling back to session user after exception')
-                return this.mapUser(session.user)
-            }
             return null
         }
     }
