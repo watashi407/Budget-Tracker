@@ -40,7 +40,7 @@ export function MainLayout() {
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-lg font-mono font-bold tracking-tighter text-white">
-                                    AXIS.POCKET
+                                    WATASHI POCKET
                                 </span>
                                 <span className="text-[10px] font-mono text-primary/80 tracking-widest uppercase">
                                     v3.0 SYSTEM
