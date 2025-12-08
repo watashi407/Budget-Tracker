@@ -7,11 +7,14 @@ import { Button } from '@/presentation/components/ui/button'
 
 import { Separator } from '@/presentation/components/ui/separator'
 import { CreateBudgetDialog } from '@/presentation/components/CreateBudgetDialog'
+import { EditBudgetDialog } from '@/presentation/components/EditBudgetDialog'
 import { CreateTransactionDialog } from '@/presentation/components/CreateTransactionDialog'
 import { BudgetCard } from '@/presentation/components/BudgetCard'
 import { TransactionList } from '@/presentation/components/TransactionList'
 import { AIInsightsPanel } from '@/presentation/components/AIInsightsPanel'
+import { SpendingChart } from '@/presentation/components/SpendingChart'
 import { PlusCircle, Wallet, TrendingUp, TrendingDown, Activity } from 'lucide-react'
+import type { Budget } from '@/domain/entities/Budget'
 
 
 type DateFilter = 'ALL' | 'MTD' | 'YTD'
@@ -23,6 +26,7 @@ export function DashboardPage() {
 
     const [showBudgetDialog, setShowBudgetDialog] = useState(false)
     const [showTransactionDialog, setShowTransactionDialog] = useState(false)
+    const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
     const [dateFilter, setDateFilter] = useState<DateFilter>('MTD')
 
     // Check for missing table error (Postgres code 42P01)
@@ -306,6 +310,11 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                 </div>
             </div>
 
+            {/* Charts Section */}
+            <div>
+                <SpendingChart budgets={budgets} />
+            </div>
+
             {/* Budgets Section */}
             <div>
                 <div className="flex items-center justify-between mb-4 border-b border-border/50 pb-2">
@@ -340,7 +349,11 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                 ) : (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {budgets.map((budget) => (
-                            <BudgetCard key={budget.id} budget={budget} />
+                            <BudgetCard
+                                key={budget.id}
+                                budget={budget}
+                                onEdit={(b) => setEditingBudget(b)}
+                            />
                         ))}
                     </div>
                 )}
@@ -381,6 +394,11 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
 
             {/* Dialogs */}
             <CreateBudgetDialog open={showBudgetDialog} onOpenChange={setShowBudgetDialog} />
+            <EditBudgetDialog
+                open={!!editingBudget}
+                onOpenChange={(open) => !open && setEditingBudget(null)}
+                budget={editingBudget}
+            />
             <CreateTransactionDialog open={showTransactionDialog} onOpenChange={setShowTransactionDialog} />
         </div>
     )

@@ -1,4 +1,5 @@
 import { useTransition } from 'react'
+import { Link } from '@tanstack/react-router'
 import type { Budget } from '@/domain/entities/Budget'
 
 import { Badge } from '@/presentation/components/ui/badge'
@@ -31,12 +32,16 @@ export function BudgetCard({ budget, onEdit }: BudgetCardProps) {
     }
 
     return (
-        <div className="axis-card group hover:border-primary/50 transition-colors duration-300">
+        <div className="axis-card group hover:border-primary/50 transition-colors duration-300 relative">
             {/* Tech Decoration */}
-            <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-primary/30 group-hover:border-primary transition-colors" />
-            <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-primary/30 group-hover:border-primary transition-colors" />
+            <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-primary/30 group-hover:border-primary transition-colors pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-primary/30 group-hover:border-primary transition-colors pointer-events-none" />
 
-            <div className="p-5 space-y-4">
+            <Link
+                to="/budgets/$budgetId"
+                params={{ budgetId: budget.id }}
+                className="block p-5 space-y-4"
+            >
                 <div className="flex items-start justify-between">
                     <div>
                         <div className="axis-header text-primary mb-1">BUDGET ID: {budget.id.slice(0, 8)}</div>
@@ -78,26 +83,32 @@ export function BudgetCard({ budget, onEdit }: BudgetCardProps) {
                         <span>STATUS: {isOverBudget ? 'CRITICAL' : 'NOMINAL'}</span>
                     </div>
                 </div>
+            </Link>
 
-                <div className="pt-2 flex gap-2 border-t border-white/5">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex-1 h-8 rounded-none text-xs font-mono hover:bg-white/5 hover:text-primary"
-                        onClick={() => onEdit?.(budget)}
-                    >
-                        <Edit className="w-3 h-3 mr-2" />
-                        CONFIGURE
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 rounded-none text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                        onClick={handleDelete}
-                    >
-                        <Trash2 className="w-3 h-3" />
-                    </Button>
-                </div>
+            <div className="px-5 pb-5 flex gap-2">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-1 h-8 rounded-none text-xs font-mono hover:bg-white/5 hover:text-primary border border-white/5"
+                    onClick={(e) => {
+                        e.preventDefault()
+                        onEdit?.(budget)
+                    }}
+                >
+                    <Edit className="w-3 h-3 mr-2" />
+                    CONFIGURE
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 rounded-none text-muted-foreground hover:bg-destructive/10 hover:text-destructive border border-white/5"
+                    onClick={(e) => {
+                        e.preventDefault()
+                        handleDelete()
+                    }}
+                >
+                    <Trash2 className="w-3 h-3" />
+                </Button>
             </div>
         </div>
     )

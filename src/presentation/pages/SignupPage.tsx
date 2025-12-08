@@ -47,7 +47,12 @@ export function SignupPage() {
             await signUp(email, password, fullName)
             navigate({ to: '/' })
         } catch (err: any) {
-            setError(err.message || 'Failed to create account')
+            console.error('[SignupPage] Signup error:', err)
+            let message = err.message || 'Failed to create account'
+            if (message.toLowerCase().includes('pwned') || message.toLowerCase().includes('security') || message.toLowerCase().includes('weak')) {
+                message = 'This password has been exposed in a data breach or is too weak. Please choose a stronger, unique password.'
+            }
+            setError(message)
         } finally {
             setLoading(false)
         }

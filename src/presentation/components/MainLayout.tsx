@@ -1,8 +1,9 @@
-import { Outlet } from "@tanstack/react-router"
+import { Link, Outlet } from "@tanstack/react-router"
 import { useAuth } from "@/presentation/context/AuthContext"
 import { ThemeToggle } from "./ThemeToggle"
 import { Wallet, LayoutDashboard, Settings, LogOut } from "lucide-react"
 import { Button } from "./ui/button"
+import { Toaster } from "@/presentation/components/ui/toaster"
 
 export function MainLayout() {
     const { user, signOut, loading } = useAuth()
@@ -53,14 +54,18 @@ export function MainLayout() {
                     <div className="px-4 py-2 text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
                         Navigation
                     </div>
-                    <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-sm font-medium hover:bg-primary/10 hover:text-primary hover:border-r-2 hover:border-primary transition-all duration-200 rounded-none group">
-                        <LayoutDashboard className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                        <span className="font-mono">DASHBOARD</span>
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-sm font-medium hover:bg-primary/10 hover:text-primary hover:border-r-2 hover:border-primary transition-all duration-200 rounded-none group">
-                        <Settings className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                        <span className="font-mono">SETTINGS</span>
-                    </Button>
+                    <Link to="/" className="w-full">
+                        <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-sm font-medium hover:bg-primary/10 hover:text-primary hover:border-r-2 hover:border-primary transition-all duration-200 rounded-none group">
+                            <LayoutDashboard className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <span className="font-mono">DASHBOARD</span>
+                        </Button>
+                    </Link>
+                    <Link to="/settings" className="w-full">
+                        <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-sm font-medium hover:bg-primary/10 hover:text-primary hover:border-r-2 hover:border-primary transition-all duration-200 rounded-none group">
+                            <Settings className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <span className="font-mono">SETTINGS</span>
+                        </Button>
+                    </Link>
                 </nav>
 
                 <div className="p-4 border-t border-border/50 space-y-4 bg-black/20 relative z-10">
@@ -98,13 +103,24 @@ export function MainLayout() {
                         </div>
                         <span className="font-mono tracking-tighter text-white">AXIS</span>
                     </div>
-                    <ThemeToggle />
+                    <div className="flex items-center gap-2">
+                        <ThemeToggle />
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={signOut}
+                            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                        >
+                            <LogOut className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </header>
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-8">
                     <Outlet />
                 </div>
             </main>
+            <Toaster />
         </div>
     )
 }

@@ -36,4 +36,9 @@ export interface IAuthRepository {
      * Update user profile
      */
     updateProfile(userId: string, updates: Partial<User>): Promise<User>
+
+    /**
+     * Update user password
+     */
+    updatePassword(password: string): Promise<void>
 }

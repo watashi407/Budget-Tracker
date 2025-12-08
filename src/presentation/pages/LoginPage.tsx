@@ -44,7 +44,11 @@ export function LoginPage() {
             // Navigation handled by useEffect
         } catch (err: any) {
             console.error('[LoginPage] Sign in error:', err)
-            setError(err.message || 'Failed to sign in')
+            let message = err.message || 'Failed to sign in'
+            if (message.toLowerCase().includes('pwned') || message.toLowerCase().includes('security')) {
+                message = 'Security alert: This password has been exposed. Please reset your password.'
+            }
+            setError(message)
             setLoading(false)
         }
     }

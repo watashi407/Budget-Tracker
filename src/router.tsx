@@ -4,6 +4,8 @@ import { Route as indexRoute } from './routes/index'
 import { Route as loginRoute } from './routes/login'
 import { Route as signupRoute } from './routes/signup'
 import { Route as forgotPasswordRoute } from './routes/forgot-password'
+import { Route as budgetDetailsRoute } from './routes/budgets.$budgetId'
+import { Route as settingsRoute } from './routes/settings'
 
 /**
  * Route Tree Configuration
@@ -14,13 +16,18 @@ const routeTree = rootRoute.addChildren([
     loginRoute,
     signupRoute,
     forgotPasswordRoute,
+    budgetDetailsRoute,
+    settingsRoute,
 ])
 
 /**
  * Router instance
  * Created with the complete route tree
  */
-export const router = createRouter({ routeTree })
+export const router = createRouter({
+    routeTree,
+    defaultViewTransition: true,
+})
 
 /**
  * Type declaration for TypeScript support

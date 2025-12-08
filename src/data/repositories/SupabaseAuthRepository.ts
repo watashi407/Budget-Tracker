@@ -42,17 +42,10 @@ export class SupabaseAuthRepository implements IAuthRepository {
         console.log('[SupabaseAuthRepository] Calling signInWithPassword for:', email)
 
         try {
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('signIn request timed out')), 5000)
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
             })
-
-            const { data, error } = await Promise.race([
-                supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                }),
-                timeoutPromise.then(() => { throw new Error('Timeout') })
-            ]) as any
 
             if (error) {
                 console.error('[SupabaseAuthRepository] Supabase auth error:', error)
@@ -91,15 +84,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
         console.log('[SupabaseAuthRepository] getCurrentUser called')
         try {
             // Create a promise that rejects after 3 seconds
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('getUser request timed out')), 3000)
-            })
-
-            // Race the getUser call against the timeout
-            const { data: { user }, error } = await Promise.race([
-                supabase.auth.getUser(),
-                timeoutPromise.then(() => { throw new Error('Timeout') })
-            ]) as any
+            const { data: { user }, error } = await supabase.auth.getUser()
 
             if (error) {
                 console.error('[SupabaseAuthRepository] getUser error:', error)
@@ -168,5 +153,15 @@ export class SupabaseAuthRepository implements IAuthRepository {
             createdAt: new Date(data.user.created_at),
             updatedAt: new Date(data.user.updated_at || data.user.created_at),
         }
+    }
+
+    /**
+     * Update user password
+     */
+    async updatePassword(password: string): Promise<void> {
+        const { error } = await supabase.auth.updateUser({
+            password,
+        })
+        if (error) throw error
     }
 }

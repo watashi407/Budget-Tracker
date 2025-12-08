@@ -16,6 +16,8 @@ interface AuthContextType {
     signUp: (email: string, password: string, fullName?: string) => Promise<void>
     signOut: () => Promise<void>
     resetPassword: (email: string) => Promise<void>
+    updateProfile: (userId: string, updates: Partial<User>) => Promise<void>
+    updatePassword: (password: string) => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -172,6 +174,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await authRepository.resetPassword(email)
     }
 
+    /**
+     * Update user profile
+     */
+    async function updateProfile(userId: string, updates: Partial<User>) {
+        const updatedUser = await authRepository.updateProfile(userId, updates)
+        setUser(updatedUser)
+        // Optionally update cache/local storage if needed, but state should drive UI
+    }
+
+    /**
+     * Update user password
+     */
+    async function updatePassword(password: string) {
+        await authRepository.updatePassword(password)
+    }
+
     const value: AuthContextType = {
         user,
         loading,
@@ -179,6 +197,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signOut,
         resetPassword,
+        updateProfile,
+        updatePassword,
     }
 
     return <AuthContext value={value}>{children}</AuthContext>

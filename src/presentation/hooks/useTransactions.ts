@@ -1,113 +1,139 @@
-import { useState, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useSupabaseRealtime } from '@/presentation/hooks/useSupabaseRealtime'
 import type { Transaction, CreateTransactionInput, UpdateTransactionInput } from '@/domain/entities/Transaction'
 import { SupabaseTransactionRepository } from '@/data/repositories/SupabaseTransactionRepository'
 import { useAuth } from '@/presentation/context/AuthContext'
+import { BUDGETS_QUERY_KEY } from './useBudgets'
 
 const transactionRepository = new SupabaseTransactionRepository()
 
+export const TRANSACTIONS_QUERY_KEY = 'transactions'
+
 /**
- * Custom hook for transaction CRUD operations
- * This is part of the Presentation layer in Clean Architecture.
+ * Custom hook for transaction CRUD operations using TanStack Query
+ * Includes optimistic updates for instant UI feedback.
  */
 export function useTransactions(budgetId?: string) {
     const { user } = useAuth()
-    const [transactions, setTransactions] = useState<Transaction[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<Error | null>(null)
+    const queryClient = useQueryClient()
+    const queryKey = [TRANSACTIONS_QUERY_KEY, user?.id, budgetId || 'all']
 
-    /**
-     * Fetch transactions for the current user or specific budget
-     */
-    async function fetchTransactions() {
-        if (!user) {
-            setTransactions([])
-            setLoading(false)
-            return
-        }
+    useSupabaseRealtime({
+        tableName: 'transactions',
+        queryKey,
+    })
 
-        try {
-            setLoading(true)
-            setError(null)
-            const data = budgetId
-                ? await transactionRepository.getByBudgetId(budgetId)
-                : await transactionRepository.getAll(user.id)
-            setTransactions(data)
-        } catch (err) {
-            setError(err as Error)
-            console.error('Error fetching transactions:', err)
-        } finally {
-            setLoading(false)
-        }
-    }
+    // Fetch Transactions
+    const { data: transactions = [], isLoading: loading, error } = useQuery({
+        queryKey,
+        queryFn: async () => {
+            if (!user) return []
+            return budgetId
+                ? transactionRepository.getByBudgetId(budgetId)
+                : transactionRepository.getAll(user.id)
+        },
+        enabled: !!user,
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    })
 
-    /**
-     * Create a new transaction
-     */
-    async function createTransaction(input: CreateTransactionInput): Promise<Transaction> {
-        if (!user) throw new Error('User not authenticated')
+    // Create Transaction
+    const createTransactionMutation = useMutation({
+        mutationFn: (input: CreateTransactionInput) => {
+            if (!user) throw new Error('User not authenticated')
+            return transactionRepository.create(user.id, input)
+        },
+        onMutate: async (newTransactionInput) => {
+            await queryClient.cancelQueries({ queryKey })
 
-        try {
-            const newTransaction = await transactionRepository.create(user.id, input)
-            setTransactions(prev => [newTransaction, ...prev])
-            return newTransaction
-        } catch (err) {
-            setError(err as Error)
-            throw err
-        }
-    }
+            const previousTransactions = queryClient.getQueryData<Transaction[]>(queryKey)
 
-    /**
-     * Update an existing transaction
-     */
-    async function updateTransaction(transactionId: string, input: UpdateTransactionInput): Promise<Transaction> {
-        try {
-            const updatedTransaction = await transactionRepository.update(transactionId, input)
-            setTransactions(prev => prev.map(t => t.id === transactionId ? updatedTransaction : t))
-            return updatedTransaction
-        } catch (err) {
-            setError(err as Error)
-            throw err
-        }
-    }
+            if (user) {
+                const optimisticTransaction: Transaction = {
+                    id: 'temp-' + Date.now(),
+                    userId: user.id,
+                    ...newTransactionInput,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                }
+                queryClient.setQueryData<Transaction[]>(queryKey, (old) => [optimisticTransaction, ...(old || [])])
+            }
 
-    /**
-     * Delete a transaction
-     */
-    async function deleteTransaction(transactionId: string): Promise<void> {
-        try {
-            await transactionRepository.delete(transactionId)
-            setTransactions(prev => prev.filter(t => t.id !== transactionId))
-        } catch (err) {
-            setError(err as Error)
-            throw err
-        }
-    }
+            return { previousTransactions }
+        },
+        onError: (_err, _newTransaction, context) => {
+            if (context?.previousTransactions) {
+                queryClient.setQueryData(queryKey, context.previousTransactions)
+            }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey })
+            // Also invalidate budgets to update spent amounts
+            queryClient.invalidateQueries({ queryKey: [BUDGETS_QUERY_KEY, user?.id] })
+        },
+    })
 
-    /**
-     * Get a single transaction by ID
-     */
-    async function getTransactionById(transactionId: string): Promise<Transaction | null> {
-        try {
-            return await transactionRepository.getById(transactionId)
-        } catch (err) {
-            setError(err as Error)
-            throw err
-        }
-    }
+    // Update Transaction
+    const updateTransactionMutation = useMutation({
+        mutationFn: ({ id, input }: { id: string; input: UpdateTransactionInput }) => {
+            return transactionRepository.update(id, input)
+        },
+        onMutate: async ({ id, input }) => {
+            await queryClient.cancelQueries({ queryKey })
+            const previousTransactions = queryClient.getQueryData<Transaction[]>(queryKey)
 
-    // Fetch transactions when user or budgetId changes
-    useEffect(() => {
-        fetchTransactions()
-    }, [user?.id, budgetId])
+            queryClient.setQueryData<Transaction[]>(queryKey, (old) =>
+                (old || []).map((t) => (t.id === id ? { ...t, ...input } : t))
+            )
+
+            return { previousTransactions }
+        },
+        onError: (_err, _variables, context) => {
+            if (context?.previousTransactions) {
+                queryClient.setQueryData(queryKey, context.previousTransactions)
+            }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey })
+            queryClient.invalidateQueries({ queryKey: [BUDGETS_QUERY_KEY, user?.id] })
+        },
+    })
+
+    // Delete Transaction
+    const deleteTransactionMutation = useMutation({
+        mutationFn: (id: string) => {
+            return transactionRepository.delete(id)
+        },
+        onMutate: async (id) => {
+            await queryClient.cancelQueries({ queryKey })
+            const previousTransactions = queryClient.getQueryData<Transaction[]>(queryKey)
+
+            queryClient.setQueryData<Transaction[]>(queryKey, (old) =>
+                (old || []).filter((t) => t.id !== id)
+            )
+
+            return { previousTransactions }
+        },
+        onError: (_err, _variables, context) => {
+            if (context?.previousTransactions) {
+                queryClient.setQueryData(queryKey, context.previousTransactions)
+            }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey })
+            queryClient.invalidateQueries({ queryKey: [BUDGETS_QUERY_KEY, user?.id] })
+        },
+    })
 
     return {
         transactions,
         loading,
-        error,
-        createTransaction,
-        updateTransaction,
-        deleteTransaction,
-        getTransactionById,
-        refreshTransactions: fetchTransactions,
+        error: error as Error | null,
+        createTransaction: createTransactionMutation.mutateAsync,
+        updateTransaction: (id: string, input: UpdateTransactionInput) => updateTransactionMutation.mutateAsync({ id, input }),
+        deleteTransaction: deleteTransactionMutation.mutateAsync,
+        refreshTransactions: () => queryClient.invalidateQueries({ queryKey }),
+        isCreating: createTransactionMutation.isPending,
+        isUpdating: updateTransactionMutation.isPending,
+        isDeleting: deleteTransactionMutation.isPending,
     }
 }

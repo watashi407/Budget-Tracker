@@ -17,9 +17,10 @@ import { useBudgets } from '@/presentation/hooks/useBudgets'
 interface CreateTransactionDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
+    defaultBudgetId?: string
 }
 
-export function CreateTransactionDialog({ open, onOpenChange }: CreateTransactionDialogProps) {
+export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }: CreateTransactionDialogProps) {
     const { createTransaction } = useTransactions()
     const { budgets } = useBudgets()
 
@@ -28,7 +29,7 @@ export function CreateTransactionDialog({ open, onOpenChange }: CreateTransactio
     const [amount, setAmount] = useState('')
     const [category, setCategory] = useState('')
     const [description, setDescription] = useState('')
-    const [budgetId, setBudgetId] = useState('')
+    const [budgetId, setBudgetId] = useState(defaultBudgetId || '')
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
 
     const [state, formAction, isPending] = useActionState(async (_prevState: any, formData: FormData) => {
