@@ -68,8 +68,8 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
             setDate(new Date().toISOString().split('T')[0])
             onOpenChange(false)
             return { success: true, error: null }
-        } catch (err: any) {
-            return { success: false, error: err.message || 'Failed to create transaction' }
+        } catch (err) {
+            return { success: false, error: err instanceof Error ? err.message : 'Failed to create transaction' }
         }
     }, { success: false, error: null })
 

@@ -37,12 +37,13 @@ export function AIInsightsPanel() {
         try {
             const result = await geminiAIService.getBudgetInsights(budgets, transactions)
             setInsights(result)
-        } catch (err: any) {
-            setError(err.message || 'Failed to get insights')
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to get insights')
         } finally {
             setLoading(false)
         }
     }
+
 
     /**
      * Get spending forecast from AI
@@ -54,8 +55,8 @@ export function AIInsightsPanel() {
         try {
             const result = await geminiAIService.getSpendingForecast(budgets, transactions)
             setForecast(result)
-        } catch (err: any) {
-            setError(err.message || 'Failed to get forecast')
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to get forecast')
         } finally {
             setLoading(false)
         }
@@ -76,8 +77,8 @@ export function AIInsightsPanel() {
         try {
             const result = await geminiAIService.chat(userMessage, budgets, transactions)
             setChatHistory(prev => [...prev, { role: 'ai', message: result }])
-        } catch (err: any) {
-            setError(err.message || 'Failed to get AI response')
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to get AI response')
         } finally {
             setLoading(false)
         }
@@ -177,8 +178,8 @@ export function AIInsightsPanel() {
                                 <div
                                     key={index}
                                     className={`p-3 rounded-lg ${chat.role === 'user'
-                                            ? 'bg-primary/10 ml-8'
-                                            : 'bg-muted mr-8'
+                                        ? 'bg-primary/10 ml-8'
+                                        : 'bg-muted mr-8'
                                         }`}
                                 >
                                     <p className="text-xs font-medium mb-1 text-muted-foreground">

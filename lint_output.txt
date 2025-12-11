@@ -1,0 +1,65 @@
+﻿
+> project_1@0.0.0 lint
+> eslint .
+
+
+C:\Users\hyper\Desktop\basic react\project_1\src\data\repositories\SupabaseAuthRepository.test.ts
+  54:9   warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')
+  58:14  error    Unexpected any. Specify a different type                                                               @typescript-eslint/no-explicit-any
+
+C:\Users\hyper\Desktop\basic react\project_1\src\db\schema.ts
+  18:5  error  '_' is defined but never used  @typescript-eslint/no-unused-vars
+  33:5  error  '_' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hyper\Desktop\basic react\project_1\src\presentation\components\AIInsightsPanel.tsx
+  40:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  57:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  79:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hyper\Desktop\basic react\project_1\src\presentation\components\CreateBudgetDialog.tsx
+   33:78  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   90:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  161:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hyper\Desktop\basic react\project_1\src\presentation\components\CreateTransactionDialog.tsx
+  35:78  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  71:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  98:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hyper\Desktop\basic react\project_1\src\presentation\components\EditBudgetDialog.tsx
+   36:78  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   63:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  130:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hyper\Desktop\basic react\project_1\src\presentation\components\ui\badge.tsx
+   6:1   warning  Unused eslint-disable directive (no problems were reported from 'react-refresh/only-export-components')
+  37:17  error    Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\hyper\Desktop\basic react\project_1\src\presentation\components\ui\button.tsx
+   7:1   warning  Unused eslint-disable directive (no problems were reported from 'react-refresh/only-export-components')
+  55:18  error    Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\hyper\Desktop\basic react\project_1\src\presentation\components\ui\use-toast.ts
+  18:7  error  'actionTypes' is assigned a value but only used as a type  @typescript-eslint/no-unused-vars
+
+C:\Users\hyper\Desktop\basic react\project_1\src\presentation\context\AuthContext.tsx
+  113:8  warning  React Hook useEffect has missing dependencies: 'loading' and 'user'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\hyper\Desktop\basic react\project_1\src\presentation\hooks\useSupabaseRealtime.ts
+  33:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hyper\Desktop\basic react\project_1\src\presentation\pages\DashboardPage.tsx
+  73:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hyper\Desktop\basic react\project_1\src\presentation\pages\ForgotPasswordPage.tsx
+  35:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hyper\Desktop\basic react\project_1\src\presentation\pages\LoginPage.tsx
+  45:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hyper\Desktop\basic react\project_1\src\presentation\pages\SignupPage.tsx
+  49:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Γ£û 27 problems (23 errors, 4 warnings)
+  0 errors and 3 warnings potentially fixable with the `--fix` option.
+

@@ -29,8 +29,48 @@ export function DashboardPage() {
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
     const [dateFilter, setDateFilter] = useState<DateFilter>('MTD')
 
+    // Filter Logic
+    const filteredTransactions = useMemo(() => {
+        const now = new Date()
+        return transactions.filter(t => {
+            const tDate = new Date(t.date)
+            if (dateFilter === 'ALL') return true
+            if (dateFilter === 'MTD') {
+                return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear()
+            }
+            if (dateFilter === 'YTD') {
+                return tDate.getFullYear() === now.getFullYear()
+            }
+            return true
+        })
+    }, [transactions, dateFilter])
+
+    const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0)
+
+    // Calculate totals based on FILTERED transactions
+    const totalIncome = filteredTransactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0)
+
+    const totalExpenses = filteredTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0)
+
+    // Forecast Logic (Simple linear projection)
+    const forecast = useMemo(() => {
+        const now = new Date()
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+        const dayOfMonth = now.getDate()
+
+        if (dateFilter === 'MTD' && dayOfMonth > 0) {
+            const dailyAvg = totalExpenses / dayOfMonth
+            return dailyAvg * daysInMonth
+        }
+        return 0
+    }, [totalExpenses, dateFilter])
+
     // Check for missing table error (Postgres code 42P01)
-    if (budgetsError && (budgetsError as any).code === '42P01') {
+    if (budgetsError && (budgetsError as { code?: string }).code === '42P01') {
         return (
             <div className="min-h-[80vh] flex flex-col items-center justify-center text-center p-4 space-y-6">
                 <div className="h-20 w-20 rounded-full bg-destructive/10 flex items-center justify-center border border-destructive/20 animate-pulse">
@@ -150,46 +190,6 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
             </div>
         )
     }
-
-    // Filter Logic
-    const filteredTransactions = useMemo(() => {
-        const now = new Date()
-        return transactions.filter(t => {
-            const tDate = new Date(t.date)
-            if (dateFilter === 'ALL') return true
-            if (dateFilter === 'MTD') {
-                return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear()
-            }
-            if (dateFilter === 'YTD') {
-                return tDate.getFullYear() === now.getFullYear()
-            }
-            return true
-        })
-    }, [transactions, dateFilter])
-
-    const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0)
-
-    // Calculate totals based on FILTERED transactions
-    const totalIncome = filteredTransactions
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0)
-
-    const totalExpenses = filteredTransactions
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0)
-
-    // Forecast Logic (Simple linear projection)
-    const forecast = useMemo(() => {
-        const now = new Date()
-        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-        const dayOfMonth = now.getDate()
-
-        if (dateFilter === 'MTD' && dayOfMonth > 0) {
-            const dailyAvg = totalExpenses / dayOfMonth
-            return dailyAvg * daysInMonth
-        }
-        return 0
-    }, [totalExpenses, dateFilter])
 
     return (
         <div className="space-y-8">

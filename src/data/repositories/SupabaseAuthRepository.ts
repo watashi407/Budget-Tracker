@@ -93,7 +93,8 @@ export class SupabaseAuthRepository implements IAuthRepository {
             console.log('[SupabaseAuthRepository] Calling getSession with timeout...')
             const { data: { session }, error: sessionError } = await Promise.race([
                 supabase.auth.getSession(),
-                timeoutPromise(3000, 'getSession') as Promise<any>
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                timeoutPromise(10000, 'getSession') as Promise<any>
             ])
             console.log('[SupabaseAuthRepository] getSession returned', session ? 'Session found' : 'No session', sessionError ? sessionError : '')
 
@@ -107,7 +108,8 @@ export class SupabaseAuthRepository implements IAuthRepository {
                 console.log('[SupabaseAuthRepository] No session user, checking getUser with timeout...')
                 const { data: { user }, error: userError } = await Promise.race([
                     supabase.auth.getUser(),
-                    timeoutPromise(3000, 'getUser') as Promise<any>
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    timeoutPromise(10000, 'getUser') as Promise<any>
                 ])
 
                 if (userError || !user) {
@@ -132,6 +134,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private mapUser(user: any): User {
         return {
             id: user.id,

@@ -77,6 +77,17 @@ src/
 ## Development
 ```bash
 npm run dev          # Start dev server
-npm run build        # Build for production
-npm run preview      # Preview production build
-```
+## Deployment
+
+### Vercel (Recommended)
+This project is configured for Vercel deployment.
+1. Push your code to GitHub.
+2. Import the project in Vercel.
+3. Add your Environment Variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_GEMINI_API_KEY`).
+4. Deploy!
+
+The `vercel.json` file ensures that client-side routing works correctly.
+
+### Netlify / Other
+Ensure your build command is `npm run build` and the publish directory is `dist`.
+For SPA routing, you may need a `_redirects` file (Netlify) or similar configuration to redirect all traffic to `/index.html`.

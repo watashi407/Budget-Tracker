@@ -20,6 +20,7 @@ interface AuthContextType {
     updatePassword: (password: string) => Promise<void>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const authRepository = new SupabaseAuthRepository()
@@ -109,6 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             clearTimeout(failsafeTimeout)
             data.subscription.unsubscribe()
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
 
@@ -190,6 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 /**
  * Hook to use auth context
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
     const context = use(AuthContext)
     if (context === undefined) {

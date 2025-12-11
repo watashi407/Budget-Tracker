@@ -32,8 +32,10 @@ describe('SupabaseAuthRepository', () => {
         // Mock getUser to hang
         vi.mocked(supabase.auth.getUser).mockImplementation(() => new Promise(() => { }))
         // Mock getSession to return null
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         vi.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null }, error: null } as any)
-
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: null }, error: null } as any)
         const user = await repository.getCurrentUser()
         expect(user).toBeNull()
     })
@@ -49,6 +51,7 @@ describe('SupabaseAuthRepository', () => {
             user_metadata: { full_name: 'Test User' },
             created_at: new Date().toISOString(),
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         vi.mocked(supabase.auth.getSession).mockResolvedValue({
             data: { session: { user: mockUser } },
             error: null

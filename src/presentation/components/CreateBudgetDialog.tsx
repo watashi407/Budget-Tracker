@@ -87,9 +87,9 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
             setColor('#3b82f6')
             onOpenChange(false)
             return { success: true, error: null }
-        } catch (err: any) {
+        } catch (err) {
             console.error('[CreateBudgetDialog] Error:', err)
-            return { success: false, error: err.message || 'Failed to create budget' }
+            return { success: false, error: err instanceof Error ? err.message : 'Failed to create budget' }
         }
     }, { success: false, error: null })
 

@@ -60,8 +60,8 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
 
             onOpenChange(false)
             return { success: true, error: null }
-        } catch (err: any) {
-            return { success: false, error: err.message || 'Failed to update budget' }
+        } catch (err) {
+            return { success: false, error: err instanceof Error ? err.message : 'Failed to update budget' }
         }
     }, { success: false, error: null })
 

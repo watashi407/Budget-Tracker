@@ -1,22 +1,20 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { createGemini } from '@tanstack/ai-gemini'
+import { chat } from '@tanstack/ai'
 import type { Budget } from '@/domain/entities/Budget'
 import type { Transaction } from '@/domain/entities/Transaction'
 
 /**
  * GeminiAIService
  * Service for interacting with Google's Gemini AI for budget insights and forecasting.
- * This is part of the Data layer in Clean Architecture.
+ * Refactored to use TanStack AI.
  */
 class GeminiAIService {
-    private genAI: GoogleGenerativeAI | null = null
-    private model: any = null
+    private gemini: ReturnType<typeof createGemini> | null = null
 
     constructor() {
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY
-
         if (apiKey) {
-            this.genAI = new GoogleGenerativeAI(apiKey)
-            this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' })
+            this.gemini = createGemini(apiKey)
         }
     }
 
@@ -24,23 +22,27 @@ class GeminiAIService {
      * Check if AI service is available
      */
     isAvailable(): boolean {
-        return this.model !== null
+        return this.gemini !== null
     }
 
     /**
      * Get budget insights based on current budgets and transactions
      */
     async getBudgetInsights(budgets: Budget[], transactions: Transaction[]): Promise<string> {
-        if (!this.model) {
+        if (!this.gemini) {
             throw new Error('Gemini API key not configured')
         }
 
         const prompt = this.buildInsightsPrompt(budgets, transactions)
 
         try {
-            const result = await this.model.generateContent(prompt)
-            const response = await result.response
-            return response.text()
+            const response = await chat({
+                adapter: this.gemini,
+                model: 'gemini-2.0-flash',
+                messages: [{ role: 'user', content: prompt }]
+            })
+
+            return this.collectResponse(response)
         } catch (error) {
             console.error('Error getting budget insights:', error)
             throw new Error('Failed to get AI insights')
@@ -51,16 +53,20 @@ class GeminiAIService {
      * Get spending forecast based on historical data
      */
     async getSpendingForecast(budgets: Budget[], transactions: Transaction[]): Promise<string> {
-        if (!this.model) {
+        if (!this.gemini) {
             throw new Error('Gemini API key not configured')
         }
 
         const prompt = this.buildForecastPrompt(budgets, transactions)
 
         try {
-            const result = await this.model.generateContent(prompt)
-            const response = await result.response
-            return response.text()
+            const response = await chat({
+                adapter: this.gemini,
+                model: 'gemini-2.0-flash',
+                messages: [{ role: 'user', content: prompt }]
+            })
+
+            return this.collectResponse(response)
         } catch (error) {
             console.error('Error getting spending forecast:', error)
             throw new Error('Failed to get spending forecast')
@@ -71,21 +77,48 @@ class GeminiAIService {
      * Chat with AI about budget questions
      */
     async chat(message: string, budgets: Budget[], transactions: Transaction[]): Promise<string> {
-        if (!this.model) {
+        if (!this.gemini) {
             throw new Error('Gemini API key not configured')
         }
 
         const context = this.buildContextPrompt(budgets, transactions)
-        const fullPrompt = `${context}\n\nUser Question: ${message}\n\nProvide a helpful, concise answer based on the budget data above.`
+        // TanStack AI handles system messages, but for now passing as user message context is safe
+        const messages = [
+            { role: 'system', content: context },
+            { role: 'user', content: message }
+        ]
 
         try {
-            const result = await this.model.generateContent(fullPrompt)
-            const response = await result.response
-            return response.text()
+            const response = await chat({
+                adapter: this.gemini,
+                model: 'gemini-2.0-flash',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                messages: messages as any // Cast for role 'system' if strictly typed
+            })
+
+            return this.collectResponse(response)
         } catch (error) {
             console.error('Error in AI chat:', error)
             throw new Error('Failed to get AI response')
         }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private async collectResponse(stream: any): Promise<string> {
+        let text = ''
+        for await (const chunk of stream) {
+            if (typeof chunk === 'string') {
+                text += chunk
+            } else if (typeof chunk === 'object' && chunk !== null) {
+                if ('content' in chunk && chunk.content) {
+                    text += chunk.content
+                } else if ('delta' in chunk && chunk.delta) {
+                    // some adapters use delta
+                    text += chunk.delta
+                }
+            }
+        }
+        return text
     }
 
     /**

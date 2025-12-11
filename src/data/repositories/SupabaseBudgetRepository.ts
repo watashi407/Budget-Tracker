@@ -71,7 +71,7 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
 
             console.log('[SupabaseBudgetRepository] Budget created successfully:', data)
             return this.mapToDomain(data)
-        } catch (err: any) {
+        } catch (err) {
             console.error('[SupabaseBudgetRepository] Exception:', err)
             throw err
         }
@@ -81,6 +81,7 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
      * Update an existing budget
      */
     async update(budgetId: string, input: UpdateBudgetInput): Promise<Budget> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updateData: any = {}
 
         if (input.name !== undefined) updateData.name = input.name
@@ -119,6 +120,7 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
     /**
      * Map database row to domain entity
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private mapToDomain(row: any): Budget {
         return {
             id: row.id,

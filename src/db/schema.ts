@@ -15,7 +15,7 @@ export const budgets = pgTable('budgets', {
     icon: text('icon'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-}, (_) => ({
+}, (_table) => ({
     periodCheck: check('period_check', sql`period IN ('daily', 'weekly', 'monthly', 'yearly')`),
 }));
 
@@ -30,7 +30,7 @@ export const transactions = pgTable('transactions', {
     date: timestamp('date', { withTimezone: true }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-}, (_) => ({
+}, (_table) => ({
     typeCheck: check('type_check', sql`type IN ('income', 'expense')`),
 }));
 

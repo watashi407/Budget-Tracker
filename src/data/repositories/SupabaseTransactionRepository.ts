@@ -98,6 +98,7 @@ export class SupabaseTransactionRepository implements ITransactionRepository {
         // Get the old transaction to adjust budget spent
         const oldTransaction = await this.getById(transactionId)
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updateData: any = {}
 
         if (input.budgetId !== undefined) updateData.budget_id = input.budgetId
@@ -172,6 +173,7 @@ export class SupabaseTransactionRepository implements ITransactionRepository {
     /**
      * Map database row to domain entity
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private mapToDomain(row: any): Transaction {
         return {
             id: row.id,
