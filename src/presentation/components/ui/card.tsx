@@ -6,7 +6,8 @@ const Card = ({ className, ref, ...props }: React.HTMLAttributes<HTMLDivElement>
   <div
     ref={ref}
     className={cn(
-      "rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm text-card-foreground shadow-lg",
+      "rounded-xl border border-border/60 bg-card/90 backdrop-blur-sm text-card-foreground shadow-lg",
+      "transition-all duration-300 hover:shadow-xl hover:border-border",
       className
     )}
     {...props}
@@ -27,7 +28,7 @@ const CardTitle = ({ className, ref, ...props }: React.HTMLAttributes<HTMLDivEle
   <div
     ref={ref}
     className={cn(
-      "text-2xl font-semibold leading-none tracking-tight",
+      "text-xl font-semibold leading-none tracking-tight text-foreground",
       className
     )}
     {...props}

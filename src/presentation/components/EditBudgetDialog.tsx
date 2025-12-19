@@ -33,7 +33,7 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
         }
     }, [budget])
 
-    const [state, formAction, isPending] = useActionState(async (_prevState: any, formData: FormData) => {
+    const [state, formAction, isPending] = useActionState(async (_prevState: { success: boolean; error: string | null }, formData: FormData) => {
         if (!budget) return { success: false, error: 'No budget selected' }
 
         try {
@@ -60,7 +60,7 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
 
             onOpenChange(false)
             return { success: true, error: null }
-        } catch (err) {
+        } catch (err: unknown) {
             return { success: false, error: err instanceof Error ? err.message : 'Failed to update budget' }
         }
     }, { success: false, error: null })
@@ -127,7 +127,7 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
                                 <Select
                                     name="period"
                                     value={period}
-                                    onValueChange={(value: any) => setPeriod(value)}
+                                    onValueChange={(value: string) => setPeriod(value as 'daily' | 'weekly' | 'monthly' | 'yearly')}
                                     disabled={isPending}
                                 >
                                     <SelectTrigger>

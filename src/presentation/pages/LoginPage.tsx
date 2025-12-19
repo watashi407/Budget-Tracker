@@ -42,7 +42,7 @@ export function LoginPage() {
             await signIn(email, password)
             console.log('[LoginPage] Sign in successful')
             // Navigation handled by useEffect
-        } catch (err) {
+        } catch (err: unknown) {
             console.error('[LoginPage] Sign in error:', err)
             let message = err instanceof Error ? err.message : 'Failed to sign in'
             if (message.toLowerCase().includes('pwned') || message.toLowerCase().includes('security')) {
@@ -54,23 +54,23 @@ export function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-black">
+        <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-background">
             {/* Background Effects */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.15),transparent_50%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_50%,hsl(var(--secondary)/0.1),transparent_50%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.12),transparent_50%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_50%,hsl(var(--secondary)/0.08),transparent_50%)]" />
 
-            <Card className="w-full max-w-md glass border-white/10 relative z-10">
-                <CardHeader className="space-y-4 text-center pb-8">
+            <Card className="w-full max-w-md mx-4 bg-card/80 backdrop-blur-xl border-border/50 shadow-2xl relative z-10">
+                <CardHeader className="space-y-4 text-center pb-6">
                     <div className="flex justify-center mb-2">
-                        <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary via-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-primary/20 ring-1 ring-white/20">
+                        <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary via-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-primary/25 ring-1 ring-white/20">
                             <Wallet className="h-8 w-8 text-white drop-shadow-md" />
                         </div>
                     </div>
                     <div className="space-y-1">
-                        <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
+                        <CardTitle className="text-2xl font-bold text-foreground">
                             Welcome Back
                         </CardTitle>
-                        <CardDescription className="text-muted-foreground/80">
+                        <CardDescription>
                             Enter your credentials to access Watashi Pocket
                         </CardDescription>
                     </div>
@@ -78,7 +78,7 @@ export function LoginPage() {
                 <form onSubmit={handleSubmit}>
                     <CardContent className="space-y-4">
                         {error && (
-                            <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+                            <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm flex items-center gap-2">
                                 <span className="h-1.5 w-1.5 rounded-full bg-destructive shrink-0" />
                                 {error}
                             </div>
@@ -93,7 +93,7 @@ export function LoginPage() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                                 disabled={loading}
-                                className="bg-black/20 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all h-11"
+                                className="h-11"
                             />
                         </div>
                         <div className="space-y-2">
@@ -114,14 +114,15 @@ export function LoginPage() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                                 disabled={loading}
-                                className="bg-black/20 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all h-11"
+                                className="h-11"
                             />
                         </div>
                     </CardContent>
                     <CardFooter className="flex flex-col space-y-4 pt-2">
                         <Button
                             type="submit"
-                            className="w-full h-11 text-base font-medium bg-gradient-to-r from-primary to-orange-600 hover:from-primary/90 hover:to-orange-600/90 shadow-lg shadow-primary/20 transition-all duration-300"
+                            className="w-full h-11 text-base font-medium"
+                            variant="glow"
                             disabled={loading}
                         >
                             {loading ? (

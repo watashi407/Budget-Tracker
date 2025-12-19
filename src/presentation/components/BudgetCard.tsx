@@ -4,7 +4,7 @@ import type { Budget } from '@/domain/entities/Budget'
 
 import { Badge } from '@/presentation/components/ui/badge'
 import { Button } from '@/presentation/components/ui/button'
-import { Trash2, Edit } from 'lucide-react'
+import { Trash2, Edit, TrendingUp, TrendingDown } from 'lucide-react'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 
 interface BudgetCardProps {
@@ -18,6 +18,7 @@ export function BudgetCard({ budget, onEdit }: BudgetCardProps) {
 
     const progress = budget.amount > 0 ? (budget.spent / budget.amount) * 100 : 0
     const isOverBudget = progress > 100
+    const remaining = budget.amount - budget.spent
 
     function handleDelete() {
         if (confirm(`Are you sure you want to delete "${budget.name}"?`)) {
@@ -32,10 +33,9 @@ export function BudgetCard({ budget, onEdit }: BudgetCardProps) {
     }
 
     return (
-        <div className="axis-card group hover:border-primary/50 transition-colors duration-300 relative">
-            {/* Tech Decoration */}
-            <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-primary/30 group-hover:border-primary transition-colors pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-primary/30 group-hover:border-primary transition-colors pointer-events-none" />
+        <div className="group relative bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all duration-300">
+            {/* Gradient accent on hover */}
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-orange-500 to-primary opacity-0 group-hover:opacity-100 transition-opacity" />
 
             <Link
                 to="/budgets/$budgetId"
@@ -43,71 +43,77 @@ export function BudgetCard({ budget, onEdit }: BudgetCardProps) {
                 className="block p-5 space-y-4"
             >
                 <div className="flex items-start justify-between">
-                    <div>
-                        <div className="axis-header text-primary mb-1">BUDGET ID: {budget.id.slice(0, 8)}</div>
-                        <h3 className="text-lg font-bold tracking-tight text-white uppercase">{budget.name}</h3>
-                        <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider">{budget.category}</p>
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+                            {budget.category}
+                        </p>
+                        <h3 className="text-lg font-bold tracking-tight text-foreground">{budget.name}</h3>
                     </div>
-                    <Badge variant="outline" className={`rounded-none border font-mono text-[10px] uppercase ${isOverBudget ? 'border-destructive text-destructive' : 'border-primary/50 text-primary'}`}>
+                    <Badge
+                        variant={isOverBudget ? "destructive" : "outline"}
+                        className="font-mono text-[10px] uppercase"
+                    >
                         {budget.period}
                     </Badge>
                 </div>
 
-                <div className="space-y-2">
-                    <div className="flex justify-between items-end font-mono">
-                        <div>
-                            <span className="text-2xl font-bold text-white">${budget.spent.toFixed(2)}</span>
-                            <span className="text-xs text-muted-foreground ml-2">/ ${budget.amount.toFixed(2)}</span>
+                <div className="space-y-3">
+                    <div className="flex justify-between items-end">
+                        <div className="space-y-0.5">
+                            <span className="text-2xl font-bold text-foreground">${budget.spent.toFixed(2)}</span>
+                            <span className="text-sm text-muted-foreground ml-2">/ ${budget.amount.toFixed(2)}</span>
                         </div>
-                        <div className={`text-sm font-bold ${isOverBudget ? 'text-destructive' : 'text-primary'}`}>
+                        <div className={`flex items-center gap-1 text-sm font-bold ${isOverBudget ? 'text-destructive' : 'text-primary'}`}>
+                            {isOverBudget ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
                             {progress.toFixed(1)}%
                         </div>
                     </div>
 
-                    {/* Technical Progress Bar */}
-                    <div className="h-2 w-full bg-black border border-white/10 relative overflow-hidden">
-                        {/* Grid lines in background */}
-                        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:10%_100%]" />
-
+                    {/* Progress Bar */}
+                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                         <div
-                            className={`h-full transition-all duration-500 relative ${isOverBudget ? 'bg-destructive' : 'bg-primary'}`}
+                            className={`h-full rounded-full transition-all duration-500 ${isOverBudget
+                                    ? 'bg-gradient-to-r from-destructive to-red-400'
+                                    : 'bg-gradient-to-r from-primary to-orange-400'
+                                }`}
                             style={{ width: `${Math.min(progress, 100)}%` }}
-                        >
-                            {/* Striped pattern overlay */}
-                            <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(0,0,0,0.2)_25%,transparent_25%,transparent_50%,rgba(0,0,0,0.2)_50%,rgba(0,0,0,0.2)_75%,transparent_75%,transparent)] bg-[size:8px_8px]" />
-                        </div>
+                        />
                     </div>
 
-                    <div className="flex justify-between text-[10px] font-mono text-muted-foreground uppercase">
-                        <span>REMAINING: ${(budget.amount - budget.spent).toFixed(2)}</span>
-                        <span>STATUS: {isOverBudget ? 'CRITICAL' : 'NOMINAL'}</span>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                        <span className={remaining < 0 ? 'text-destructive font-medium' : ''}>
+                            {remaining >= 0 ? `$${remaining.toFixed(2)} remaining` : `$${Math.abs(remaining).toFixed(2)} over budget`}
+                        </span>
+                        <span className={`font-medium ${isOverBudget ? 'text-destructive' : 'text-success'}`}>
+                            {isOverBudget ? 'Over Budget' : 'On Track'}
+                        </span>
                     </div>
                 </div>
             </Link>
 
             <div className="px-5 pb-5 flex gap-2">
                 <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="flex-1 h-8 rounded-none text-xs font-mono hover:bg-white/5 hover:text-primary border border-white/5"
+                    className="flex-1 h-9 text-xs font-medium hover:bg-primary/10 hover:text-primary hover:border-primary/50"
                     onClick={(e) => {
                         e.preventDefault()
                         onEdit?.(budget)
                     }}
                 >
-                    <Edit className="w-3 h-3 mr-2" />
-                    CONFIGURE
+                    <Edit className="w-3.5 h-3.5 mr-2" />
+                    Configure
                 </Button>
                 <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="h-8 w-8 rounded-none text-muted-foreground hover:bg-destructive/10 hover:text-destructive border border-white/5"
+                    className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
                     onClick={(e) => {
                         e.preventDefault()
                         handleDelete()
                     }}
                 >
-                    <Trash2 className="w-3 h-3" />
+                    <Trash2 className="w-3.5 h-3.5" />
                 </Button>
             </div>
         </div>

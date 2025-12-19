@@ -30,7 +30,7 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
     const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('monthly')
     const [color, setColor] = useState('#3b82f6')
 
-    const [state, formAction, isPending] = useActionState(async (_prevState: any, formData: FormData) => {
+    const [state, formAction, isPending] = useActionState(async (_prevState: { success: boolean; error: string | null }, formData: FormData) => {
         console.log('[CreateBudgetDialog] Submitting form via Action...')
 
         try {
@@ -87,7 +87,7 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
             setColor('#3b82f6')
             onOpenChange(false)
             return { success: true, error: null }
-        } catch (err) {
+        } catch (err: unknown) {
             console.error('[CreateBudgetDialog] Error:', err)
             return { success: false, error: err instanceof Error ? err.message : 'Failed to create budget' }
         }
@@ -158,7 +158,7 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
                                 <Select
                                     name="period"
                                     value={period}
-                                    onValueChange={(value: any) => setPeriod(value)}
+                                    onValueChange={(value: string) => setPeriod(value as 'daily' | 'weekly' | 'monthly' | 'yearly')}
                                     disabled={isPending}
                                 >
                                     <SelectTrigger>

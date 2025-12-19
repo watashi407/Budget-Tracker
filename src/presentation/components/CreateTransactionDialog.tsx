@@ -32,7 +32,7 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
     const [budgetId, setBudgetId] = useState(defaultBudgetId || '')
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
 
-    const [state, formAction, isPending] = useActionState(async (_prevState: any, formData: FormData) => {
+    const [state, formAction, isPending] = useActionState(async (_prevState: { success: boolean; error: string | null }, formData: FormData) => {
         console.log('[CreateTransactionDialog] Submitting form via Action...')
 
         try {
@@ -68,7 +68,7 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
             setDate(new Date().toISOString().split('T')[0])
             onOpenChange(false)
             return { success: true, error: null }
-        } catch (err) {
+        } catch (err: unknown) {
             return { success: false, error: err instanceof Error ? err.message : 'Failed to create transaction' }
         }
     }, { success: false, error: null })
@@ -95,7 +95,7 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
                             <Select
                                 name="type"
                                 value={type}
-                                onValueChange={(value: any) => setType(value)}
+                                onValueChange={(value: string) => setType(value as 'income' | 'expense')}
                                 disabled={isPending}
                             >
                                 <SelectTrigger>

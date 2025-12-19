@@ -11,9 +11,9 @@ import { EditBudgetDialog } from '@/presentation/components/EditBudgetDialog'
 import { CreateTransactionDialog } from '@/presentation/components/CreateTransactionDialog'
 import { BudgetCard } from '@/presentation/components/BudgetCard'
 import { TransactionList } from '@/presentation/components/TransactionList'
-import { AIInsightsPanel } from '@/presentation/components/AIInsightsPanel'
+import { AIInsightsDialog } from '@/presentation/components/AIInsightsDialog'
 import { SpendingChart } from '@/presentation/components/SpendingChart'
-import { PlusCircle, Wallet, TrendingUp, TrendingDown, Activity } from 'lucide-react'
+import { PlusCircle, Wallet, TrendingUp, TrendingDown, Activity, Sparkles } from 'lucide-react'
 import type { Budget } from '@/domain/entities/Budget'
 
 
@@ -26,6 +26,7 @@ export function DashboardPage() {
 
     const [showBudgetDialog, setShowBudgetDialog] = useState(false)
     const [showTransactionDialog, setShowTransactionDialog] = useState(false)
+    const [showAIDialog, setShowAIDialog] = useState(false)
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
     const [dateFilter, setDateFilter] = useState<DateFilter>('MTD')
 
@@ -359,15 +360,21 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                 )}
             </div>
 
-            <Separator className="bg-border/50" />
-
-            {/* AI Insights Section */}
-            <div>
-                <div className="flex items-center gap-2 mb-4">
-                    <span className="w-1 h-4 bg-secondary inline-block" />
-                    <h2 className="text-xl font-bold tracking-tight">AI ANALYSIS</h2>
+            {/* AI Insights Button */}
+            <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/10 via-orange-500/10 to-secondary/10 border border-border/50">
+                <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                        <Sparkles className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-foreground">AI Budget Assistant</h3>
+                        <p className="text-sm text-muted-foreground">Get insights, forecasts, and chat with AI</p>
+                    </div>
                 </div>
-                <AIInsightsPanel />
+                <Button onClick={() => setShowAIDialog(true)} className="gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Open AI Assistant
+                </Button>
             </div>
 
             <Separator className="bg-border/50" />
@@ -400,6 +407,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                 budget={editingBudget}
             />
             <CreateTransactionDialog open={showTransactionDialog} onOpenChange={setShowTransactionDialog} />
+            <AIInsightsDialog open={showAIDialog} onOpenChange={setShowAIDialog} />
         </div>
     )
 }

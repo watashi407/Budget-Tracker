@@ -51,10 +51,11 @@ describe('SupabaseAuthRepository', () => {
             user_metadata: { full_name: 'Test User' },
             created_at: new Date().toISOString(),
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         vi.mocked(supabase.auth.getSession).mockResolvedValue({
             data: { session: { user: mockUser } },
             error: null
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any)
 
         const user = await repository.getCurrentUser()
