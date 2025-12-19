@@ -66,7 +66,7 @@ export function useTransactions(budgetId?: string) {
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey })
+            queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY, user?.id] })
             // Also invalidate budgets to update spent amounts
             queryClient.invalidateQueries({ queryKey: [BUDGETS_QUERY_KEY, user?.id] })
         },
@@ -93,7 +93,7 @@ export function useTransactions(budgetId?: string) {
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey })
+            queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY, user?.id] })
             queryClient.invalidateQueries({ queryKey: [BUDGETS_QUERY_KEY, user?.id] })
         },
     })
@@ -119,7 +119,7 @@ export function useTransactions(budgetId?: string) {
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey })
+            queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY, user?.id] })
             queryClient.invalidateQueries({ queryKey: [BUDGETS_QUERY_KEY, user?.id] })
         },
     })
