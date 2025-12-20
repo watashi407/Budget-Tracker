@@ -107,6 +107,7 @@ export class SupabaseTransactionRepository implements ITransactionRepository {
         if (input.category !== undefined) updateData.category = input.category
         if (input.description !== undefined) updateData.description = input.description
         if (input.date !== undefined) updateData.date = input.date.toISOString()
+        if (input.isLocked !== undefined) updateData.is_locked = input.isLocked
 
         const { data, error } = await supabase
             .from(this.tableName)
@@ -184,6 +185,7 @@ export class SupabaseTransactionRepository implements ITransactionRepository {
             category: row.category,
             description: row.description,
             date: new Date(row.date),
+            isLocked: row.is_locked,
             createdAt: new Date(row.created_at),
             updatedAt: new Date(row.updated_at),
         }

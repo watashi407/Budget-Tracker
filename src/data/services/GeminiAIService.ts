@@ -97,9 +97,14 @@ class GeminiAIService {
             })
 
             return this.collectResponse(response)
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error in AI chat:', error)
-            throw new Error('Failed to get AI response')
+            // Log specific details if available
+            if (error.status) console.error('Status:', error.status);
+            if (error.statusText) console.error('StatusText:', error.statusText);
+            if (error.errorDetails) console.error('Details:', error.errorDetails);
+
+            throw new Error(`Failed to get AI response: ${error.message || 'Unknown error'}`)
         }
     }
 

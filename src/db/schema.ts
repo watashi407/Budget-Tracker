@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, decimal, timestamp, check } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, decimal, timestamp, check, boolean } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
 export const budgets = pgTable('budgets', {
@@ -28,6 +28,7 @@ export const transactions = pgTable('transactions', {
     category: text('category').notNull(),
     description: text('description').notNull(),
     date: timestamp('date', { withTimezone: true }).notNull(),
+    isLocked: boolean('is_locked').default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, () => ({

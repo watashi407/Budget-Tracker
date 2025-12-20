@@ -4,6 +4,7 @@ import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
 import { Button } from '@/presentation/components/ui/button'
+import { Input } from '@/presentation/components/ui/input'
 
 import { Separator } from '@/presentation/components/ui/separator'
 import { CreateBudgetDialog } from '@/presentation/components/CreateBudgetDialog'
@@ -13,7 +14,7 @@ import { BudgetCard } from '@/presentation/components/BudgetCard'
 import { TransactionList } from '@/presentation/components/TransactionList'
 import { AIInsightsDialog } from '@/presentation/components/AIInsightsDialog'
 import { SpendingChart } from '@/presentation/components/SpendingChart'
-import { PlusCircle, Wallet, TrendingUp, TrendingDown, Activity, Sparkles } from 'lucide-react'
+import { PlusCircle, Wallet, TrendingUp, TrendingDown, Activity, Sparkles, Search } from 'lucide-react'
 import type { Budget } from '@/domain/entities/Budget'
 
 
@@ -29,6 +30,7 @@ export function DashboardPage() {
     const [showAIDialog, setShowAIDialog] = useState(false)
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
     const [dateFilter, setDateFilter] = useState<DateFilter>('MTD')
+    const [budgetSearch, setBudgetSearch] = useState('')
 
     // Filter Logic
     const filteredTransactions = useMemo(() => {
@@ -324,9 +326,20 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                         ACTIVE BUDGETS
                     </h2>
                     {budgets.length > 0 && (
-                        <Button onClick={() => setShowBudgetDialog(true)} variant="ghost" size="sm" className="text-xs font-mono text-muted-foreground hover:text-primary">
-                            + ADD NEW
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <div className="relative">
+                                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search budgets..."
+                                    className="pl-8 h-8 w-[150px] lg:w-[200px] text-xs"
+                                    value={budgetSearch}
+                                    onChange={(e) => setBudgetSearch(e.target.value)}
+                                />
+                            </div>
+                            <Button onClick={() => setShowBudgetDialog(true)} variant="ghost" size="sm" className="text-xs font-mono text-muted-foreground hover:text-primary">
+                                + ADD NEW
+                            </Button>
+                        </div>
                     )}
                 </div>
 
@@ -349,13 +362,18 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                     </div>
                 ) : (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {budgets.map((budget) => (
-                            <BudgetCard
-                                key={budget.id}
-                                budget={budget}
-                                onEdit={(b) => setEditingBudget(b)}
-                            />
-                        ))}
+                        {budgets
+                            .filter(b =>
+                                b.name.toLowerCase().includes(budgetSearch.toLowerCase()) ||
+                                b.category.toLowerCase().includes(budgetSearch.toLowerCase())
+                            )
+                            .map((budget) => (
+                                <BudgetCard
+                                    key={budget.id}
+                                    budget={budget}
+                                    onEdit={(b) => setEditingBudget(b)}
+                                />
+                            ))}
                     </div>
                 )}
             </div>

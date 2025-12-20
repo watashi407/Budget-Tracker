@@ -12,6 +12,7 @@ export interface Transaction {
     category: string
     description: string
     date: Date
+    isLocked?: boolean
     createdAt: Date
     updatedAt: Date
 }
@@ -38,4 +39,5 @@ export interface UpdateTransactionInput {
     category?: string
     description?: string
     date?: Date
+    isLocked?: boolean
 }
