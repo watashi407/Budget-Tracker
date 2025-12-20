@@ -18,6 +18,11 @@ export interface IAuthRepository {
     signIn(email: string, password: string): Promise<User>
 
     /**
+     * Sign in with Google
+     */
+    signInWithGoogle(): Promise<void>
+
+    /**
      * Sign out the current user
      */
     signOut(): Promise<void>

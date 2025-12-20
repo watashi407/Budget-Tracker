@@ -6,6 +6,7 @@ import { Badge } from '@/presentation/components/ui/badge'
 import { Button } from '@/presentation/components/ui/button'
 import { Trash2, Edit, TrendingUp, TrendingDown } from 'lucide-react'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
+import { useCurrency } from '@/presentation/context/CurrencyContext'
 
 interface BudgetCardProps {
     budget: Budget
@@ -14,6 +15,7 @@ interface BudgetCardProps {
 
 export function BudgetCard({ budget, onEdit }: BudgetCardProps) {
     const { deleteBudget } = useBudgets()
+    const { formatCurrency } = useCurrency()
     const [, startTransition] = useTransition()
 
     const progress = budget.amount > 0 ? (budget.spent / budget.amount) * 100 : 0
@@ -60,8 +62,8 @@ export function BudgetCard({ budget, onEdit }: BudgetCardProps) {
                 <div className="space-y-3">
                     <div className="flex justify-between items-end">
                         <div className="space-y-0.5">
-                            <span className="text-2xl font-bold text-foreground">${budget.spent.toFixed(2)}</span>
-                            <span className="text-sm text-muted-foreground ml-2">/ ${budget.amount.toFixed(2)}</span>
+                            <span className="text-2xl font-bold text-foreground">{formatCurrency(budget.spent)}</span>
+                            <span className="text-sm text-muted-foreground ml-2">/ {formatCurrency(budget.amount)}</span>
                         </div>
                         <div className={`flex items-center gap-1 text-sm font-bold ${isOverBudget ? 'text-destructive' : 'text-primary'}`}>
                             {isOverBudget ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
@@ -73,8 +75,8 @@ export function BudgetCard({ budget, onEdit }: BudgetCardProps) {
                     <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                         <div
                             className={`h-full rounded-full transition-all duration-500 ${isOverBudget
-                                    ? 'bg-gradient-to-r from-destructive to-red-400'
-                                    : 'bg-gradient-to-r from-primary to-orange-400'
+                                ? 'bg-gradient-to-r from-destructive to-red-400'
+                                : 'bg-gradient-to-r from-primary to-orange-400'
                                 }`}
                             style={{ width: `${Math.min(progress, 100)}%` }}
                         />
@@ -82,7 +84,7 @@ export function BudgetCard({ budget, onEdit }: BudgetCardProps) {
 
                     <div className="flex justify-between text-xs text-muted-foreground">
                         <span className={remaining < 0 ? 'text-destructive font-medium' : ''}>
-                            {remaining >= 0 ? `$${remaining.toFixed(2)} remaining` : `$${Math.abs(remaining).toFixed(2)} over budget`}
+                            {remaining >= 0 ? `${formatCurrency(remaining)} remaining` : `${formatCurrency(Math.abs(remaining))} over budget`}
                         </span>
                         <span className={`font-medium ${isOverBudget ? 'text-destructive' : 'text-success'}`}>
                             {isOverBudget ? 'Over Budget' : 'On Track'}

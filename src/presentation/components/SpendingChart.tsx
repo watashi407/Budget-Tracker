@@ -1,12 +1,15 @@
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from 'recharts'
 import type { Budget } from '@/domain/entities/Budget'
 import { BarChart3 } from 'lucide-react'
+import { useCurrency } from '@/presentation/context/CurrencyContext'
 
 interface SpendingChartProps {
     budgets: Budget[]
 }
 
 export function SpendingChart({ budgets }: SpendingChartProps) {
+    const { formatCurrency } = useCurrency()
+
     const data = budgets.map(b => ({
         name: b.name,
         budget: b.amount,
@@ -60,7 +63,7 @@ export function SpendingChart({ budgets }: SpendingChartProps) {
                             fontSize={11}
                             tickLine={false}
                             axisLine={false}
-                            tickFormatter={(value) => `$${value}`}
+                            tickFormatter={(value) => formatCurrency(value)}
                             tick={{ fill: 'hsl(var(--muted-foreground))' }}
                         />
                         <Tooltip
@@ -74,17 +77,17 @@ export function SpendingChart({ budgets }: SpendingChartProps) {
                                             <div className="space-y-1.5 text-xs">
                                                 <div className="flex justify-between gap-6 text-muted-foreground">
                                                     <span>Budget:</span>
-                                                    <span className="text-foreground font-medium">${item.budget.toFixed(2)}</span>
+                                                    <span className="text-foreground font-medium">{formatCurrency(item.budget)}</span>
                                                 </div>
                                                 <div className="flex justify-between gap-6 text-muted-foreground">
                                                     <span>Spent:</span>
                                                     <span className={`font-medium ${item.isOverBudget ? 'text-destructive' : 'text-primary'}`}>
-                                                        ${item.spent.toFixed(2)}
+                                                        {formatCurrency(item.spent)}
                                                     </span>
                                                 </div>
                                                 <div className="border-t border-border pt-1.5 flex justify-between gap-6 text-muted-foreground">
                                                     <span>Remaining:</span>
-                                                    <span className="text-success font-medium">${item.remaining.toFixed(2)}</span>
+                                                    <span className="text-success font-medium">{formatCurrency(item.remaining)}</span>
                                                 </div>
                                             </div>
                                         </div>

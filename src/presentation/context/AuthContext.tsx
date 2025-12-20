@@ -18,6 +18,7 @@ interface AuthContextType {
     resetPassword: (email: string) => Promise<void>
     updateProfile: (userId: string, updates: Partial<User>) => Promise<void>
     updatePassword: (password: string) => Promise<void>
+    signInWithGoogle: () => Promise<void>
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -175,6 +176,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await authRepository.updatePassword(password)
     }
 
+    /**
+     * Sign in with Google
+     */
+    async function signInWithGoogle() {
+        await authRepository.signInWithGoogle()
+    }
+
     const value: AuthContextType = {
         user,
         loading,
@@ -184,6 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         resetPassword,
         updateProfile,
         updatePassword,
+        signInWithGoogle,
     }
 
     return <AuthContext value={value}>{children}</AuthContext>

@@ -6,10 +6,13 @@ import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
 import { Label } from '@/presentation/components/ui/label'
 import { useToast } from '@/presentation/components/ui/use-toast'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
+import { useCurrency } from '@/presentation/context/CurrencyContext'
 import { Loader2 } from 'lucide-react'
 
 export default function SettingsPage() {
     const { user, updateProfile, updatePassword } = useAuth()
+    const { currency, setCurrency, availableCurrencies } = useCurrency()
     const { toast } = useToast()
 
     const [fullName, setFullName] = useState(user?.fullName || '')
@@ -126,6 +129,38 @@ export default function SettingsPage() {
                         </Button>
                     </CardFooter>
                 </form>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Preferences</CardTitle>
+                    <CardDescription>
+                        Customize your application experience.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="currency">Currency</Label>
+                        <Select
+                            value={currency}
+                            onValueChange={setCurrency}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select currency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {availableCurrencies.map((c) => (
+                                    <SelectItem key={c.code} value={c.code}>
+                                        {c.code} - {c.label} ({c.symbol})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <p className="text-[0.8rem] text-muted-foreground">
+                            This will be used to display all monetary values in the app.
+                        </p>
+                    </div>
+                </CardContent>
             </Card>
 
             <Card>

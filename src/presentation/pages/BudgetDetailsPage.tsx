@@ -5,10 +5,12 @@ import { Button } from '@/presentation/components/ui/button'
 import { ArrowLeft, Wallet, Calendar, TrendingUp, PlusCircle } from 'lucide-react'
 import { CreateTransactionDialog } from '@/presentation/components/CreateTransactionDialog'
 import { useState } from 'react'
+import { useCurrency } from '@/presentation/context/CurrencyContext'
 
 export function BudgetDetailsPage() {
     const { budgetId } = useParams({ from: '/budgets/$budgetId' })
     const { data: budget, isLoading, error } = useBudget(budgetId)
+    const { formatCurrency } = useCurrency()
     const [showTransactionDialog, setShowTransactionDialog] = useState(false)
 
     if (isLoading) {
@@ -79,12 +81,12 @@ export function BudgetDetailsPage() {
             <div className="grid gap-4 md:grid-cols-3">
                 <div className="p-6 rounded-xl bg-card/80 border border-border/50 backdrop-blur-sm">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Budget</p>
-                    <p className="text-2xl font-bold mt-2 text-foreground">${budget.amount.toFixed(2)}</p>
+                    <p className="text-2xl font-bold mt-2 text-foreground">{formatCurrency(budget.amount)}</p>
                 </div>
                 <div className="p-6 rounded-xl bg-card/80 border border-border/50 backdrop-blur-sm">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Spent</p>
                     <p className={`text-2xl font-bold mt-2 ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
-                        ${budget.spent.toFixed(2)}
+                        {formatCurrency(budget.spent)}
                     </p>
                     <div className="mt-3 h-2 w-full bg-muted rounded-full overflow-hidden">
                         <div
@@ -96,7 +98,7 @@ export function BudgetDetailsPage() {
                 <div className="p-6 rounded-xl bg-card/80 border border-border/50 backdrop-blur-sm">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Remaining</p>
                     <p className={`text-2xl font-bold mt-2 ${remaining < 0 ? 'text-destructive' : 'text-success'}`}>
-                        ${remaining.toFixed(2)}
+                        {formatCurrency(remaining)}
                     </p>
                 </div>
             </div>

@@ -1,6 +1,7 @@
 import { useTransition } from 'react'
 import { Trash2, ArrowUpRight, ArrowDownLeft, Receipt } from 'lucide-react'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
+import { useCurrency } from '@/presentation/context/CurrencyContext'
 import type { Transaction } from '@/domain/entities/Transaction'
 
 interface TransactionListProps {
@@ -11,6 +12,7 @@ interface TransactionListProps {
 
 export function TransactionList({ budgetId, limit, initialTransactions }: TransactionListProps) {
     const { transactions: fetchedTransactions, deleteTransaction, loading } = useTransactions(budgetId)
+    const { formatCurrency } = useCurrency()
     const [isPending, startTransition] = useTransition()
 
     const transactions = initialTransactions || fetchedTransactions
@@ -101,7 +103,7 @@ export function TransactionList({ budgetId, limit, initialTransactions }: Transa
                         {/* Amount */}
                         <div className="col-span-3 md:col-span-2 text-right font-semibold md:block">
                             <span className={transaction.type === 'income' ? 'text-success' : 'text-destructive'}>
-                                {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
+                                {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
                             </span>
                         </div>
 

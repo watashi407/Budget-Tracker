@@ -1,8 +1,8 @@
-
 import { useState, useMemo } from 'react'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
+import { useCurrency } from '@/presentation/context/CurrencyContext'
 import { Button } from '@/presentation/components/ui/button'
 
 import { Separator } from '@/presentation/components/ui/separator'
@@ -18,11 +18,11 @@ import type { Budget } from '@/domain/entities/Budget'
 
 
 type DateFilter = 'ALL' | 'MTD' | 'YTD'
-
 export function DashboardPage() {
     const { user } = useAuth()
     const { budgets, loading: budgetsLoading, error: budgetsError } = useBudgets()
     const { transactions } = useTransactions()
+    const { formatCurrency } = useCurrency()
 
     const [showBudgetDialog, setShowBudgetDialog] = useState(false)
     const [showTransactionDialog, setShowTransactionDialog] = useState(false)
@@ -249,7 +249,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                     </div>
                     <div className="axis-header text-primary">TOTAL BUDGET (MONTHLY)</div>
                     <div className="text-3xl font-mono font-bold text-white tracking-tighter mt-2">
-                        ${totalBudget.toFixed(2)}
+                        {formatCurrency(totalBudget)}
                     </div>
                     <div className="mt-4 h-1 w-full bg-border/30 overflow-hidden">
                         <div className="h-full bg-primary w-full origin-left scale-x-100 transition-transform duration-1000" />
@@ -265,7 +265,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                         {dateFilter === 'MTD' ? 'FORECAST (EOM)' : 'TOTAL SPENT'}
                     </div>
                     <div className="text-3xl font-mono font-bold text-white tracking-tighter mt-2">
-                        ${(dateFilter === 'MTD' && forecast > 0 ? forecast : totalExpenses).toFixed(2)}
+                        {formatCurrency(dateFilter === 'MTD' && forecast > 0 ? forecast : totalExpenses)}
                     </div>
                     <div className="mt-4 h-1 w-full bg-border/30 overflow-hidden">
                         <div
@@ -275,7 +275,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                     </div>
                     {dateFilter === 'MTD' && (
                         <p className="text-[10px] font-mono text-muted-foreground mt-2 text-right">
-                            CURRENT: ${totalExpenses.toFixed(0)}
+                            CURRENT: {formatCurrency(totalExpenses)}
                         </p>
                     )}
                 </div>
@@ -287,7 +287,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                     </div>
                     <div className="axis-header text-emerald-500">INCOME ({dateFilter})</div>
                     <div className="text-3xl font-mono font-bold text-white tracking-tighter mt-2">
-                        ${totalIncome.toFixed(2)}
+                        {formatCurrency(totalIncome)}
                     </div>
                     <div className="mt-4 flex items-center gap-2">
                         <div className="h-1 w-2 bg-emerald-500 rounded-full animate-pulse" />
@@ -302,7 +302,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                     </div>
                     <div className="axis-header text-rose-500">EXPENSES ({dateFilter})</div>
                     <div className="text-3xl font-mono font-bold text-white tracking-tighter mt-2">
-                        ${totalExpenses.toFixed(2)}
+                        {formatCurrency(totalExpenses)}
                     </div>
                     <div className="mt-4 flex items-center gap-2">
                         <div className="h-1 w-2 bg-rose-500 rounded-full animate-pulse" />
