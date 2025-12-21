@@ -4,25 +4,23 @@ import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
 import { Button } from '@/presentation/components/ui/button'
-import { Input } from '@/presentation/components/ui/input'
 
-import { Separator } from '@/presentation/components/ui/separator'
 import { CreateBudgetDialog } from '@/presentation/components/CreateBudgetDialog'
 import { EditBudgetDialog } from '@/presentation/components/EditBudgetDialog'
 import { CreateTransactionDialog } from '@/presentation/components/CreateTransactionDialog'
-import { BudgetCard } from '@/presentation/components/BudgetCard'
+import { BudgetList } from '@/presentation/components/BudgetList'
 import { TransactionList } from '@/presentation/components/TransactionList'
 import { AIInsightsDialog } from '@/presentation/components/AIInsightsDialog'
 import { ExportReportDialog } from '@/presentation/components/ExportReportDialog'
 import { SpendingChart } from '@/presentation/components/SpendingChart'
-import { PlusCircle, Wallet, TrendingUp, TrendingDown, Activity, Sparkles, Search, Download } from 'lucide-react'
+import { PlusCircle, TrendingUp, TrendingDown, Activity, Sparkles, Download } from 'lucide-react'
 import type { Budget } from '@/domain/entities/Budget'
 
 
 type DateFilter = 'ALL' | 'MTD' | 'YTD'
 export function DashboardPage() {
     const { user } = useAuth()
-    const { budgets, loading: budgetsLoading, error: budgetsError } = useBudgets()
+    const { budgets } = useBudgets()
     const { transactions } = useTransactions()
     const { formatCurrency } = useCurrency()
 
@@ -32,7 +30,6 @@ export function DashboardPage() {
     const [showExportDialog, setShowExportDialog] = useState(false)
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
     const [dateFilter, setDateFilter] = useState<DateFilter>('MTD')
-    const [budgetSearch, setBudgetSearch] = useState('')
 
     // Filter Logic
     const filteredTransactions = useMemo(() => {
@@ -73,128 +70,6 @@ export function DashboardPage() {
         }
         return 0
     }, [totalExpenses, dateFilter])
-
-    // Check for missing table error (Postgres code 42P01)
-    if (budgetsError && (budgetsError as { code?: string }).code === '42P01') {
-        return (
-            <div className="min-h-[80vh] flex flex-col items-center justify-center text-center p-4 space-y-6">
-                <div className="h-20 w-20 rounded-full bg-destructive/10 flex items-center justify-center border border-destructive/20 animate-pulse">
-                    <Activity className="h-10 w-10 text-destructive" />
-                </div>
-                <div className="space-y-2 max-w-md">
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">DATABASE CONNECTION REQUIRED</h1>
-                    <p className="text-muted-foreground">
-                        The application is connected to Supabase, but the necessary tables (<b>budgets</b>, <b>transactions</b>) do not exist yet.
-                    </p>
-                </div>
-
-                <div className="w-full max-w-2xl bg-black/50 border border-border rounded-lg p-4 text-left overflow-hidden">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-mono text-muted-foreground uppercase">REQUIRED SQL SETUP</span>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 text-xs"
-                            onClick={() => {
-                                navigator.clipboard.writeText(`-- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- Budgets table
-CREATE TABLE IF NOT EXISTS budgets (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  category TEXT NOT NULL,
-  amount DECIMAL(10, 2) NOT NULL,
-  spent DECIMAL(10, 2) DEFAULT 0,
-  period TEXT NOT NULL CHECK (period IN ('daily', 'weekly', 'monthly', 'yearly')),
-  start_date TIMESTAMP WITH TIME ZONE NOT NULL,
-  end_date TIMESTAMP WITH TIME ZONE NOT NULL,
-  color TEXT,
-  icon TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Transactions table
-CREATE TABLE IF NOT EXISTS transactions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  budget_id UUID REFERENCES budgets(id) ON DELETE SET NULL,
-  type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
-  amount DECIMAL(10, 2) NOT NULL,
-  category TEXT NOT NULL,
-  description TEXT NOT NULL,
-  date TIMESTAMP WITH TIME ZONE NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Profiles table
-CREATE TABLE IF NOT EXISTS "profiles" (
-	"id" uuid PRIMARY KEY NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-	"full_name" text,
-	"avatar_url" text,
-	"updated_at" timestamp with time zone DEFAULT now()
-);
-
--- Row Level Security
-ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view their own budgets" ON budgets FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create their own budgets" ON budgets FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update their own budgets" ON budgets FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete their own budgets" ON budgets FOR DELETE USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can view their own transactions" ON transactions FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create their own transactions" ON transactions FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update their own transactions" ON transactions FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete their own transactions" ON transactions FOR DELETE USING (auth.uid() = user_id);
-
-CREATE POLICY "Public profiles are viewable by everyone." ON profiles FOR SELECT USING ( true );
-CREATE POLICY "Users can insert their own profile." ON profiles FOR INSERT WITH CHECK ( auth.uid() = id );
-CREATE POLICY "Users can update own profile." ON profiles FOR UPDATE USING ( auth.uid() = id );
-
--- Trigger to create profile on signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO public.profiles (id, full_name, avatar_url)
-  VALUES (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url');
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-CREATE OR REPLACE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();`)
-                                alert('SQL copied to clipboard!')
-                            }}
-                        >
-                            COPY SQL
-                        </Button>
-                    </div>
-                    <pre className="text-[10px] font-mono text-primary/80 overflow-x-auto p-2 bg-black border border-white/5 rounded h-48">
-                        {`-- Enable UUID extension... (Click COPY SQL for full script)`}
-                    </pre>
-                </div>
-
-                <div className="flex gap-4">
-                    <Button
-                        variant="outline"
-                        onClick={() => window.open('https://supabase.com/dashboard/project/vsfiksmbacwstzttopag/sql', '_blank')}
-                    >
-                        OPEN SUPABASE SQL EDITOR
-                    </Button>
-                    <Button onClick={() => window.location.reload()}>
-                        I'VE RUN THE SQL (REFRESH)
-                    </Button>
-                </div>
-            </div>
-        )
-    }
 
     return (
         <div className="space-y-8">
@@ -331,77 +206,23 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                         <span className="w-1 h-4 bg-primary inline-block" />
                         ACTIVE BUDGETS
                     </h2>
-                    {budgets.length > 0 && (
-                        <div className="flex items-center gap-2">
-                            <div className="relative">
-                                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search budgets..."
-                                    className="pl-8 h-8 w-[150px] lg:w-[200px] text-xs"
-                                    value={budgetSearch}
-                                    onChange={(e) => setBudgetSearch(e.target.value)}
-                                />
-                            </div>
-                            <Button onClick={() => setShowBudgetDialog(true)} variant="ghost" size="sm" className="text-xs font-mono text-muted-foreground hover:text-primary">
-                                + ADD NEW
-                            </Button>
-                        </div>
-                    )}
                 </div>
 
-                {budgetsLoading ? (
-                    <div className="flex justify-center py-12">
-                        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
-                    </div>
-                ) : budgets.length === 0 ? (
-                    <div className="axis-card p-12 flex flex-col items-center justify-center text-center">
-                        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 border border-primary/20">
-                            <Wallet className="w-8 h-8 text-primary" />
-                        </div>
-                        <h3 className="text-lg font-bold mb-2">NO ACTIVE BUDGETS</h3>
-                        <p className="text-muted-foreground mb-6 max-w-sm">
-                            Initialize a budget parameter to begin tracking financial data.
-                        </p>
-                        <Button onClick={() => setShowBudgetDialog(true)} className="rounded-none border border-primary bg-primary/10 text-primary hover:bg-primary hover:text-white">
-                            INITIALIZE BUDGET
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {budgets
-                            .filter(b =>
-                                b.name.toLowerCase().includes(budgetSearch.toLowerCase()) ||
-                                b.category.toLowerCase().includes(budgetSearch.toLowerCase())
-                            )
-                            .map((budget) => (
-                                <BudgetCard
-                                    key={budget.id}
-                                    budget={budget}
-                                    onEdit={(b) => setEditingBudget(b)}
-                                />
-                            ))}
-                    </div>
-                )}
+                <BudgetList
+                    onEdit={(b) => setEditingBudget(b)}
+                    onAddNew={() => setShowBudgetDialog(true)}
+                />
             </div>
 
-            {/* AI Insights Button */}
-            <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/10 via-orange-500/10 to-secondary/10 border border-border/50">
-                <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                        <Sparkles className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                        <h3 className="font-semibold text-foreground">AI Budget Assistant</h3>
-                        <p className="text-sm text-muted-foreground">Get insights, forecasts, and chat with AI</p>
-                    </div>
-                </div>
-                <Button onClick={() => setShowAIDialog(true)} className="gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Open AI Assistant
-                </Button>
-            </div>
-
-            <Separator className="bg-border/50" />
+            {/* Floating AI Assistant Button */}
+            <Button
+                onClick={() => setShowAIDialog(true)}
+                className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg bg-gradient-to-br from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 transition-all hover:scale-105"
+                size="icon"
+                title="AI Budget Assistant"
+            >
+                <Sparkles className="w-6 h-6 text-white" />
+            </Button>
 
             {/* Recent Transactions */}
             <div>
@@ -417,7 +238,6 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
 
                 <div className="axis-card p-4">
                     <TransactionList
-                        limit={10}
                         initialTransactions={filteredTransactions}
                     />
                 </div>

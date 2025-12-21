@@ -1,10 +1,11 @@
 import { useTransition, useState, useMemo } from 'react'
-import { Trash2, ArrowUpRight, ArrowDownLeft, Receipt, Lock, Unlock, Edit, Search, Calendar as CalendarIcon } from 'lucide-react'
+import { Trash2, ArrowUpRight, ArrowDownLeft, Receipt, Lock, Unlock, Edit, Search, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
 import type { Transaction } from '@/domain/entities/Transaction'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
 import { EditTransactionDialog } from '@/presentation/components/EditTransactionDialog'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 
@@ -12,9 +13,10 @@ interface TransactionListProps {
     budgetId?: string
     limit?: number
     initialTransactions?: Transaction[]
+    showPagination?: boolean
 }
 
-export function TransactionList({ budgetId, limit, initialTransactions }: TransactionListProps) {
+export function TransactionList({ budgetId, limit, initialTransactions, showPagination = true }: TransactionListProps) {
     const { transactions: fetchedTransactions, deleteTransaction, updateTransaction, loading } = useTransactions(budgetId)
     const { budgets } = useBudgets()
     const { formatCurrency } = useCurrency()
@@ -24,6 +26,10 @@ export function TransactionList({ budgetId, limit, initialTransactions }: Transa
     // Search States
     const [searchText, setSearchText] = useState('')
     const [searchDate, setSearchDate] = useState('')
+
+    // Pagination States
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(5)
 
     const transactions = initialTransactions || fetchedTransactions
 
@@ -50,7 +56,20 @@ export function TransactionList({ budgetId, limit, initialTransactions }: Transa
         })
     }, [transactions, searchText, searchDate, budgets])
 
-    const displayTransactions = limit ? filteredTransactions.slice(0, limit) : filteredTransactions
+    // Pagination Logic
+    const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage)
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+
+    // Apply limit if provided (for dashboard), otherwise use pagination
+    const displayTransactions = limit
+        ? filteredTransactions.slice(0, limit)
+        : filteredTransactions.slice(startIndex, endIndex)
+
+    // Reset to page 1 when filters change
+    useMemo(() => {
+        setCurrentPage(1)
+    }, [searchText, searchDate, itemsPerPage])
 
     function handleDelete(id: string, description: string) {
         if (confirm(`Are you sure you want to delete "${description}"?`)) {
@@ -267,6 +286,81 @@ export function TransactionList({ budgetId, limit, initialTransactions }: Transa
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Pagination Controls */}
+            {showPagination && !limit && filteredTransactions.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border/30">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>Show</span>
+                        <Select
+                            value={itemsPerPage.toString()}
+                            onValueChange={(value) => setItemsPerPage(Number(value))}
+                        >
+                            <SelectTrigger className="w-16 h-8 text-xs">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="3">3</SelectItem>
+                                <SelectItem value="4">4</SelectItem>
+                                <SelectItem value="5">5</SelectItem>
+                                <SelectItem value="6">6</SelectItem>
+                                <SelectItem value="7">7</SelectItem>
+                                <SelectItem value="8">8</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <span>per page</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground mr-2">
+                            {startIndex + 1}-{Math.min(endIndex, filteredTransactions.length)} of {filteredTransactions.length}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <div className="flex items-center gap-1">
+                            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                                let pageNum: number
+                                if (totalPages <= 5) {
+                                    pageNum = i + 1
+                                } else if (currentPage <= 3) {
+                                    pageNum = i + 1
+                                } else if (currentPage >= totalPages - 2) {
+                                    pageNum = totalPages - 4 + i
+                                } else {
+                                    pageNum = currentPage - 2 + i
+                                }
+                                return (
+                                    <Button
+                                        key={pageNum}
+                                        variant={currentPage === pageNum ? 'default' : 'ghost'}
+                                        size="icon"
+                                        className="h-8 w-8 text-xs"
+                                        onClick={() => setCurrentPage(pageNum)}
+                                    >
+                                        {pageNum}
+                                    </Button>
+                                )
+                            })}
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages}
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </Button>
                     </div>
                 </div>
             )}
