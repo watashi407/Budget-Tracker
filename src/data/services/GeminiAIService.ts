@@ -81,25 +81,30 @@ class GeminiAIService {
             throw new Error('Gemini API key not configured')
         }
 
-        const context = this.buildContextPrompt(budgets, transactions)
-        // TanStack AI handles system messages, but for now passing as user message context is safe
-        const messages = [
-            { role: 'system', content: context },
-            { role: 'user', content: message }
-        ]
+        const financialData = this.buildContextPrompt(budgets, transactions)
+
+        // Build a combined prompt that won't cause echoing
+        const combinedPrompt = `You are a helpful budget assistant for the Watashi Pocket app. Respond directly to the user's message.
+
+For greetings like "hi", "hello", "hey" - respond with a friendly, brief greeting (1-2 sentences max).
+For budget questions - use the financial data below to provide helpful insights.
+
+${financialData}
+
+User says: "${message}"
+
+Respond naturally and directly (do not explain what you will do, just do it):`
 
         try {
             const response = await chat({
                 adapter: this.gemini,
                 model: 'gemini-2.0-flash',
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                messages: messages as any // Cast for role 'system' if strictly typed
+                messages: [{ role: 'user', content: combinedPrompt }]
             })
 
             return this.collectResponse(response)
         } catch (error: any) {
             console.error('Error in AI chat:', error)
-            // Log specific details if available
             if (error.status) console.error('Status:', error.status);
             if (error.statusText) console.error('StatusText:', error.statusText);
             if (error.errorDetails) console.error('Details:', error.errorDetails);
@@ -150,17 +155,9 @@ class GeminiAIService {
             ? `\nRecent: ${transactions.slice(0, 5).map(t => `${t.type === 'income' ? '+' : '-'}$${t.amount.toFixed(0)} ${t.category}`).join(', ')}`
             : ''
 
-        return `You are a friendly AI assistant for a budget tracking app called "Watashi Pocket".
-
-IMPORTANT INSTRUCTIONS:
-1. Respond naturally to greetings like "hi", "hello", "hey" with a friendly greeting back. Do NOT give budget summaries for greetings.
-2. Only provide budget/financial information when the user specifically asks about their budgets, spending, or finances.
-3. Keep responses concise and helpful.
-4. Use markdown formatting when providing detailed financial information.
-
-User's financial context (reference only when relevant):
-- Total Budget: $${totalBudget.toFixed(2)}, Spent: $${totalSpent.toFixed(2)}
-- Income: $${totalIncome.toFixed(2)}, Expenses: $${totalExpenses.toFixed(2)}${budgetDetails}${transactionDetails}`
+        return `FINANCIAL DATA:
+Total Budget: $${totalBudget.toFixed(2)}, Spent: $${totalSpent.toFixed(2)}
+Income: $${totalIncome.toFixed(2)}, Expenses: $${totalExpenses.toFixed(2)}${budgetDetails}${transactionDetails}`
     }
 
     /**
@@ -169,17 +166,16 @@ User's financial context (reference only when relevant):
     private buildInsightsPrompt(budgets: Budget[], transactions: Transaction[]): string {
         const context = this.buildContextPrompt(budgets, transactions)
 
-        return `${context}
+        return `Analyze this financial data and provide spending insights:
 
-Based on this financial data, provide 3-5 key insights about the user's spending habits and budget health.
+${context}
 
-**Format your response using markdown with:**
-- A brief summary header
-- Numbered list of insights with **bold** key findings
-- Specific dollar amounts and percentages where relevant
-- Actionable recommendations
+Generate 3-5 key insights with:
+1. **Bold key findings** for each insight
+2. Specific dollar amounts and percentages
+3. Actionable recommendations
 
-Be specific, data-driven, and concise.`
+Be data-driven and concise. Start your response with the first insight:`
     }
 
     /**
@@ -188,17 +184,17 @@ Be specific, data-driven, and concise.`
     private buildForecastPrompt(budgets: Budget[], transactions: Transaction[]): string {
         const context = this.buildContextPrompt(budgets, transactions)
 
-        return `${context}
+        return `Analyze this financial data and provide a spending forecast:
 
-Based on the current spending patterns and budget allocations, provide a forecast for the next month.
+${context}
 
-**Format your response using markdown with:**
-- A **summary section** with key predictions
-- A **table** showing projected spending by category (if applicable)
-- A **warnings section** for potential budget overruns (use ⚠️ emoji)
-- **Recommendations** to stay on track (numbered list)
+Generate a forecast report with:
+1. **Summary**: Key predictions for next month (2-3 sentences)
+2. **Projected Spending**: Estimated amounts by category
+3. **⚠️ Warnings**: Any potential budget overruns
+4. **Recommendations**: 2-3 actionable tips to stay on track
 
-Be specific with dollar amounts and percentages. Use bold for important numbers.`
+Use specific dollar amounts. Be concise and helpful. Start your response with the summary:`
     }
 }
 

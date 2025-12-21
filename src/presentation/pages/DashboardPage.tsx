@@ -219,9 +219,10 @@ export function DashboardPage() {
                 onClick={() => setShowAIDialog(true)}
                 className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg bg-gradient-to-br from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 transition-all hover:scale-105"
                 size="icon"
-                title="AI Budget Assistant"
+                aria-label="Open AI Budget Assistant"
             >
                 <Sparkles className="w-6 h-6 text-white" />
+                <span className="sr-only">AI Budget Assistant</span>
             </Button>
 
             {/* Recent Transactions */}
