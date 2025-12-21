@@ -46,18 +46,16 @@ export function ExpensesPage() {
                         {transactions.length} transaction{transactions.length !== 1 ? 's' : ''} recorded
                     </p>
                 </div>
-                <div className="flex flex-wrap gap-2 items-center">
+                <div className="flex flex-wrap gap-3 items-center">
                     <Button
                         onClick={() => setShowExportDialog(true)}
                         variant="outline"
-                        className="rounded-none border-border hover:border-primary/50 hover:text-primary transition-all"
                     >
                         <Download className="w-4 h-4 mr-2" />
                         EXPORT
                     </Button>
                     <Button
                         onClick={() => setShowTransactionDialog(true)}
-                        className="rounded-none border border-primary bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all"
                     >
                         <PlusCircle className="w-4 h-4 mr-2" />
                         ADD TRANSACTION
@@ -69,7 +67,7 @@ export function ExpensesPage() {
             <div className="grid gap-4 md:grid-cols-3">
                 <div className="axis-card p-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-emerald-500/10">
+                        <div className="p-2 rounded-xl bg-emerald-500/10">
                             <ArrowUpRight className="w-5 h-5 text-emerald-500" />
                         </div>
                         <div>
@@ -80,7 +78,7 @@ export function ExpensesPage() {
                 </div>
                 <div className="axis-card p-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-rose-500/10">
+                        <div className="p-2 rounded-xl bg-rose-500/10">
                             <ArrowDownLeft className="w-5 h-5 text-rose-500" />
                         </div>
                         <div>
@@ -91,7 +89,7 @@ export function ExpensesPage() {
                 </div>
                 <div className="axis-card p-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10">
+                        <div className="p-2 rounded-xl bg-primary/10">
                             <Receipt className="w-5 h-5 text-primary" />
                         </div>
                         <div>
@@ -105,34 +103,34 @@ export function ExpensesPage() {
             </div>
 
             {/* Type Filter */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
                 <span className="text-sm text-muted-foreground mr-2">Filter:</span>
-                <div className="flex items-center bg-black/40 border border-white/10 rounded-md p-1">
+                <div className="flex items-center gap-1 bg-muted/50 border border-border/50 rounded-xl p-1.5">
                     <Button
                         variant={typeFilter === 'all' ? 'secondary' : 'ghost'}
                         size="sm"
                         onClick={() => setTypeFilter('all')}
-                        className="text-xs h-7 gap-1"
+                        className="text-xs h-8 gap-1.5 px-3"
                     >
-                        <List className="w-3 h-3" />
+                        <List className="w-3.5 h-3.5" />
                         All
                     </Button>
                     <Button
                         variant={typeFilter === 'income' ? 'secondary' : 'ghost'}
                         size="sm"
                         onClick={() => setTypeFilter('income')}
-                        className="text-xs h-7 gap-1"
+                        className="text-xs h-8 gap-1.5 px-3"
                     >
-                        <ArrowUpRight className="w-3 h-3 text-emerald-500" />
+                        <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
                         Income
                     </Button>
                     <Button
                         variant={typeFilter === 'expense' ? 'secondary' : 'ghost'}
                         size="sm"
                         onClick={() => setTypeFilter('expense')}
-                        className="text-xs h-7 gap-1"
+                        className="text-xs h-8 gap-1.5 px-3"
                     >
-                        <ArrowDownLeft className="w-3 h-3 text-rose-500" />
+                        <ArrowDownLeft className="w-3.5 h-3.5 text-rose-500" />
                         Expenses
                     </Button>
                 </div>
@@ -142,7 +140,7 @@ export function ExpensesPage() {
             </div>
 
             {/* Transaction List with built-in search */}
-            <div className="axis-card p-0">
+            <div className="axis-card p-4">
                 <TransactionList initialTransactions={filteredTransactions} />
             </div>
 

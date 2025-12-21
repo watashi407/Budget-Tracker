@@ -190,8 +190,14 @@
 }
 
 @utility axis-card {
-  @apply bg-card/80 backdrop-blur-md border border-border/50 relative overflow-hidden;
+  @apply bg-card/80 backdrop-blur-md border border-border/50 relative overflow-hidden rounded-xl;
   @apply hover:border-primary/40 transition-all duration-300;
+}
+
+@utility kpi-card {
+  @apply bg-card/80 backdrop-blur-md border border-border/50 relative overflow-hidden rounded-2xl;
+  @apply p-6 hover:border-primary/40 transition-all duration-300;
+  @apply hover:shadow-lg hover:scale-[1.02];
 }
 
 @utility axis-header {

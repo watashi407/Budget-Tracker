@@ -205,8 +205,8 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                     <h1 className="text-3xl font-bold tracking-tight">DASHBOARD</h1>
                     <p className="text-muted-foreground font-mono text-xs mt-1">OPERATOR: {user?.fullName || user?.email}</p>
                 </div>
-                <div className="flex flex-wrap gap-2 items-center">
-                    <div className="flex items-center bg-black/40 border border-white/10 rounded-md p-1 mr-2">
+                <div className="flex flex-wrap gap-3 items-center">
+                    <div className="flex items-center gap-1 bg-muted/50 border border-border/50 rounded-xl p-1.5 mr-2">
                         <Button
                             variant={dateFilter === 'MTD' ? 'secondary' : 'ghost'}
                             size="sm"
@@ -233,15 +233,15 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                         </Button>
                     </div>
 
-                    <Button onClick={() => setShowExportDialog(true)} variant="outline" className="rounded-none border-border hover:border-primary/50 hover:text-primary transition-all">
+                    <Button onClick={() => setShowExportDialog(true)} variant="outline">
                         <Download className="w-4 h-4 mr-2" />
                         EXPORT
                     </Button>
-                    <Button onClick={() => setShowTransactionDialog(true)} className="rounded-none border border-primary bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all">
+                    <Button onClick={() => setShowTransactionDialog(true)}>
                         <PlusCircle className="w-4 h-4 mr-2" />
                         ADD TRANSACTION
                     </Button>
-                    <Button onClick={() => setShowBudgetDialog(true)} variant="outline" className="rounded-none border-border hover:border-primary/50 hover:text-primary transition-all">
+                    <Button onClick={() => setShowBudgetDialog(true)} variant="outline">
                         <PlusCircle className="w-4 h-4 mr-2" />
                         NEW BUDGET
                     </Button>
@@ -249,71 +249,71 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
             </div>
 
             {/* Overview Cards */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
                 {/* Total Budget (Static for now, usually monthly) */}
-                <div className="axis-card p-6 group">
-                    <div className="absolute top-0 right-0 p-2 opacity-50 group-hover:opacity-100 transition-opacity">
-                        <Activity className="w-4 h-4 text-primary" />
+                <div className="kpi-card group">
+                    <div className="absolute top-0 right-0 p-3 opacity-50 group-hover:opacity-100 transition-opacity">
+                        <Activity className="w-5 h-5 text-primary" />
                     </div>
                     <div className="axis-header text-primary">TOTAL BUDGET (MONTHLY)</div>
-                    <div className="text-3xl font-mono font-bold text-foreground tracking-tighter mt-2">
+                    <div className="text-3xl font-mono font-bold text-foreground tracking-tighter mt-3">
                         {formatCurrency(totalBudget)}
                     </div>
-                    <div className="mt-4 h-1 w-full bg-border/30 overflow-hidden">
-                        <div className="h-full bg-primary w-full origin-left scale-x-100 transition-transform duration-1000" />
+                    <div className="mt-5 h-1.5 w-full bg-border/30 overflow-hidden rounded-full">
+                        <div className="h-full bg-primary w-full origin-left scale-x-100 transition-transform duration-1000 rounded-full" />
                     </div>
                 </div>
 
                 {/* Forecast / Spent */}
-                <div className="axis-card p-6 group">
-                    <div className="absolute top-0 right-0 p-2 opacity-50 group-hover:opacity-100 transition-opacity">
-                        <Activity className="w-4 h-4 text-secondary" />
+                <div className="kpi-card group">
+                    <div className="absolute top-0 right-0 p-3 opacity-50 group-hover:opacity-100 transition-opacity">
+                        <Activity className="w-5 h-5 text-secondary" />
                     </div>
                     <div className="axis-header text-secondary">
                         {dateFilter === 'MTD' ? 'FORECAST (EOM)' : 'TOTAL SPENT'}
                     </div>
-                    <div className="text-3xl font-mono font-bold text-foreground tracking-tighter mt-2">
+                    <div className="text-3xl font-mono font-bold text-foreground tracking-tighter mt-3">
                         {formatCurrency(dateFilter === 'MTD' && forecast > 0 ? forecast : totalExpenses)}
                     </div>
-                    <div className="mt-4 h-1 w-full bg-border/30 overflow-hidden">
+                    <div className="mt-5 h-1.5 w-full bg-border/30 overflow-hidden rounded-full">
                         <div
-                            className={`h-full ${totalExpenses > totalBudget ? 'bg-destructive' : 'bg-secondary'} transition-all duration-1000`}
+                            className={`h-full ${totalExpenses > totalBudget ? 'bg-destructive' : 'bg-secondary'} transition-all duration-1000 rounded-full`}
                             style={{ width: `${Math.min((totalExpenses / (totalBudget || 1)) * 100, 100)}%` }}
                         />
                     </div>
                     {dateFilter === 'MTD' && (
-                        <p className="text-[10px] font-mono text-muted-foreground mt-2 text-right">
+                        <p className="text-[10px] font-mono text-muted-foreground mt-3 text-right">
                             CURRENT: {formatCurrency(totalExpenses)}
                         </p>
                     )}
                 </div>
 
                 {/* Income */}
-                <div className="axis-card p-6 group">
-                    <div className="absolute top-0 right-0 p-2 opacity-50 group-hover:opacity-100 transition-opacity">
-                        <TrendingUp className="w-4 h-4 text-emerald-500" />
+                <div className="kpi-card group">
+                    <div className="absolute top-0 right-0 p-3 opacity-50 group-hover:opacity-100 transition-opacity">
+                        <TrendingUp className="w-5 h-5 text-emerald-500" />
                     </div>
                     <div className="axis-header text-emerald-500">INCOME ({dateFilter})</div>
-                    <div className="text-3xl font-mono font-bold text-foreground tracking-tighter mt-2">
+                    <div className="text-3xl font-mono font-bold text-foreground tracking-tighter mt-3">
                         {formatCurrency(totalIncome)}
                     </div>
-                    <div className="mt-4 flex items-center gap-2">
-                        <div className="h-1 w-2 bg-emerald-500 rounded-full animate-pulse" />
+                    <div className="mt-5 flex items-center gap-2">
+                        <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse" />
                         <span className="text-[10px] font-mono text-emerald-500/70">ACTIVE</span>
                     </div>
                 </div>
 
                 {/* Expenses */}
-                <div className="axis-card p-6 group">
-                    <div className="absolute top-0 right-0 p-2 opacity-50 group-hover:opacity-100 transition-opacity">
-                        <TrendingDown className="w-4 h-4 text-rose-500" />
+                <div className="kpi-card group">
+                    <div className="absolute top-0 right-0 p-3 opacity-50 group-hover:opacity-100 transition-opacity">
+                        <TrendingDown className="w-5 h-5 text-rose-500" />
                     </div>
                     <div className="axis-header text-rose-500">EXPENSES ({dateFilter})</div>
-                    <div className="text-3xl font-mono font-bold text-foreground tracking-tighter mt-2">
+                    <div className="text-3xl font-mono font-bold text-foreground tracking-tighter mt-3">
                         {formatCurrency(totalExpenses)}
                     </div>
-                    <div className="mt-4 flex items-center gap-2">
-                        <div className="h-1 w-2 bg-rose-500 rounded-full animate-pulse" />
+                    <div className="mt-5 flex items-center gap-2">
+                        <div className="h-2 w-2 bg-rose-500 rounded-full animate-pulse" />
                         <span className="text-[10px] font-mono text-rose-500/70">TRACKING</span>
                     </div>
                 </div>
@@ -415,7 +415,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                     </Button>
                 </div>
 
-                <div className="axis-card p-0">
+                <div className="axis-card p-4">
                     <TransactionList
                         limit={10}
                         initialTransactions={filteredTransactions}

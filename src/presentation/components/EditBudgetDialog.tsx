@@ -6,11 +6,18 @@ import { Label } from '@/presentation/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/presentation/components/ui/dialog'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
+import { AlertCircle } from 'lucide-react'
 
 interface EditBudgetDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     budget: Budget | null
+}
+
+interface FieldErrors {
+    name?: string
+    category?: string
+    amount?: string
 }
 
 export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialogProps) {
@@ -22,6 +29,9 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
     const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('monthly')
     const [color, setColor] = useState('#3b82f6')
 
+    // Field-level errors
+    const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
+
     // Initialize form when budget changes
     useEffect(() => {
         if (budget) {
@@ -30,11 +40,55 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
             setAmount(budget.amount.toString())
             setPeriod(budget.period)
             setColor(budget.color || '#3b82f6')
+            setFieldErrors({})
         }
     }, [budget])
 
+    // Validate a single field
+    const validateField = (fieldName: keyof FieldErrors, value: string): string | undefined => {
+        switch (fieldName) {
+            case 'name':
+                if (!value.trim()) return 'Budget name is required'
+                if (value.trim().length < 2) return 'Name must be at least 2 characters'
+                return undefined
+            case 'category':
+                if (!value.trim()) return 'Category is required'
+                return undefined
+            case 'amount':
+                if (!value.trim()) return 'Amount is required'
+                const num = parseFloat(value)
+                if (isNaN(num)) return 'Please enter a valid number'
+                if (num <= 0) return 'Amount must be greater than 0'
+                return undefined
+            default:
+                return undefined
+        }
+    }
+
+    // Handle field blur for real-time validation
+    const handleBlur = (fieldName: keyof FieldErrors, value: string) => {
+        const error = validateField(fieldName, value)
+        setFieldErrors(prev => ({ ...prev, [fieldName]: error }))
+    }
+
+    // Validate all fields
+    const validateAllFields = (): boolean => {
+        const errors: FieldErrors = {
+            name: validateField('name', name),
+            category: validateField('category', category),
+            amount: validateField('amount', amount),
+        }
+        setFieldErrors(errors)
+        return !Object.values(errors).some(error => error !== undefined)
+    }
+
     const [state, formAction, isPending] = useActionState(async (_prevState: { success: boolean; error: string | null }, formData: FormData) => {
         if (!budget) return { success: false, error: 'No budget selected' }
+
+        // Validate all fields first
+        if (!validateAllFields()) {
+            return { success: false, error: 'Please fix the errors above' }
+        }
 
         try {
             const name = formData.get('name') as string
@@ -44,8 +98,8 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
             const color = formData.get('color') as string
 
             const parsedAmount = parseFloat(amountStr)
-            if (isNaN(parsedAmount) || parsedAmount < 0) {
-                throw new Error('Please enter a valid amount')
+            if (isNaN(parsedAmount) || parsedAmount <= 0) {
+                throw new Error('Please enter a valid amount greater than 0')
             }
 
             const input: UpdateBudgetInput = {
@@ -57,7 +111,7 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
             }
 
             await updateBudget(budget.id, input)
-
+            setFieldErrors({})
             onOpenChange(false)
             return { success: true, error: null }
         } catch (err: unknown) {
@@ -65,8 +119,16 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
         }
     }, { success: false, error: null })
 
+    // Reset errors when dialog closes
+    const handleOpenChange = (isOpen: boolean) => {
+        if (!isOpen) {
+            setFieldErrors({})
+        }
+        onOpenChange(isOpen)
+    }
+
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>Edit Budget</DialogTitle>
@@ -75,51 +137,82 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
                     </DialogDescription>
                 </DialogHeader>
                 <form action={formAction}>
-                    <div className="space-y-4 py-4">
+                    <div className="space-y-5 py-4">
                         {state.error && (
-                            <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-md text-sm">
+                            <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 flex-shrink-0" />
                                 {state.error}
                             </div>
                         )}
 
                         <div className="space-y-2">
-                            <Label htmlFor="edit-name">Budget Name</Label>
+                            <Label htmlFor="edit-name" className="flex items-center gap-1">
+                                Budget Name <span className="text-destructive">*</span>
+                            </Label>
                             <Input
                                 id="edit-name"
                                 name="name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
+                                onBlur={(e) => handleBlur('name', e.target.value)}
                                 required
                                 disabled={isPending}
+                                className={fieldErrors.name ? 'border-destructive focus-visible:ring-destructive' : ''}
                             />
+                            {fieldErrors.name && (
+                                <p className="text-destructive text-xs flex items-center gap-1 mt-1">
+                                    <AlertCircle className="w-3 h-3" />
+                                    {fieldErrors.name}
+                                </p>
+                            )}
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="edit-category">Category</Label>
+                            <Label htmlFor="edit-category" className="flex items-center gap-1">
+                                Category <span className="text-destructive">*</span>
+                            </Label>
                             <Input
                                 id="edit-category"
                                 name="category"
                                 value={category}
                                 onChange={(e) => setCategory(e.target.value)}
+                                onBlur={(e) => handleBlur('category', e.target.value)}
                                 required
                                 disabled={isPending}
+                                className={fieldErrors.category ? 'border-destructive focus-visible:ring-destructive' : ''}
                             />
+                            {fieldErrors.category && (
+                                <p className="text-destructive text-xs flex items-center gap-1 mt-1">
+                                    <AlertCircle className="w-3 h-3" />
+                                    {fieldErrors.category}
+                                </p>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="edit-amount">Amount</Label>
+                                <Label htmlFor="edit-amount" className="flex items-center gap-1">
+                                    Amount <span className="text-destructive">*</span>
+                                </Label>
                                 <Input
                                     id="edit-amount"
                                     name="amount"
                                     type="number"
                                     step="0.01"
-                                    min="0"
+                                    min="0.01"
                                     value={amount}
                                     onChange={(e) => setAmount(e.target.value)}
+                                    onBlur={(e) => handleBlur('amount', e.target.value)}
                                     required
                                     disabled={isPending}
+                                    className={fieldErrors.amount ? 'border-destructive focus-visible:ring-destructive' : ''}
                                 />
+                                {fieldErrors.amount && (
+                                    <p className="text-destructive text-xs flex items-center gap-1 mt-1">
+                                        <AlertCircle className="w-3 h-3" />
+                                        {fieldErrors.amount}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="space-y-2">
@@ -130,7 +223,7 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
                                     onValueChange={(value: string) => setPeriod(value as 'daily' | 'weekly' | 'monthly' | 'yearly')}
                                     disabled={isPending}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="rounded-xl">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -145,14 +238,14 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
 
                         <div className="space-y-2">
                             <Label htmlFor="edit-color">Color</Label>
-                            <div className="flex gap-2">
+                            <div className="flex gap-3">
                                 <Input
                                     id="edit-color"
                                     name="color"
                                     type="color"
                                     value={color}
                                     onChange={(e) => setColor(e.target.value)}
-                                    className="w-20 h-10"
+                                    className="w-20 h-10 p-1 rounded-xl cursor-pointer"
                                     disabled={isPending}
                                 />
                                 <Input
@@ -165,8 +258,8 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
                         </div>
                     </div>
 
-                    <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+                    <DialogFooter className="gap-2">
+                        <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
                             Cancel
                         </Button>
                         <Button type="submit" disabled={isPending}>

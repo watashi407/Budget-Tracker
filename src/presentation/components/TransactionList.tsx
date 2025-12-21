@@ -116,14 +116,14 @@ export function TransactionList({ budgetId, limit, initialTransactions }: Transa
                     <p className="text-xs text-muted-foreground mt-1">Try adjusting your filters or add a new one.</p>
                 </div>
             ) : (
-                <div className="border border-border/50 rounded-lg bg-card/50 overflow-hidden">
-                    {/* Header Row */}
-                    <div className="grid grid-cols-12 gap-4 p-3 border-b border-border/50 bg-muted/30 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                <div className="border border-border/50 rounded-xl bg-card/50 overflow-hidden">
+                    {/* Header Row - Hidden on mobile for cleaner look */}
+                    <div className="hidden sm:grid grid-cols-12 gap-2 md:gap-4 p-3 border-b border-border/50 bg-muted/30 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
                         <div className="col-span-1 text-center">Lock</div>
-                        <div className="col-span-5 md:col-span-4">Description</div>
-                        <div className="col-span-3 md:col-span-2">Category</div>
-                        <div className="col-span-3 md:col-span-2 text-right">Date</div>
-                        <div className="col-span-3 md:col-span-2 text-right hidden md:block">Amount</div>
+                        <div className="col-span-4 md:col-span-3">Description</div>
+                        <div className="col-span-2 hidden md:block">Category</div>
+                        <div className="col-span-2 text-right">Date</div>
+                        <div className="col-span-2 text-right">Amount</div>
                         <div className="col-span-1 text-center">Act</div>
                     </div>
 
@@ -132,13 +132,62 @@ export function TransactionList({ budgetId, limit, initialTransactions }: Transa
                         {displayTransactions.map((transaction) => (
                             <div
                                 key={transaction.id}
-                                className={`grid grid-cols-12 gap-4 p-3 items-center hover:bg-muted/30 transition-colors group text-sm ${transaction.isLocked ? 'opacity-75 bg-muted/10' : ''}`}
+                                className={`flex flex-col sm:grid sm:grid-cols-12 gap-2 md:gap-4 p-3 sm:items-center hover:bg-muted/30 transition-colors group text-xs ${transaction.isLocked ? 'opacity-75 bg-muted/10' : ''}`}
                             >
-                                {/* Lock Status */}
-                                <div className="col-span-1 flex justify-center">
+                                {/* Mobile: Top Row with Icon, Description, Amount */}
+                                <div className="flex items-center justify-between sm:hidden">
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <div className={`p-1.5 rounded-lg shrink-0 ${transaction.type === 'income'
+                                            ? 'bg-success/10 text-success'
+                                            : 'bg-destructive/10 text-destructive'
+                                            }`}>
+                                            {transaction.type === 'income' ? (
+                                                <ArrowUpRight className="w-4 h-4" />
+                                            ) : (
+                                                <ArrowDownLeft className="w-4 h-4" />
+                                            )}
+                                        </div>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="truncate font-medium text-foreground">
+                                                {transaction.description}
+                                            </span>
+                                            <span className="text-[10px] text-muted-foreground">
+                                                {transaction.category}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <span className={`font-semibold shrink-0 ${transaction.type === 'income' ? 'text-success' : 'text-destructive'}`}>
+                                        {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                                    </span>
+                                </div>
+
+                                {/* Mobile: Bottom Row with Date and Actions */}
+                                <div className="flex items-center justify-between sm:hidden pl-8">
+                                    <span className="text-[10px] text-muted-foreground">
+                                        {new Date(transaction.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            onClick={() => handleLockToggle(transaction)}
+                                            className={`p-1.5 rounded-lg ${transaction.isLocked ? 'text-primary' : 'text-muted-foreground'}`}
+                                            disabled={isPending}
+                                        >
+                                            {transaction.isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                                        </button>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingTransaction(transaction)} disabled={transaction.isLocked || isPending}>
+                                            <Edit className="w-3.5 h-3.5" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(transaction.id, transaction.description)} disabled={transaction.isLocked || isPending}>
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* Desktop: Lock Status */}
+                                <div className="hidden sm:flex col-span-1 justify-center">
                                     <button
                                         onClick={() => handleLockToggle(transaction)}
-                                        className={`p-1 rounded-md transition-colors ${transaction.isLocked ? 'text-primary' : 'text-muted-foreground hover:text-primary opacity-50 hover:opacity-100'}`}
+                                        className={`p-1.5 rounded-lg transition-colors ${transaction.isLocked ? 'text-primary' : 'text-muted-foreground hover:text-primary opacity-50 hover:opacity-100'}`}
                                         title={transaction.isLocked ? "Unlock Transaction" : "Lock Transaction"}
                                         disabled={isPending}
                                     >
@@ -146,9 +195,9 @@ export function TransactionList({ budgetId, limit, initialTransactions }: Transa
                                     </button>
                                 </div>
 
-                                {/* Description */}
-                                <div className="col-span-5 md:col-span-4 flex items-center gap-3 overflow-hidden">
-                                    <div className={`p-1.5 rounded-lg ${transaction.type === 'income'
+                                {/* Desktop: Description */}
+                                <div className="hidden sm:flex col-span-4 md:col-span-3 items-center gap-2 overflow-hidden">
+                                    <div className={`p-1.5 rounded-lg shrink-0 ${transaction.type === 'income'
                                         ? 'bg-success/10 text-success'
                                         : 'bg-destructive/10 text-destructive'
                                         }`}>
@@ -170,15 +219,15 @@ export function TransactionList({ budgetId, limit, initialTransactions }: Transa
                                     </div>
                                 </div>
 
-                                {/* Category */}
-                                <div className="col-span-3 md:col-span-2">
-                                    <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground uppercase font-medium">
+                                {/* Desktop: Category */}
+                                <div className="hidden md:block col-span-2">
+                                    <span className="px-2 py-1 rounded-lg bg-muted text-[10px] text-muted-foreground uppercase font-medium">
                                         {transaction.category}
                                     </span>
                                 </div>
 
-                                {/* Date */}
-                                <div className="col-span-3 md:col-span-2 text-right text-muted-foreground text-xs">
+                                {/* Desktop: Date */}
+                                <div className="hidden sm:block col-span-2 text-right text-muted-foreground">
                                     {new Date(transaction.date).toLocaleDateString('en-US', {
                                         month: 'short',
                                         day: 'numeric',
@@ -186,15 +235,15 @@ export function TransactionList({ budgetId, limit, initialTransactions }: Transa
                                     })}
                                 </div>
 
-                                {/* Amount */}
-                                <div className="col-span-3 md:col-span-2 text-right font-semibold md:block hidden">
+                                {/* Desktop: Amount */}
+                                <div className="hidden sm:block col-span-2 text-right font-semibold">
                                     <span className={transaction.type === 'income' ? 'text-success' : 'text-destructive'}>
                                         {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
                                     </span>
                                 </div>
 
-                                {/* Actions */}
-                                <div className="col-span-1 flex justify-center gap-1">
+                                {/* Desktop: Actions */}
+                                <div className="hidden sm:flex col-span-1 justify-center gap-1">
                                     <Button
                                         variant="ghost"
                                         size="icon"
