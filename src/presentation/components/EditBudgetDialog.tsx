@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/presentation/components/ui/dialog'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { AlertCircle } from 'lucide-react'
+import { BUDGET_CATEGORIES, OTHERS_CATEGORY } from '@/constants/categories'
 
 interface EditBudgetDialogProps {
     open: boolean
@@ -24,10 +25,14 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
     const { updateBudget } = useBudgets()
 
     const [name, setName] = useState('')
-    const [category, setCategory] = useState('')
+    const [selectedCategory, setSelectedCategory] = useState('')
+    const [customCategory, setCustomCategory] = useState('')
     const [amount, setAmount] = useState('')
     const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('monthly')
     const [color, setColor] = useState('#3b82f6')
+
+    // Derived category value (either selected or custom)
+    const category = selectedCategory === OTHERS_CATEGORY ? customCategory : selectedCategory
 
     // Field-level errors
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
@@ -36,7 +41,15 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
     useEffect(() => {
         if (budget) {
             setName(budget.name)
-            setCategory(budget.category)
+            // Check if budget category matches a predefined one
+            const matchedCategory = BUDGET_CATEGORIES.find(c => c.value === budget.category || c.label === budget.category)
+            if (matchedCategory) {
+                setSelectedCategory(matchedCategory.value)
+                setCustomCategory('')
+            } else {
+                setSelectedCategory(OTHERS_CATEGORY)
+                setCustomCategory(budget.category)
+            }
             setAmount(budget.amount.toString())
             setPeriod(budget.period)
             setColor(budget.color || '#3b82f6')
@@ -171,16 +184,43 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
                             <Label htmlFor="edit-category" className="flex items-center gap-1">
                                 Category <span className="text-destructive">*</span>
                             </Label>
-                            <Input
-                                id="edit-category"
-                                name="category"
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                                onBlur={(e) => handleBlur('category', e.target.value)}
-                                required
+                            <Select
+                                value={selectedCategory}
+                                onValueChange={(value) => {
+                                    setSelectedCategory(value)
+                                    if (value !== OTHERS_CATEGORY) {
+                                        setCustomCategory('')
+                                        const found = BUDGET_CATEGORIES.find(c => c.value === value)
+                                        if (found) {
+                                            handleBlur('category', found.label)
+                                        }
+                                    }
+                                }}
                                 disabled={isPending}
-                                className={fieldErrors.category ? 'border-destructive focus-visible:ring-destructive' : ''}
-                            />
+                            >
+                                <SelectTrigger className={`rounded-xl ${fieldErrors.category ? 'border-destructive focus-visible:ring-destructive' : ''}`}>
+                                    <SelectValue placeholder="Select a category" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-60">
+                                    {BUDGET_CATEGORIES.map((cat) => (
+                                        <SelectItem key={cat.value} value={cat.value}>
+                                            {cat.label}
+                                        </SelectItem>
+                                    ))}
+                                    <SelectItem value={OTHERS_CATEGORY}>Others (Specify below)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <input type="hidden" name="category" value={category} />
+                            {selectedCategory === OTHERS_CATEGORY && (
+                                <Input
+                                    placeholder="Enter custom category"
+                                    value={customCategory}
+                                    onChange={(e) => setCustomCategory(e.target.value)}
+                                    onBlur={(e) => handleBlur('category', e.target.value)}
+                                    disabled={isPending}
+                                    className={`mt-2 ${fieldErrors.category ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                                />
+                            )}
                             {fieldErrors.category && (
                                 <p className="text-destructive text-xs flex items-center gap-1 mt-1">
                                     <AlertCircle className="w-3 h-3" />
