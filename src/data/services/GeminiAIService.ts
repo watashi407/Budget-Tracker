@@ -115,15 +115,20 @@ class GeminiAIService {
             if (typeof chunk === 'string') {
                 text += chunk
             } else if (typeof chunk === 'object' && chunk !== null) {
-                if ('content' in chunk && chunk.content) {
-                    text += chunk.content
-                } else if ('delta' in chunk && chunk.delta) {
-                    // some adapters use delta
+                // Only use one content source per chunk to avoid duplicates
+                if ('delta' in chunk && chunk.delta) {
+                    // Prefer delta for streaming responses
                     text += chunk.delta
+                } else if ('content' in chunk && chunk.content && !('delta' in chunk)) {
+                    // Use content only if delta is not present
+                    text += chunk.content
+                } else if ('text' in chunk && chunk.text) {
+                    // Some adapters use 'text' field
+                    text += chunk.text
                 }
             }
         }
-        return text
+        return text.trim()
     }
 
     /**
@@ -135,25 +140,27 @@ class GeminiAIService {
         const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0)
         const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0)
 
-        return `You are a financial advisor assistant helping users manage their budgets.
-Always format your responses using markdown for better readability. Use:
-- **Bold** for important numbers and key points
-- Bullet points for lists
-- Headers (##, ###) to organize sections
-- Tables when comparing data
-- Code blocks for specific values when appropriate
+        // Only include budget details if there are budgets
+        const budgetDetails = budgets.length > 0
+            ? `\nBudgets: ${budgets.slice(0, 5).map(b => `${b.name}: $${b.spent.toFixed(0)}/$${b.amount.toFixed(0)}`).join(', ')}`
+            : ''
 
-Current Budget Summary:
-- Total Budget: $${totalBudget.toFixed(2)}
-- Total Spent: $${totalSpent.toFixed(2)}
-- Total Income: $${totalIncome.toFixed(2)}
-- Total Expenses: $${totalExpenses.toFixed(2)}
+        // Only include transaction details if there are transactions
+        const transactionDetails = transactions.length > 0
+            ? `\nRecent: ${transactions.slice(0, 5).map(t => `${t.type === 'income' ? '+' : '-'}$${t.amount.toFixed(0)} ${t.category}`).join(', ')}`
+            : ''
 
-Active Budgets (${budgets.length}):
-${budgets.map(b => `- ${b.name} (${b.category}): $${b.spent.toFixed(2)} / $${b.amount.toFixed(2)} (${b.period})`).join('\n')}
+        return `You are a friendly AI assistant for a budget tracking app called "Watashi Pocket".
 
-Recent Transactions (${transactions.length}):
-${transactions.slice(0, 10).map(t => `- ${t.type === 'income' ? '+' : '-'}$${t.amount.toFixed(2)} - ${t.description} (${t.category})`).join('\n')}`
+IMPORTANT INSTRUCTIONS:
+1. Respond naturally to greetings like "hi", "hello", "hey" with a friendly greeting back. Do NOT give budget summaries for greetings.
+2. Only provide budget/financial information when the user specifically asks about their budgets, spending, or finances.
+3. Keep responses concise and helpful.
+4. Use markdown formatting when providing detailed financial information.
+
+User's financial context (reference only when relevant):
+- Total Budget: $${totalBudget.toFixed(2)}, Spent: $${totalSpent.toFixed(2)}
+- Income: $${totalIncome.toFixed(2)}, Expenses: $${totalExpenses.toFixed(2)}${budgetDetails}${transactionDetails}`
     }
 
     /**
