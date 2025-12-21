@@ -6,6 +6,7 @@ import { Separator } from '@/presentation/components/ui/separator'
 import { geminiAIService } from '@/data/services/GeminiAIService'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
+import { MarkdownRenderer } from '@/presentation/components/MarkdownRenderer'
 import { Sparkles, Send, TrendingUp, AlertCircle, Bot, User, Loader2, MessageSquare } from 'lucide-react'
 
 export function AIAssistantPage() {
@@ -155,7 +156,11 @@ export function AIAssistantPage() {
                                                     : 'bg-muted'
                                                     }`}
                                             >
-                                                <p className="text-sm whitespace-pre-wrap">{chat.message}</p>
+                                                {chat.role === 'ai' ? (
+                                                    <MarkdownRenderer content={chat.message} className="text-sm" />
+                                                ) : (
+                                                    <p className="text-sm whitespace-pre-wrap">{chat.message}</p>
+                                                )}
                                             </div>
                                             {chat.role === 'user' && (
                                                 <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
@@ -207,7 +212,7 @@ export function AIAssistantPage() {
                                             Insights
                                         </Badge>
                                     </div>
-                                    <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">{insights}</div>
+                                    <MarkdownRenderer content={insights} className="text-foreground/90 leading-relaxed" />
                                 </div>
                             )}
 
@@ -220,7 +225,7 @@ export function AIAssistantPage() {
                                             Forecast
                                         </Badge>
                                     </div>
-                                    <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">{forecast}</div>
+                                    <MarkdownRenderer content={forecast} className="text-foreground/90 leading-relaxed" />
                                 </div>
                             )}
 

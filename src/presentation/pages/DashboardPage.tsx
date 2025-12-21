@@ -13,8 +13,9 @@ import { CreateTransactionDialog } from '@/presentation/components/CreateTransac
 import { BudgetCard } from '@/presentation/components/BudgetCard'
 import { TransactionList } from '@/presentation/components/TransactionList'
 import { AIInsightsDialog } from '@/presentation/components/AIInsightsDialog'
+import { ExportReportDialog } from '@/presentation/components/ExportReportDialog'
 import { SpendingChart } from '@/presentation/components/SpendingChart'
-import { PlusCircle, Wallet, TrendingUp, TrendingDown, Activity, Sparkles, Search } from 'lucide-react'
+import { PlusCircle, Wallet, TrendingUp, TrendingDown, Activity, Sparkles, Search, Download } from 'lucide-react'
 import type { Budget } from '@/domain/entities/Budget'
 
 
@@ -28,6 +29,7 @@ export function DashboardPage() {
     const [showBudgetDialog, setShowBudgetDialog] = useState(false)
     const [showTransactionDialog, setShowTransactionDialog] = useState(false)
     const [showAIDialog, setShowAIDialog] = useState(false)
+    const [showExportDialog, setShowExportDialog] = useState(false)
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
     const [dateFilter, setDateFilter] = useState<DateFilter>('MTD')
     const [budgetSearch, setBudgetSearch] = useState('')
@@ -231,6 +233,10 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                         </Button>
                     </div>
 
+                    <Button onClick={() => setShowExportDialog(true)} variant="outline" className="rounded-none border-border hover:border-primary/50 hover:text-primary transition-all">
+                        <Download className="w-4 h-4 mr-2" />
+                        EXPORT
+                    </Button>
                     <Button onClick={() => setShowTransactionDialog(true)} className="rounded-none border border-primary bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all">
                         <PlusCircle className="w-4 h-4 mr-2" />
                         ADD TRANSACTION
@@ -426,6 +432,12 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
             />
             <CreateTransactionDialog open={showTransactionDialog} onOpenChange={setShowTransactionDialog} />
             <AIInsightsDialog open={showAIDialog} onOpenChange={setShowAIDialog} />
+            <ExportReportDialog
+                open={showExportDialog}
+                onOpenChange={setShowExportDialog}
+                budgets={budgets}
+                transactions={transactions}
+            />
         </div>
     )
 }

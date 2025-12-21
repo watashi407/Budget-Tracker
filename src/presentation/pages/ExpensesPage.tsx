@@ -1,17 +1,21 @@
 import { useState, useMemo } from 'react'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
+import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
 import { Button } from '@/presentation/components/ui/button'
 import { CreateTransactionDialog } from '@/presentation/components/CreateTransactionDialog'
+import { ExportReportDialog } from '@/presentation/components/ExportReportDialog'
 import { TransactionList } from '@/presentation/components/TransactionList'
-import { PlusCircle, Receipt, ArrowUpRight, ArrowDownLeft, List } from 'lucide-react'
+import { PlusCircle, Receipt, ArrowUpRight, ArrowDownLeft, List, Download } from 'lucide-react'
 
 type TypeFilter = 'all' | 'income' | 'expense'
 
 export function ExpensesPage() {
     const { transactions } = useTransactions()
+    const { budgets } = useBudgets()
     const { formatCurrency } = useCurrency()
     const [showTransactionDialog, setShowTransactionDialog] = useState(false)
+    const [showExportDialog, setShowExportDialog] = useState(false)
     const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
 
     // Filter transactions by type
@@ -43,6 +47,14 @@ export function ExpensesPage() {
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2 items-center">
+                    <Button
+                        onClick={() => setShowExportDialog(true)}
+                        variant="outline"
+                        className="rounded-none border-border hover:border-primary/50 hover:text-primary transition-all"
+                    >
+                        <Download className="w-4 h-4 mr-2" />
+                        EXPORT
+                    </Button>
                     <Button
                         onClick={() => setShowTransactionDialog(true)}
                         className="rounded-none border border-primary bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all"
@@ -134,8 +146,14 @@ export function ExpensesPage() {
                 <TransactionList initialTransactions={filteredTransactions} />
             </div>
 
-            {/* Dialog */}
+            {/* Dialogs */}
             <CreateTransactionDialog open={showTransactionDialog} onOpenChange={setShowTransactionDialog} />
+            <ExportReportDialog
+                open={showExportDialog}
+                onOpenChange={setShowExportDialog}
+                budgets={budgets}
+                transactions={transactions}
+            />
         </div>
     )
 }

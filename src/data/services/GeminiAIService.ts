@@ -136,6 +136,12 @@ class GeminiAIService {
         const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0)
 
         return `You are a financial advisor assistant helping users manage their budgets.
+Always format your responses using markdown for better readability. Use:
+- **Bold** for important numbers and key points
+- Bullet points for lists
+- Headers (##, ###) to organize sections
+- Tables when comparing data
+- Code blocks for specific values when appropriate
 
 Current Budget Summary:
 - Total Budget: $${totalBudget.toFixed(2)}
@@ -158,7 +164,15 @@ ${transactions.slice(0, 10).map(t => `- ${t.type === 'income' ? '+' : '-'}$${t.a
 
         return `${context}
 
-Based on this financial data, provide 3-5 key insights about the user's spending habits and budget health. Be specific, actionable, and concise. Format your response as bullet points.`
+Based on this financial data, provide 3-5 key insights about the user's spending habits and budget health.
+
+**Format your response using markdown with:**
+- A brief summary header
+- Numbered list of insights with **bold** key findings
+- Specific dollar amounts and percentages where relevant
+- Actionable recommendations
+
+Be specific, data-driven, and concise.`
     }
 
     /**
@@ -169,12 +183,15 @@ Based on this financial data, provide 3-5 key insights about the user's spending
 
         return `${context}
 
-Based on the current spending patterns and budget allocations, provide a forecast for the next month. Include:
-1. Projected spending by category
-2. Potential budget overruns
-3. Recommendations to stay on track
+Based on the current spending patterns and budget allocations, provide a forecast for the next month.
 
-Be specific and data-driven. Format your response clearly.`
+**Format your response using markdown with:**
+- A **summary section** with key predictions
+- A **table** showing projected spending by category (if applicable)
+- A **warnings section** for potential budget overruns (use ⚠️ emoji)
+- **Recommendations** to stay on track (numbered list)
+
+Be specific with dollar amounts and percentages. Use bold for important numbers.`
     }
 }
 
