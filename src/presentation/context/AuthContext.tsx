@@ -41,75 +41,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Failsafe: If loading takes too long, force it to false
         const failsafeTimeout = setTimeout(() => {
             if (mounted && loading) {
-                console.error('[AuthContext] Failsafe triggered: Auth loading timed out after 5s. Forcing loading false.')
+                console.error('[AuthContext] Failsafe triggered: Auth loading timed out after 8s. Forcing loading false.')
                 setLoading(false)
             }
-        }, 5000)
+        }, 8000)
 
-        // Fetch initial session immediately
-        async function getSession() {
-            console.log('[AuthContext] getSession: starting...')
-            try {
-                // Priority Check: check session validity first
-                const sessionUser = await authRepository.getCurrentUser()
-                console.log('[AuthContext] getSession: result received', sessionUser?.email)
+        // Helper to map Supabase user to our User type
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mapSessionUser = (supabaseUser: any): User => ({
+            id: supabaseUser.id,
+            email: supabaseUser.email!,
+            fullName: supabaseUser.user_metadata?.full_name,
+            avatarUrl: supabaseUser.user_metadata?.avatar_url,
+            createdAt: new Date(supabaseUser.created_at),
+            updatedAt: new Date(supabaseUser.updated_at || supabaseUser.created_at),
+        })
 
-                if (mounted) {
-                    if (sessionUser) {
-                        console.log('[AuthContext] Initial session found:', sessionUser.email)
-                        setUser(sessionUser)
-                    } else {
-                        console.log('[AuthContext] No initial session')
-                        setUser(null)
-                    }
-                    setLoading(false)
-                }
-            } catch (error) {
-                console.error('[AuthContext] Error getting initial session:', error)
-                if (mounted) {
-                    setUser(null)
-                    setLoading(false)
-                }
-            }
-        }
-
-        getSession()
-
-        // Listen for auth state changes
+        // Listen for auth state changes - this is the SINGLE SOURCE OF TRUTH
+        // INITIAL_SESSION fires when Supabase finishes restoring from localStorage
         const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return
 
             console.log('[AuthContext] Auth state change:', event, session?.user?.email)
 
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-                if (session?.user) {
-                    try {
-                        const currentUser = await authRepository.getCurrentUser()
-                        if (mounted) {
-                            setUser(currentUser)
-                            setLoading(false)
-                        }
-                    } catch (err) {
-                        console.error('[AuthContext] Error fetching user on change:', err)
-                        // Fallback: use session user data directly
-                        if (mounted && session.user) {
-                            setUser({
-                                id: session.user.id,
-                                email: session.user.email!,
-                                fullName: session.user.user_metadata?.full_name,
-                                avatarUrl: session.user.user_metadata?.avatar_url,
-                                createdAt: new Date(session.user.created_at),
-                                updatedAt: new Date(session.user.updated_at || session.user.created_at),
-                            })
-                            setLoading(false)
-                        }
+            switch (event) {
+                case 'INITIAL_SESSION':
+                    // This fires when Supabase finishes checking localStorage
+                    if (session?.user) {
+                        console.log('[AuthContext] Initial session restored:', session.user.email)
+                        setUser(mapSessionUser(session.user))
+                    } else {
+                        console.log('[AuthContext] No initial session found')
+                        setUser(null)
                     }
-                }
-            } else if (event === 'SIGNED_OUT') {
-                if (mounted) {
+                    setLoading(false)
+                    break
+
+                case 'SIGNED_IN':
+                    if (session?.user) {
+                        console.log('[AuthContext] User signed in:', session.user.email)
+                        setUser(mapSessionUser(session.user))
+                        setLoading(false)
+                    }
+                    break
+
+                case 'TOKEN_REFRESHED':
+                    if (session?.user) {
+                        console.log('[AuthContext] Token refreshed for:', session.user.email)
+                        setUser(mapSessionUser(session.user))
+                    }
+                    break
+
+                case 'SIGNED_OUT':
+                    console.log('[AuthContext] User signed out')
                     setUser(null)
                     setLoading(false)
-                }
+                    break
+
+                case 'USER_UPDATED':
+                    if (session?.user) {
+                        console.log('[AuthContext] User updated:', session.user.email)
+                        setUser(mapSessionUser(session.user))
+                    }
+                    break
             }
         })
 
