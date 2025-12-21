@@ -80,7 +80,7 @@ export function DashboardPage() {
                     <Activity className="h-10 w-10 text-destructive" />
                 </div>
                 <div className="space-y-2 max-w-md">
-                    <h1 className="text-2xl font-bold tracking-tight text-white">DATABASE CONNECTION REQUIRED</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">DATABASE CONNECTION REQUIRED</h1>
                     <p className="text-muted-foreground">
                         The application is connected to Supabase, but the necessary tables (<b>budgets</b>, <b>transactions</b>) do not exist yet.
                     </p>
@@ -250,7 +250,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                         <Activity className="w-4 h-4 text-primary" />
                     </div>
                     <div className="axis-header text-primary">TOTAL BUDGET (MONTHLY)</div>
-                    <div className="text-3xl font-mono font-bold text-white tracking-tighter mt-2">
+                    <div className="text-3xl font-mono font-bold text-foreground tracking-tighter mt-2">
                         {formatCurrency(totalBudget)}
                     </div>
                     <div className="mt-4 h-1 w-full bg-border/30 overflow-hidden">
@@ -266,7 +266,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                     <div className="axis-header text-secondary">
                         {dateFilter === 'MTD' ? 'FORECAST (EOM)' : 'TOTAL SPENT'}
                     </div>
-                    <div className="text-3xl font-mono font-bold text-white tracking-tighter mt-2">
+                    <div className="text-3xl font-mono font-bold text-foreground tracking-tighter mt-2">
                         {formatCurrency(dateFilter === 'MTD' && forecast > 0 ? forecast : totalExpenses)}
                     </div>
                     <div className="mt-4 h-1 w-full bg-border/30 overflow-hidden">
@@ -288,7 +288,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                         <TrendingUp className="w-4 h-4 text-emerald-500" />
                     </div>
                     <div className="axis-header text-emerald-500">INCOME ({dateFilter})</div>
-                    <div className="text-3xl font-mono font-bold text-white tracking-tighter mt-2">
+                    <div className="text-3xl font-mono font-bold text-foreground tracking-tighter mt-2">
                         {formatCurrency(totalIncome)}
                     </div>
                     <div className="mt-4 flex items-center gap-2">
@@ -303,7 +303,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
                         <TrendingDown className="w-4 h-4 text-rose-500" />
                     </div>
                     <div className="axis-header text-rose-500">EXPENSES ({dateFilter})</div>
-                    <div className="text-3xl font-mono font-bold text-white tracking-tighter mt-2">
+                    <div className="text-3xl font-mono font-bold text-foreground tracking-tighter mt-2">
                         {formatCurrency(totalExpenses)}
                     </div>
                     <div className="mt-4 flex items-center gap-2">
