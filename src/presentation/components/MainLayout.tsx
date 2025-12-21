@@ -28,7 +28,7 @@ export function MainLayout() {
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground flex font-sans">
+        <div className="h-screen overflow-hidden bg-background text-foreground flex font-sans">
             {/* Sidebar - Desktop */}
             <aside className="w-72 border-r border-border/50 bg-card/50 backdrop-blur-xl hidden md:flex flex-col relative overflow-hidden">
                 {/* Subtle gradient overlay */}
