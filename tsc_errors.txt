@@ -1,0 +1,1 @@
+﻿src/presentation/pages/ExpensesPage.tsx(5,1): error TS6133: 'Input' is declared but its value is never read.

@@ -1,7 +1,7 @@
 import { Link, Outlet } from "@tanstack/react-router"
 import { useAuth } from "@/presentation/context/AuthContext"
 import { ThemeToggle } from "./ThemeToggle"
-import { Wallet, LayoutDashboard, Settings, LogOut, Menu, X } from "lucide-react"
+import { Wallet, LayoutDashboard, Settings, LogOut, Menu, X, Receipt, Sparkles } from "lucide-react"
 import { Button } from "./ui/button"
 import { Toaster } from "@/presentation/components/ui/toaster"
 import { useState } from "react"
@@ -63,6 +63,24 @@ export function MainLayout() {
                         <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-sm font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg group">
                             <LayoutDashboard className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                             <span>Dashboard</span>
+                        </Button>
+                    </Link>
+                    <Link to="/budgets" className="w-full">
+                        <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-sm font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg group">
+                            <Wallet className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <span>Budgets</span>
+                        </Button>
+                    </Link>
+                    <Link to="/expenses" className="w-full">
+                        <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-sm font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg group">
+                            <Receipt className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <span>Expenses</span>
+                        </Button>
+                    </Link>
+                    <Link to="/ai-assistant" className="w-full">
+                        <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-sm font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg group">
+                            <Sparkles className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <span>AI Assistant</span>
                         </Button>
                     </Link>
                     <Link to="/settings" className="w-full">
@@ -129,6 +147,24 @@ export function MainLayout() {
                                 <Button variant="ghost" className="w-full justify-start gap-3">
                                     <LayoutDashboard className="h-4 w-4" />
                                     Dashboard
+                                </Button>
+                            </Link>
+                            <Link to="/budgets" onClick={() => setMobileMenuOpen(false)}>
+                                <Button variant="ghost" className="w-full justify-start gap-3">
+                                    <Wallet className="h-4 w-4" />
+                                    Budgets
+                                </Button>
+                            </Link>
+                            <Link to="/expenses" onClick={() => setMobileMenuOpen(false)}>
+                                <Button variant="ghost" className="w-full justify-start gap-3">
+                                    <Receipt className="h-4 w-4" />
+                                    Expenses
+                                </Button>
+                            </Link>
+                            <Link to="/ai-assistant" onClick={() => setMobileMenuOpen(false)}>
+                                <Button variant="ghost" className="w-full justify-start gap-3">
+                                    <Sparkles className="h-4 w-4" />
+                                    AI Assistant
                                 </Button>
                             </Link>
                             <Link to="/settings" onClick={() => setMobileMenuOpen(false)}>
