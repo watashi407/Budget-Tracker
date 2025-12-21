@@ -11,6 +11,20 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 /**
  * Supabase client instance for interacting with the database and auth.
- * Uses the VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.
+ * Configured with explicit session persistence to prevent unexpected logouts.
  */
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+        // Use localStorage for persistent sessions across browser refreshes
+        persistSession: true,
+        // Storage key for the session
+        storageKey: 'watashi-pocket-auth',
+        // Auto-refresh the token before it expires
+        autoRefreshToken: true,
+        // Detect session from URL hash (for OAuth redirects)
+        detectSessionInUrl: true,
+        // Flow type - PKCE is recommended for SPAs
+        flowType: 'pkce',
+    },
+})
+

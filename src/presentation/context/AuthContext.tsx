@@ -83,10 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
                 if (session?.user) {
-                    // Check if we need to update user state (optimization)
-                    // If we are already loaded and have the same user, skip
-                    if (user && user.email === session.user.email) return
-
                     try {
                         const currentUser = await authRepository.getCurrentUser()
                         if (mounted) {
@@ -95,6 +91,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         }
                     } catch (err) {
                         console.error('[AuthContext] Error fetching user on change:', err)
+                        // Fallback: use session user data directly
+                        if (mounted && session.user) {
+                            setUser({
+                                id: session.user.id,
+                                email: session.user.email!,
+                                fullName: session.user.user_metadata?.full_name,
+                                avatarUrl: session.user.user_metadata?.avatar_url,
+                                createdAt: new Date(session.user.created_at),
+                                updatedAt: new Date(session.user.updated_at || session.user.created_at),
+                            })
+                            setLoading(false)
+                        }
                     }
                 }
             } else if (event === 'SIGNED_OUT') {
