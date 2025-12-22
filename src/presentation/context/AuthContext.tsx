@@ -51,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: supabaseUser.email!,
             fullName: supabaseUser.user_metadata?.full_name,
             avatarUrl: supabaseUser.user_metadata?.avatar_url,
+            emailVerified: !!supabaseUser.email_confirmed_at,
             createdAt: new Date(supabaseUser.created_at),
             updatedAt: new Date(supabaseUser.updated_at || supabaseUser.created_at),
         })

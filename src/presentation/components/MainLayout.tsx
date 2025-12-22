@@ -1,6 +1,7 @@
 import { Link, Outlet } from "@tanstack/react-router"
 import { useAuth } from "@/presentation/context/AuthContext"
 import { ThemeToggle } from "./ThemeToggle"
+import { EmailVerificationBanner } from "./EmailVerificationBanner"
 import { Wallet, LayoutDashboard, Settings, LogOut, Menu, X, Receipt, Sparkles } from "lucide-react"
 import { Button } from "./ui/button"
 import { Toaster } from "@/presentation/components/ui/toaster"
@@ -185,6 +186,7 @@ export function MainLayout() {
                     </div>
                 )}
 
+                <EmailVerificationBanner />
                 <div className="flex-1 overflow-y-auto p-4 md:p-8">
                     <Outlet />
                 </div>

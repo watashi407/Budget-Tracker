@@ -9,6 +9,7 @@ export interface User {
     fullName?: string
     avatarUrl?: string
     currency?: string
+    emailVerified?: boolean
     createdAt: Date
     updatedAt: Date
 }
