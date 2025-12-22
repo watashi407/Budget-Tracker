@@ -6,7 +6,9 @@ import { Label } from '@/presentation/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/presentation/components/ui/dialog'
 import { FormSubmitButton } from '@/presentation/components/FormSubmitButton'
+import { EmailVerificationMessage } from '@/presentation/components/EmailVerificationMessage'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
+import { useAuth } from '@/presentation/context/AuthContext'
 import { AlertCircle } from 'lucide-react'
 import { BUDGET_CATEGORIES, OTHERS_CATEGORY } from '@/constants/categories'
 
@@ -23,7 +25,9 @@ interface FieldErrors {
 }
 
 export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialogProps) {
+    const { user } = useAuth()
     const { updateBudget } = useBudgets()
+    const isEmailVerified = user?.emailVerified
 
     const [name, setName] = useState('')
     const [selectedCategory, setSelectedCategory] = useState('')
@@ -150,164 +154,172 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
                         Modify your budget details.
                     </DialogDescription>
                 </DialogHeader>
-                <form action={formAction}>
-                    <div className="space-y-5 py-4">
-                        {state.error && (
-                            <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-xl text-sm flex items-center gap-2">
-                                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                                {state.error}
-                            </div>
-                        )}
 
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-name" className="flex items-center gap-1">
-                                Budget Name <span className="text-destructive">*</span>
-                            </Label>
-                            <Input
-                                id="edit-name"
-                                name="name"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                onBlur={(e) => handleBlur('name', e.target.value)}
-                                required
-                                disabled={isPending}
-                                className={fieldErrors.name ? 'border-destructive focus-visible:ring-destructive' : ''}
-                            />
-                            {fieldErrors.name && (
-                                <p className="text-destructive text-xs flex items-center gap-1 mt-1">
-                                    <AlertCircle className="w-3 h-3" />
-                                    {fieldErrors.name}
-                                </p>
+                {!isEmailVerified ? (
+                    <EmailVerificationMessage
+                        onClose={() => onOpenChange(false)}
+                        actionName="editing budgets"
+                    />
+                ) : (
+                    <form action={formAction}>
+                        <div className="space-y-5 py-4">
+                            {state.error && (
+                                <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                    {state.error}
+                                </div>
                             )}
-                        </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-category" className="flex items-center gap-1">
-                                Category <span className="text-destructive">*</span>
-                            </Label>
-                            <Select
-                                value={selectedCategory}
-                                onValueChange={(value) => {
-                                    setSelectedCategory(value)
-                                    if (value !== OTHERS_CATEGORY) {
-                                        setCustomCategory('')
-                                        const found = BUDGET_CATEGORIES.find(c => c.value === value)
-                                        if (found) {
-                                            handleBlur('category', found.label)
-                                        }
-                                    }
-                                }}
-                                disabled={isPending}
-                            >
-                                <SelectTrigger className={`rounded-xl ${fieldErrors.category ? 'border-destructive focus-visible:ring-destructive' : ''}`}>
-                                    <SelectValue placeholder="Select a category" />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-60">
-                                    {BUDGET_CATEGORIES.map((cat) => (
-                                        <SelectItem key={cat.value} value={cat.value}>
-                                            {cat.label}
-                                        </SelectItem>
-                                    ))}
-                                    <SelectItem value={OTHERS_CATEGORY}>Others (Specify below)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <input type="hidden" name="category" value={category} />
-                            {selectedCategory === OTHERS_CATEGORY && (
-                                <Input
-                                    placeholder="Enter custom category"
-                                    value={customCategory}
-                                    onChange={(e) => setCustomCategory(e.target.value)}
-                                    onBlur={(e) => handleBlur('category', e.target.value)}
-                                    disabled={isPending}
-                                    className={`mt-2 ${fieldErrors.category ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                                />
-                            )}
-                            {fieldErrors.category && (
-                                <p className="text-destructive text-xs flex items-center gap-1 mt-1">
-                                    <AlertCircle className="w-3 h-3" />
-                                    {fieldErrors.category}
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="edit-amount" className="flex items-center gap-1">
-                                    Amount <span className="text-destructive">*</span>
+                                <Label htmlFor="edit-name" className="flex items-center gap-1">
+                                    Budget Name <span className="text-destructive">*</span>
                                 </Label>
                                 <Input
-                                    id="edit-amount"
-                                    name="amount"
-                                    type="number"
-                                    step="0.01"
-                                    min="0.01"
-                                    value={amount}
-                                    onChange={(e) => setAmount(e.target.value)}
-                                    onBlur={(e) => handleBlur('amount', e.target.value)}
+                                    id="edit-name"
+                                    name="name"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    onBlur={(e) => handleBlur('name', e.target.value)}
                                     required
                                     disabled={isPending}
-                                    className={fieldErrors.amount ? 'border-destructive focus-visible:ring-destructive' : ''}
+                                    className={fieldErrors.name ? 'border-destructive focus-visible:ring-destructive' : ''}
                                 />
-                                {fieldErrors.amount && (
+                                {fieldErrors.name && (
                                     <p className="text-destructive text-xs flex items-center gap-1 mt-1">
                                         <AlertCircle className="w-3 h-3" />
-                                        {fieldErrors.amount}
+                                        {fieldErrors.name}
                                     </p>
                                 )}
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="edit-period">Period</Label>
+                                <Label htmlFor="edit-category" className="flex items-center gap-1">
+                                    Category <span className="text-destructive">*</span>
+                                </Label>
                                 <Select
-                                    name="period"
-                                    value={period}
-                                    onValueChange={(value: string) => setPeriod(value as 'daily' | 'weekly' | 'monthly' | 'yearly')}
+                                    value={selectedCategory}
+                                    onValueChange={(value) => {
+                                        setSelectedCategory(value)
+                                        if (value !== OTHERS_CATEGORY) {
+                                            setCustomCategory('')
+                                            const found = BUDGET_CATEGORIES.find(c => c.value === value)
+                                            if (found) {
+                                                handleBlur('category', found.label)
+                                            }
+                                        }
+                                    }}
                                     disabled={isPending}
                                 >
-                                    <SelectTrigger className="rounded-xl">
-                                        <SelectValue />
+                                    <SelectTrigger className={`rounded-xl ${fieldErrors.category ? 'border-destructive focus-visible:ring-destructive' : ''}`}>
+                                        <SelectValue placeholder="Select a category" />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="daily">Daily</SelectItem>
-                                        <SelectItem value="weekly">Weekly</SelectItem>
-                                        <SelectItem value="monthly">Monthly</SelectItem>
-                                        <SelectItem value="yearly">Yearly</SelectItem>
+                                    <SelectContent className="max-h-60">
+                                        {BUDGET_CATEGORIES.map((cat) => (
+                                            <SelectItem key={cat.value} value={cat.value}>
+                                                {cat.label}
+                                            </SelectItem>
+                                        ))}
+                                        <SelectItem value={OTHERS_CATEGORY}>Others (Specify below)</SelectItem>
                                     </SelectContent>
                                 </Select>
+                                <input type="hidden" name="category" value={category} />
+                                {selectedCategory === OTHERS_CATEGORY && (
+                                    <Input
+                                        placeholder="Enter custom category"
+                                        value={customCategory}
+                                        onChange={(e) => setCustomCategory(e.target.value)}
+                                        onBlur={(e) => handleBlur('category', e.target.value)}
+                                        disabled={isPending}
+                                        className={`mt-2 ${fieldErrors.category ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                                    />
+                                )}
+                                {fieldErrors.category && (
+                                    <p className="text-destructive text-xs flex items-center gap-1 mt-1">
+                                        <AlertCircle className="w-3 h-3" />
+                                        {fieldErrors.category}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-amount" className="flex items-center gap-1">
+                                        Amount <span className="text-destructive">*</span>
+                                    </Label>
+                                    <Input
+                                        id="edit-amount"
+                                        name="amount"
+                                        type="number"
+                                        step="0.01"
+                                        min="0.01"
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        onBlur={(e) => handleBlur('amount', e.target.value)}
+                                        required
+                                        disabled={isPending}
+                                        className={fieldErrors.amount ? 'border-destructive focus-visible:ring-destructive' : ''}
+                                    />
+                                    {fieldErrors.amount && (
+                                        <p className="text-destructive text-xs flex items-center gap-1 mt-1">
+                                            <AlertCircle className="w-3 h-3" />
+                                            {fieldErrors.amount}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-period">Period</Label>
+                                    <Select
+                                        name="period"
+                                        value={period}
+                                        onValueChange={(value: string) => setPeriod(value as 'daily' | 'weekly' | 'monthly' | 'yearly')}
+                                        disabled={isPending}
+                                    >
+                                        <SelectTrigger className="rounded-xl">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="daily">Daily</SelectItem>
+                                            <SelectItem value="weekly">Weekly</SelectItem>
+                                            <SelectItem value="monthly">Monthly</SelectItem>
+                                            <SelectItem value="yearly">Yearly</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-color">Color</Label>
+                                <div className="flex gap-3">
+                                    <Input
+                                        id="edit-color"
+                                        name="color"
+                                        type="color"
+                                        value={color}
+                                        onChange={(e) => setColor(e.target.value)}
+                                        className="w-20 h-10 p-1 rounded-xl cursor-pointer"
+                                        disabled={isPending}
+                                    />
+                                    <Input
+                                        type="text"
+                                        value={color}
+                                        onChange={(e) => setColor(e.target.value)}
+                                        disabled={isPending}
+                                    />
+                                </div>
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-color">Color</Label>
-                            <div className="flex gap-3">
-                                <Input
-                                    id="edit-color"
-                                    name="color"
-                                    type="color"
-                                    value={color}
-                                    onChange={(e) => setColor(e.target.value)}
-                                    className="w-20 h-10 p-1 rounded-xl cursor-pointer"
-                                    disabled={isPending}
-                                />
-                                <Input
-                                    type="text"
-                                    value={color}
-                                    onChange={(e) => setColor(e.target.value)}
-                                    disabled={isPending}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <DialogFooter className="gap-2">
-                        <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
-                            Cancel
-                        </Button>
-                        <FormSubmitButton pendingText="Saving...">
-                            Save Changes
-                        </FormSubmitButton>
-                    </DialogFooter>
-                </form>
+                        <DialogFooter className="gap-2">
+                            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
+                                Cancel
+                            </Button>
+                            <FormSubmitButton pendingText="Saving...">
+                                Save Changes
+                            </FormSubmitButton>
+                        </DialogFooter>
+                    </form>
+                )}
             </DialogContent>
         </Dialog>
     )

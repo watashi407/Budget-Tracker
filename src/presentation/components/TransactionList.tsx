@@ -2,12 +2,24 @@ import { useTransition, useState, useMemo } from 'react'
 import { Trash2, ArrowUpRight, ArrowDownLeft, Receipt, Lock, Unlock, Edit, Search, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
+import { useAuth } from '@/presentation/context/AuthContext'
 import type { Transaction } from '@/domain/entities/Transaction'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
 import { EditTransactionDialog } from '@/presentation/components/EditTransactionDialog'
+import { DeleteConfirmDialog } from '@/presentation/components/DeleteConfirmDialog'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/presentation/components/ui/alert-dialog'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
+import { Mail } from 'lucide-react'
 
 interface TransactionListProps {
     budgetId?: string
@@ -17,11 +29,16 @@ interface TransactionListProps {
 }
 
 export function TransactionList({ budgetId, limit, initialTransactions, showPagination = true }: TransactionListProps) {
+    const { user } = useAuth()
     const { transactions: fetchedTransactions, deleteTransaction, updateTransaction, loading } = useTransactions(budgetId)
     const { budgets } = useBudgets()
     const { formatCurrency } = useCurrency()
     const [isPending, startTransition] = useTransition()
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; description: string } | null>(null)
+    const [showVerificationDialog, setShowVerificationDialog] = useState(false)
+
+    const isEmailVerified = user?.emailVerified
 
     // Search States
     const [searchText, setSearchText] = useState('')
@@ -71,16 +88,24 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
         setCurrentPage(1)
     }, [searchText, searchDate, itemsPerPage])
 
-    function handleDelete(id: string, description: string) {
-        if (confirm(`Are you sure you want to delete "${description}"?`)) {
-            startTransition(async () => {
-                try {
-                    await deleteTransaction(id)
-                } catch (error) {
-                    console.error('Failed to delete transaction:', error)
-                }
-            })
+    function handleDeleteClick(id: string, description: string) {
+        if (!isEmailVerified) {
+            setShowVerificationDialog(true)
+            return
         }
+        setDeleteTarget({ id, description })
+    }
+
+    function handleConfirmDelete() {
+        if (!deleteTarget) return
+        startTransition(async () => {
+            try {
+                await deleteTransaction(deleteTarget.id)
+                setDeleteTarget(null)
+            } catch {
+                // Error handled by mutation
+            }
+        })
     }
 
     function handleLockToggle(transaction: Transaction) {
@@ -196,7 +221,7 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
                                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingTransaction(transaction)} disabled={transaction.isLocked || isPending}>
                                             <Edit className="w-3.5 h-3.5" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(transaction.id, transaction.description)} disabled={transaction.isLocked || isPending}>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteClick(transaction.id, transaction.description)} disabled={transaction.isLocked || isPending}>
                                             <Trash2 className="w-3.5 h-3.5" />
                                         </Button>
                                     </div>
@@ -277,7 +302,7 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
                                         variant="ghost"
                                         size="icon"
                                         className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                        onClick={() => handleDelete(transaction.id, transaction.description)}
+                                        onClick={() => handleDeleteClick(transaction.id, transaction.description)}
                                         disabled={transaction.isLocked || isPending}
                                         title={transaction.isLocked ? "Transaction is locked" : "Delete"}
                                     >
@@ -313,7 +338,7 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
                         </Select>
                         <span>per page</span>
                     </div>
-                    
+
                     <div className="flex items-center gap-1">
                         <span className="text-xs text-muted-foreground mr-2">
                             {startIndex + 1}-{Math.min(endIndex, filteredTransactions.length)} of {filteredTransactions.length}
@@ -370,6 +395,32 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
                 onOpenChange={(open) => !open && setEditingTransaction(null)}
                 transaction={editingTransaction}
             />
+
+            <DeleteConfirmDialog
+                open={!!deleteTarget}
+                onOpenChange={(open) => !open && setDeleteTarget(null)}
+                onConfirm={handleConfirmDelete}
+                title={`Delete "${deleteTarget?.description}"?`}
+                description="This will permanently delete this transaction. This action cannot be undone."
+                isPending={isPending}
+            />
+
+            <AlertDialog open={showVerificationDialog} onOpenChange={setShowVerificationDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <div className="mx-auto w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mb-4">
+                            <Mail className="w-8 h-8 text-amber-500" />
+                        </div>
+                        <AlertDialogTitle className="text-center">Email Verification Required</AlertDialogTitle>
+                        <AlertDialogDescription className="text-center">
+                            Please verify your email address before deleting transactions.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="justify-center">
+                        <AlertDialogAction>Close</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

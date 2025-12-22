@@ -5,9 +5,19 @@ import type { Budget } from '@/domain/entities/Budget'
 import { Badge } from '@/presentation/components/ui/badge'
 import { Button } from '@/presentation/components/ui/button'
 import { DeleteConfirmDialog } from '@/presentation/components/DeleteConfirmDialog'
-import { Trash2, Edit, TrendingUp, TrendingDown } from 'lucide-react'
+import { Trash2, Edit, TrendingUp, TrendingDown, Mail } from 'lucide-react'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
+import { useAuth } from '@/presentation/context/AuthContext'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/presentation/components/ui/alert-dialog'
 
 interface BudgetCardProps {
     budget: Budget
@@ -15,14 +25,25 @@ interface BudgetCardProps {
 }
 
 export const BudgetCard = React.memo(function BudgetCard({ budget, onEdit }: BudgetCardProps) {
+    const { user } = useAuth()
     const { deleteBudget } = useBudgets()
     const { formatCurrency } = useCurrency()
     const [isPending, startTransition] = useTransition()
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+    const [showVerificationDialog, setShowVerificationDialog] = useState(false)
+    const isEmailVerified = user?.emailVerified
 
     const progress = budget.amount > 0 ? (budget.spent / budget.amount) * 100 : 0
     const isOverBudget = progress > 100
     const remaining = budget.amount - budget.spent
+
+    function handleDeleteClick() {
+        if (!isEmailVerified) {
+            setShowVerificationDialog(true)
+            return
+        }
+        setShowDeleteDialog(true)
+    }
 
     function handleDelete() {
         startTransition(async () => {
@@ -114,7 +135,7 @@ export const BudgetCard = React.memo(function BudgetCard({ budget, onEdit }: Bud
                         className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         onClick={(e) => {
                             e.preventDefault()
-                            setShowDeleteDialog(true)
+                            handleDeleteClick()
                         }}
                     >
                         <Trash2 className="w-4 h-4" />
@@ -130,6 +151,23 @@ export const BudgetCard = React.memo(function BudgetCard({ budget, onEdit }: Bud
                 description="This will permanently delete this budget and all associated data. This action cannot be undone."
                 isPending={isPending}
             />
+
+            <AlertDialog open={showVerificationDialog} onOpenChange={setShowVerificationDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <div className="mx-auto w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mb-4">
+                            <Mail className="w-8 h-8 text-amber-500" />
+                        </div>
+                        <AlertDialogTitle className="text-center">Email Verification Required</AlertDialogTitle>
+                        <AlertDialogDescription className="text-center">
+                            Please verify your email address before deleting budgets.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="justify-center">
+                        <AlertDialogAction>Close</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     )
 })

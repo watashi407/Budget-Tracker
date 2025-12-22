@@ -7,11 +7,12 @@ import { Textarea } from '@/presentation/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/presentation/components/ui/dialog'
 import { FormSubmitButton } from '@/presentation/components/FormSubmitButton'
+import { EmailVerificationMessage } from '@/presentation/components/EmailVerificationMessage'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
 import { useAuth } from '@/presentation/context/AuthContext'
-import { AlertCircle, Mail } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 
 /**
  * CreateTransactionDialog Component
@@ -157,20 +158,10 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
                 </DialogHeader>
 
                 {!isEmailVerified ? (
-                    <div className="py-8 text-center space-y-4">
-                        <div className="mx-auto w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
-                            <Mail className="w-8 h-8 text-amber-500" />
-                        </div>
-                        <div className="space-y-2">
-                            <h3 className="text-lg font-semibold">Email Verification Required</h3>
-                            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                                Please verify your email address before creating transactions. Check your inbox for the verification link.
-                            </p>
-                        </div>
-                        <Button variant="outline" onClick={() => onOpenChange(false)}>
-                            Close
-                        </Button>
-                    </div>
+                    <EmailVerificationMessage
+                        onClose={() => onOpenChange(false)}
+                        actionName="creating transactions"
+                    />
                 ) : (
                     <form action={formAction}>
                         <div className="space-y-5 py-4">
