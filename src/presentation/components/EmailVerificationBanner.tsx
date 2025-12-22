@@ -15,8 +15,12 @@ export function EmailVerificationBanner() {
     const [resending, setResending] = useState(false)
     const [resent, setResent] = useState(false)
 
-    // Don't show if no user, verified, or dismissed
-    if (!user || user.emailVerified || dismissed) {
+    // Don't show if:
+    // - no user
+    // - emailVerified is true
+    // - emailVerified is undefined (still loading from server)
+    // - dismissed
+    if (!user || user.emailVerified !== false || dismissed) {
         return null
     }
 

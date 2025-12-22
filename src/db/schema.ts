@@ -46,6 +46,7 @@ export const profiles = pgTable('profiles', {
     fullName: text('full_name'),
     avatarUrl: text('avatar_url'),
     currency: text('currency').default('USD'),
+    verified: boolean('verified').default(false),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 })
 

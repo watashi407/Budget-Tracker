@@ -45,25 +45,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }, 8000)
 
         // Helper to map Supabase user to our User type
+        // emailVerified starts as undefined - will be set by profiles.verified
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapSessionUser = (supabaseUser: any): User => ({
             id: supabaseUser.id,
             email: supabaseUser.email!,
             fullName: supabaseUser.user_metadata?.full_name,
             avatarUrl: supabaseUser.user_metadata?.avatar_url,
-            emailVerified: !!supabaseUser.email_confirmed_at,
+            emailVerified: undefined, // Will be set by updateWithServerData
             createdAt: new Date(supabaseUser.created_at),
             updatedAt: new Date(supabaseUser.updated_at || supabaseUser.created_at),
         })
 
+        // Async function to update user with data from profiles table (non-blocking)
+        // Reads verified status from profiles.verified column (the source of truth)
+        const updateWithServerData = async (userId: string) => {
+            console.log('[Auth] Fetching profile for userId:', userId)
+            try {
+                // Get verified status and currency from profiles table
+                const { data: profileData, error } = await supabase
+                    .from('profiles')
+                    .select('verified, currency')
+                    .eq('id', userId)
+                    .maybeSingle()
+
+                console.log('[Auth] Profile data:', profileData, 'Error:', error)
+
+                if (mounted) {
+                    // Always update emailVerified - use false if no profile or verified is false
+                    const isVerified = profileData?.verified === true
+                    console.log('[Auth] Setting emailVerified to:', isVerified)
+                    setUser(prev => prev ? {
+                        ...prev,
+                        emailVerified: isVerified,
+                        currency: profileData?.currency || prev.currency || 'USD',
+                    } : null)
+                }
+            } catch (err) {
+                console.log('[Auth] Profile fetch error:', err)
+                // On error, set emailVerified to false (safer default)
+                if (mounted) {
+                    setUser(prev => prev ? { ...prev, emailVerified: false } : null)
+                }
+            }
+        }
+
         // Listen for auth state changes - this is the SINGLE SOURCE OF TRUTH
-        const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+        const { data } = supabase.auth.onAuthStateChange((event, session) => {
             if (!mounted) return
 
             switch (event) {
                 case 'INITIAL_SESSION':
                     if (session?.user) {
                         setUser(mapSessionUser(session.user))
+                        updateWithServerData(session.user.id) // Non-blocking
                     } else {
                         setUser(null)
                     }
@@ -73,6 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 case 'SIGNED_IN':
                     if (session?.user) {
                         setUser(mapSessionUser(session.user))
+                        updateWithServerData(session.user.id) // Non-blocking
                         setLoading(false)
                     }
                     break
@@ -80,6 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 case 'TOKEN_REFRESHED':
                     if (session?.user) {
                         setUser(mapSessionUser(session.user))
+                        updateWithServerData(session.user.id) // Non-blocking
                     }
                     break
 
@@ -91,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 case 'USER_UPDATED':
                     if (session?.user) {
                         setUser(mapSessionUser(session.user))
+                        updateWithServerData(session.user.id) // Non-blocking
                     }
                     break
             }
