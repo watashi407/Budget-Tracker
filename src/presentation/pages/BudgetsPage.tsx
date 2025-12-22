@@ -24,10 +24,7 @@ export function BudgetsPage() {
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2 items-center">
-                    <Button
-                        onClick={() => setShowBudgetDialog(true)}
-                        className="rounded-none border border-primary bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all"
-                    >
+                    <Button onClick={() => setShowBudgetDialog(true)}>
                         <PlusCircle className="w-4 h-4 mr-2" />
                         NEW BUDGET
                     </Button>

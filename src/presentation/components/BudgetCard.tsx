@@ -95,27 +95,27 @@ export const BudgetCard = React.memo(function BudgetCard({ budget, onEdit }: Bud
 
             <div className="px-5 pb-5 flex gap-2">
                 <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="flex-1 h-9 text-xs font-medium hover:bg-primary/10 hover:text-primary hover:border-primary/50"
+                    className="flex-1"
                     onClick={(e) => {
                         e.preventDefault()
                         onEdit?.(budget)
                     }}
                 >
-                    <Edit className="w-3.5 h-3.5 mr-2" />
+                    <Edit className="w-4 h-4 mr-2" />
                     Configure
                 </Button>
                 <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     onClick={(e) => {
                         e.preventDefault()
                         handleDelete()
                     }}
                 >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                 </Button>
             </div>
         </div>
