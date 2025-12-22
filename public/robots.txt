@@ -1,0 +1,11 @@
+# Robots.txt for Watashi Pocket Budget Tracker
+# https://budget-mo-bulsa-mo.vercel.app/
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://budget-mo-bulsa-mo.vercel.app/sitemap.xml
+
+# Disallow private/authenticated routes from indexing
+Disallow: /api/
