@@ -4,7 +4,7 @@ import type { OnlineUser } from '@/data/repositories/SupabaseSocialRepository'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
 import { useAuth } from '@/presentation/context/AuthContext'
-import { Send, MessageCircle, X, Loader2, Users } from 'lucide-react'
+import { Send, MessageCircle, X, Loader2, Users, BadgeCheck } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
 interface LiveChatProps {
@@ -127,8 +127,11 @@ export function LiveChat({ messages, loading, onSendMessage, isOpen, onClose, on
                                 )}
                                 <div className={`max-w-[70%]`}>
                                     {!isOwn && (
-                                        <p className="text-[10px] text-muted-foreground mb-1 ml-1 font-medium">
+                                        <p className="text-[10px] text-muted-foreground mb-1 ml-1 font-medium flex items-center gap-1">
                                             {msg.authorName || 'User'}
+                                            {msg.authorVerified && (
+                                                <BadgeCheck className="w-3 h-3 text-blue-500" />
+                                            )}
                                         </p>
                                     )}
                                     <div className={`px-3 py-2 rounded-2xl text-sm ${isOwn

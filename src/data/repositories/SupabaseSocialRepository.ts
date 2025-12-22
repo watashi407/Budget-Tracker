@@ -72,6 +72,7 @@ export class SupabaseSocialRepository implements ISocialRepository {
             userData.user.email?.split('@')[0] ||
             'User'
         const authorEmail = userData.user.email || ''
+        const authorVerified = !!userData.user.email_confirmed_at
 
         const { data, error } = await supabase
             .from('social_comments')
@@ -82,6 +83,7 @@ export class SupabaseSocialRepository implements ISocialRepository {
                 parent_id: input.parentId || null,
                 author_name: authorName,
                 author_email: authorEmail,
+                author_verified: authorVerified,
             })
             .select()
             .single()
@@ -200,6 +202,7 @@ export class SupabaseSocialRepository implements ISocialRepository {
             userData.user.email?.split('@')[0] ||
             'User'
         const authorEmail = userData.user.email || ''
+        const authorVerified = !!userData.user.email_confirmed_at
 
         const { data, error } = await supabase
             .from('chat_messages')
@@ -208,6 +211,7 @@ export class SupabaseSocialRepository implements ISocialRepository {
                 content: input.content,
                 author_name: authorName,
                 author_email: authorEmail,
+                author_verified: authorVerified,
             })
             .select()
             .single()
@@ -254,6 +258,7 @@ export class SupabaseSocialRepository implements ISocialRepository {
             updatedAt: new Date(row.updated_at as string),
             replies: row.replies as SocialComment[] | undefined,
             authorName: row.author_name as string | undefined,
+            authorVerified: row.author_verified as boolean | undefined,
         }
     }
 
@@ -267,6 +272,7 @@ export class SupabaseSocialRepository implements ISocialRepository {
             content: row.content as string,
             createdAt: new Date(row.created_at as string),
             authorName: row.author_name as string | undefined,
+            authorVerified: row.author_verified as boolean | undefined,
         }
     }
 

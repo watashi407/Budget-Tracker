@@ -16,6 +16,7 @@ export interface SocialComment {
     // Joined data
     authorName?: string
     authorAvatar?: string
+    authorVerified?: boolean
     replies?: SocialComment[]
     userVote?: 'like' | 'dislike' | null
 }
@@ -42,6 +43,7 @@ export interface ChatMessage {
     // Joined data
     authorName?: string
     authorAvatar?: string
+    authorVerified?: boolean
 }
 
 export interface CreateChatMessageInput {

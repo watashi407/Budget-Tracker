@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { SocialComment } from '@/domain/entities/Social'
 import { Button } from '@/presentation/components/ui/button'
 import { useAuth } from '@/presentation/context/AuthContext'
-import { ThumbsUp, ThumbsDown, Reply, Trash2, MessageSquare, Sparkles, Clock } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, Reply, Trash2, MessageSquare, Sparkles, Clock, BadgeCheck } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
 interface CommentCardProps {
@@ -29,9 +29,16 @@ export function CommentCard({ comment, userVote, onLike, onReply, onDelete, isRe
                             {comment.authorName?.charAt(0).toUpperCase() || 'U'}
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-foreground">
-                                {comment.authorName || 'Anonymous'}
-                            </p>
+                            <div className="flex items-center gap-1">
+                                <p className="text-sm font-medium text-foreground">
+                                    {comment.authorName || 'Anonymous'}
+                                </p>
+                                {comment.authorVerified && (
+                                    <span title="Verified User">
+                                        <BadgeCheck className="w-4 h-4 text-blue-500" />
+                                    </span>
+                                )}
+                            </div>
                             <p className="text-[10px] text-muted-foreground flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
                                 {formatDistanceToNow(comment.createdAt, { addSuffix: true })}
@@ -41,8 +48,8 @@ export function CommentCard({ comment, userVote, onLike, onReply, onDelete, isRe
                     <div className="flex items-center gap-2">
                         {/* Type Badge */}
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase ${comment.type === 'suggestion'
-                                ? 'bg-blue-500/10 text-blue-500'
-                                : 'bg-purple-500/10 text-purple-500'
+                            ? 'bg-blue-500/10 text-blue-500'
+                            : 'bg-purple-500/10 text-purple-500'
                             }`}>
                             {comment.type}
                         </span>
