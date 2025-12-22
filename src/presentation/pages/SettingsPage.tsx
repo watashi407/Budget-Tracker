@@ -17,6 +17,7 @@ export default function SettingsPage() {
 
     const [fullName, setFullName] = useState(user?.fullName || '')
     const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
+    const [isUpdatingCurrency, setIsUpdatingCurrency] = useState(false)
 
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
@@ -42,6 +43,32 @@ export default function SettingsPage() {
             console.error(error)
         } finally {
             setIsUpdatingProfile(false)
+        }
+    }
+
+    async function handleCurrencyChange(newCurrency: string) {
+        if (!user) return
+
+        // Immediately update local state for responsive UI
+        setCurrency(newCurrency)
+        setIsUpdatingCurrency(true)
+
+        try {
+            // Save to database for cross-device persistence
+            await updateProfile(user.id, { currency: newCurrency })
+            toast({
+                title: "Currency updated",
+                description: `Currency changed to ${newCurrency}. This setting will sync across all your devices.`,
+            })
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to save currency preference. Please try again.",
+                variant: "destructive",
+            })
+            console.error(error)
+        } finally {
+            setIsUpdatingCurrency(false)
         }
     }
 
@@ -135,7 +162,7 @@ export default function SettingsPage() {
                 <CardHeader>
                     <CardTitle>Preferences</CardTitle>
                     <CardDescription>
-                        Customize your application experience.
+                        Customize your application experience. Changes sync across all devices.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -143,10 +170,18 @@ export default function SettingsPage() {
                         <Label htmlFor="currency">Currency</Label>
                         <Select
                             value={currency}
-                            onValueChange={setCurrency}
+                            onValueChange={handleCurrencyChange}
+                            disabled={isUpdatingCurrency}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Select currency" />
+                                {isUpdatingCurrency ? (
+                                    <div className="flex items-center gap-2">
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        <span>Saving...</span>
+                                    </div>
+                                ) : (
+                                    <SelectValue placeholder="Select currency" />
+                                )}
                             </SelectTrigger>
                             <SelectContent>
                                 {availableCurrencies.map((c) => (

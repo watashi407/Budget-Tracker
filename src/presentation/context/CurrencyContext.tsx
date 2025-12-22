@@ -1,8 +1,10 @@
-import React, { createContext, use, useEffect, useState } from 'react'
+import React, { createContext, use, useEffect, useState, useCallback } from 'react'
+import { useAuth } from '@/presentation/context/AuthContext'
 
 /**
  * CurrencyContext
  * Manages the application's currency preference and provides formatting utilities.
+ * Syncs currency preference to database for cross-device persistence.
  */
 
 interface CurrencyContextType {
@@ -10,6 +12,7 @@ interface CurrencyContextType {
     setCurrency: (currency: string) => void
     formatCurrency: (amount: number) => string
     availableCurrencies: { code: string; label: string; symbol: string }[]
+    isLoading: boolean
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -33,44 +36,66 @@ const AVAILABLE_CURRENCIES = [
     { code: 'VND', label: 'Vietnamese Dong', symbol: '₫' },
 ]
 
+/**
+ * Detect default currency from browser locale
+ */
+function detectDefaultCurrency(): string {
+    const locale = navigator.language
+    if (locale.includes('PH')) return 'PHP'
+    if (locale.includes('JP')) return 'JPY'
+    if (locale.includes('GB')) return 'GBP'
+    if (locale.includes('EU') || locale.includes('DE') || locale.includes('FR')) return 'EUR'
+    return 'USD'
+}
+
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-    // Initialize with saved currency or detect from locale
-    const [currency, setCurrency] = useState<string>(() => {
+    const { user } = useAuth()
+    const [isLoading, setIsLoading] = useState(true)
+
+    // Initialize with localStorage fallback, then sync with user preference from DB
+    const [currency, setCurrencyState] = useState<string>(() => {
         const saved = localStorage.getItem('watashi_currency')
         if (saved) return saved
-
-        // Basic detection logic
-        const locale = navigator.language
-        if (locale.includes('PH')) return 'PHP'
-        if (locale.includes('JP')) return 'JPY'
-        if (locale.includes('GB')) return 'GBP'
-        if (locale.includes('EU') || locale.includes('DE') || locale.includes('FR')) return 'EUR'
-
-        return 'USD'
+        return detectDefaultCurrency()
     })
 
-    // Persist changes
+    // Sync currency from user profile when user changes
     useEffect(() => {
-        localStorage.setItem('watashi_currency', currency)
-    }, [currency])
+        if (user?.currency) {
+            // User has a currency preference in database
+            setCurrencyState(user.currency)
+            localStorage.setItem('watashi_currency', user.currency)
+        }
+        setIsLoading(false)
+    }, [user?.currency])
+
+    /**
+     * Set currency - updates state and localStorage
+     * Note: Saving to database is handled by SettingsPage via updateProfile
+     */
+    const setCurrency = useCallback((newCurrency: string) => {
+        setCurrencyState(newCurrency)
+        localStorage.setItem('watashi_currency', newCurrency)
+    }, [])
 
     /**
      * Format amount using the current currency locale
      */
-    const formatCurrency = (amount: number) => {
+    const formatCurrency = useCallback((amount: number) => {
         return new Intl.NumberFormat(undefined, {
             style: 'currency',
             currency: currency,
             minimumFractionDigits: currency === 'JPY' ? 0 : 2,
             maximumFractionDigits: currency === 'JPY' ? 0 : 2,
         }).format(amount)
-    }
+    }, [currency])
 
     const value = {
         currency,
         setCurrency,
         formatCurrency,
         availableCurrencies: AVAILABLE_CURRENCIES,
+        isLoading,
     }
 
     return <CurrencyContext value={value}>{children}</CurrencyContext>

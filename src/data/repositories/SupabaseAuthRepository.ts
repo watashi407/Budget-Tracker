@@ -136,14 +136,14 @@ export class SupabaseAuthRepository implements IAuthRepository {
                 return this.mapUser(user)
             }
 
-            // If we have a session, we can attempt to get fresh user data, but fallback to session user
-            /* 
-               Optimization: Trust session user for immediate rendering. 
-               Only fetch updated profile if needed, but for now let's just use session user to unblock.
-               If we really need fresh data, we can do it in background or separate call.
-               Ideally, we should try getUser but fallback INSTANTLY to session.user if it fails/times out.
-            */
-            return this.mapUser(session.user)
+            // If we have a session, fetch profile data including currency from profiles table
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('currency')
+                .eq('id', session.user.id)
+                .single()
+
+            return this.mapUser(session.user, profile?.currency)
 
         } catch (err) {
             console.error('[SupabaseAuthRepository] getCurrentUser exception:', err)
@@ -152,12 +152,13 @@ export class SupabaseAuthRepository implements IAuthRepository {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private mapUser(user: any): User {
+    private mapUser(user: any, currency?: string): User {
         return {
             id: user.id,
             email: user.email!,
             fullName: user.user_metadata.full_name,
             avatarUrl: user.user_metadata.avatar_url,
+            currency: currency || 'USD',
             createdAt: new Date(user.created_at),
             updatedAt: new Date(user.updated_at || user.created_at),
         }
@@ -174,25 +175,44 @@ export class SupabaseAuthRepository implements IAuthRepository {
     /**
      * Update user profile
      */
-    async updateProfile(_userId: string, updates: Partial<User>): Promise<User> {
-        const { data, error } = await supabase.auth.updateUser({
-            data: {
-                full_name: updates.fullName,
-                avatar_url: updates.avatarUrl,
-            },
-        })
-
-        if (error) throw error
-        if (!data.user) throw new Error('Profile update failed')
-
-        return {
-            id: data.user.id,
-            email: data.user.email!,
-            fullName: data.user.user_metadata.full_name,
-            avatarUrl: data.user.user_metadata.avatar_url,
-            createdAt: new Date(data.user.created_at),
-            updatedAt: new Date(data.user.updated_at || data.user.created_at),
+    async updateProfile(userId: string, updates: Partial<User>): Promise<User> {
+        // Update auth metadata if fullName or avatarUrl changed
+        if (updates.fullName !== undefined || updates.avatarUrl !== undefined) {
+            const { error: authError } = await supabase.auth.updateUser({
+                data: {
+                    full_name: updates.fullName,
+                    avatar_url: updates.avatarUrl,
+                },
+            })
+            if (authError) throw authError
         }
+
+        // Update profiles table (for currency and other profile fields)
+        const profileUpdates: Record<string, unknown> = {
+            updated_at: new Date().toISOString(),
+        }
+        if (updates.fullName !== undefined) profileUpdates.full_name = updates.fullName
+        if (updates.avatarUrl !== undefined) profileUpdates.avatar_url = updates.avatarUrl
+        if (updates.currency !== undefined) profileUpdates.currency = updates.currency
+
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update(profileUpdates)
+            .eq('id', userId)
+
+        if (profileError) throw profileError
+
+        // Get updated user data
+        const { data: { user }, error: getUserError } = await supabase.auth.getUser()
+        if (getUserError || !user) throw new Error('Failed to get updated user')
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('currency')
+            .eq('id', user.id)
+            .single()
+
+        return this.mapUser(user, profile?.currency)
     }
 
     /**

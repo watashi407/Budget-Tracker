@@ -8,6 +8,7 @@ export interface User {
     email: string
     fullName?: string
     avatarUrl?: string
+    currency?: string
     createdAt: Date
     updatedAt: Date
 }
