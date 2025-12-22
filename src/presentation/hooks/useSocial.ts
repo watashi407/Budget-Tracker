@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import type { SocialComment, ChatMessage, CreateCommentInput, CreateChatMessageInput } from '@/domain/entities/Social'
-import { SupabaseSocialRepository } from '@/data/repositories/SupabaseSocialRepository'
+import { SupabaseSocialRepository, type OnlineUser } from '@/data/repositories/SupabaseSocialRepository'
 
 const socialRepository = new SupabaseSocialRepository()
 
@@ -13,6 +13,7 @@ type FilterType = 'all' | 'suggestion' | 'feedback' | 'upcoming'
 export function useSocial() {
     const [comments, setComments] = useState<SocialComment[]>([])
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+    const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([])
     const [filter, setFilter] = useState<FilterType>('all')
     const [loading, setLoading] = useState(true)
     const [chatLoading, setChatLoading] = useState(true)
@@ -51,15 +52,22 @@ export function useSocial() {
         }
     }, [])
 
-    // Subscribe to real-time chat
+    // Subscribe to real-time chat and presence
     useEffect(() => {
         fetchChatMessages()
 
-        const unsubscribe = socialRepository.subscribeToChatMessages((message) => {
+        const unsubscribeChat = socialRepository.subscribeToChatMessages((message) => {
             setChatMessages(prev => [...prev, message])
         })
 
-        return unsubscribe
+        const unsubscribePresence = socialRepository.subscribeToPresence((users) => {
+            setOnlineUsers(users)
+        })
+
+        return () => {
+            unsubscribeChat()
+            unsubscribePresence()
+        }
     }, [fetchChatMessages])
 
     // Fetch comments when filter changes
@@ -184,6 +192,7 @@ export function useSocial() {
     return {
         comments,
         chatMessages,
+        onlineUsers,
         filter,
         setFilter,
         loading,

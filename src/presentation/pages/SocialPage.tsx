@@ -27,6 +27,7 @@ export function SocialPage() {
     const {
         comments,
         chatMessages,
+        onlineUsers,
         filter,
         setFilter,
         loading,
@@ -214,6 +215,7 @@ export function SocialPage() {
                 onSendMessage={handleSendChatMessage}
                 isOpen={chatOpen}
                 onClose={() => setChatOpen(false)}
+                onlineUsers={onlineUsers}
             />
 
             {/* Create Comment Dialog */}

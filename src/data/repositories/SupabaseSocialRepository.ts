@@ -2,6 +2,13 @@ import { supabase } from '@/lib/supabase'
 import type { ISocialRepository } from '@/domain/repositories/ISocialRepository'
 import type { SocialComment, ChatMessage, CreateCommentInput, CreateChatMessageInput } from '@/domain/entities/Social'
 
+// Type for online user presence
+export interface OnlineUser {
+    id: string
+    name: string
+    email: string
+}
+
 /**
  * SupabaseSocialRepository
  * Implementation of ISocialRepository using Supabase
@@ -55,11 +62,16 @@ export class SupabaseSocialRepository implements ISocialRepository {
     }
 
     /**
-     * Create a new comment
+     * Create a new comment with author info
      */
     async createComment(input: CreateCommentInput): Promise<SocialComment> {
         const { data: userData } = await supabase.auth.getUser()
         if (!userData.user) throw new Error('Not authenticated')
+
+        const authorName = userData.user.user_metadata?.full_name ||
+            userData.user.email?.split('@')[0] ||
+            'User'
+        const authorEmail = userData.user.email || ''
 
         const { data, error } = await supabase
             .from('social_comments')
@@ -68,6 +80,8 @@ export class SupabaseSocialRepository implements ISocialRepository {
                 content: input.content,
                 type: input.type,
                 parent_id: input.parentId || null,
+                author_name: authorName,
+                author_email: authorEmail,
             })
             .select()
             .single()
@@ -176,17 +190,24 @@ export class SupabaseSocialRepository implements ISocialRepository {
     }
 
     /**
-     * Send a chat message
+     * Send a chat message with author info
      */
     async sendChatMessage(input: CreateChatMessageInput): Promise<ChatMessage> {
         const { data: userData } = await supabase.auth.getUser()
         if (!userData.user) throw new Error('Not authenticated')
+
+        const authorName = userData.user.user_metadata?.full_name ||
+            userData.user.email?.split('@')[0] ||
+            'User'
+        const authorEmail = userData.user.email || ''
 
         const { data, error } = await supabase
             .from('chat_messages')
             .insert({
                 user_id: userData.user.id,
                 content: input.content,
+                author_name: authorName,
+                author_email: authorEmail,
             })
             .select()
             .single()
@@ -232,6 +253,7 @@ export class SupabaseSocialRepository implements ISocialRepository {
             createdAt: new Date(row.created_at as string),
             updatedAt: new Date(row.updated_at as string),
             replies: row.replies as SocialComment[] | undefined,
+            authorName: row.author_name as string | undefined,
         }
     }
 
@@ -244,6 +266,52 @@ export class SupabaseSocialRepository implements ISocialRepository {
             userId: row.user_id as string,
             content: row.content as string,
             createdAt: new Date(row.created_at as string),
+            authorName: row.author_name as string | undefined,
+        }
+    }
+
+    /**
+     * Subscribe to presence channel for online users
+     */
+    subscribeToPresence(
+        onSync: (users: OnlineUser[]) => void
+    ): () => void {
+        const channel = supabase.channel('social_presence', {
+            config: { presence: { key: 'user' } }
+        })
+
+        channel
+            .on('presence', { event: 'sync' }, () => {
+                const state = channel.presenceState<{ name: string; email: string }>()
+                const users: OnlineUser[] = []
+                Object.keys(state).forEach(key => {
+                    const presences = state[key]
+                    presences.forEach(p => {
+                        users.push({
+                            id: key,
+                            name: p.name || 'User',
+                            email: p.email || '',
+                        })
+                    })
+                })
+                onSync(users)
+            })
+            .subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    const { data: userData } = await supabase.auth.getUser()
+                    if (userData.user) {
+                        const name = userData.user.user_metadata?.full_name ||
+                            userData.user.email?.split('@')[0] || 'User'
+                        await channel.track({
+                            name,
+                            email: userData.user.email || '',
+                        })
+                    }
+                }
+            })
+
+        return () => {
+            supabase.removeChannel(channel)
         }
     }
 }
