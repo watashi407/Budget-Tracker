@@ -60,29 +60,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Async function to update user with data from profiles table (non-blocking)
         // Reads verified status from profiles.verified column (the source of truth)
         const updateWithServerData = async (userId: string) => {
-            console.log('[Auth] Fetching profile for userId:', userId)
             try {
                 // Get verified status and currency from profiles table
-                const { data: profileData, error } = await supabase
+                const { data: profileData } = await supabase
                     .from('profiles')
                     .select('verified, currency')
                     .eq('id', userId)
                     .maybeSingle()
 
-                console.log('[Auth] Profile data:', profileData, 'Error:', error)
-
                 if (mounted) {
                     // Always update emailVerified - use false if no profile or verified is false
                     const isVerified = profileData?.verified === true
-                    console.log('[Auth] Setting emailVerified to:', isVerified)
                     setUser(prev => prev ? {
                         ...prev,
                         emailVerified: isVerified,
                         currency: profileData?.currency || prev.currency || 'USD',
                     } : null)
                 }
-            } catch (err) {
-                console.log('[Auth] Profile fetch error:', err)
+            } catch {
                 // On error, set emailVerified to false (safer default)
                 if (mounted) {
                     setUser(prev => prev ? { ...prev, emailVerified: false } : null)
