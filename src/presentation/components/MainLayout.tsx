@@ -2,7 +2,7 @@ import { Link, Outlet } from "@tanstack/react-router"
 import { useAuth } from "@/presentation/context/AuthContext"
 import { ThemeToggle } from "./ThemeToggle"
 import { EmailVerificationBanner } from "./EmailVerificationBanner"
-import { Wallet, LayoutDashboard, Settings, LogOut, Menu, X, Receipt, Sparkles } from "lucide-react"
+import { Wallet, LayoutDashboard, Settings, LogOut, Menu, X, Receipt, Sparkles, Users } from "lucide-react"
 import { Button } from "./ui/button"
 import { Toaster } from "@/presentation/components/ui/toaster"
 import { useState } from "react"
@@ -82,6 +82,12 @@ export function MainLayout() {
                         <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-sm font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg group">
                             <Sparkles className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                             <span>AI Assistant</span>
+                        </Button>
+                    </Link>
+                    <Link to="/social" className="w-full">
+                        <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-sm font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg group">
+                            <Users className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <span>Social</span>
                         </Button>
                     </Link>
                     <Link to="/settings" className="w-full">

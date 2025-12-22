@@ -9,6 +9,7 @@ import { Route as settingsRoute } from './routes/settings'
 import { Route as budgetsRoute } from './routes/budgets'
 import { Route as expensesRoute } from './routes/expenses'
 import { Route as aiAssistantRoute } from './routes/ai-assistant'
+import { Route as socialRoute } from './routes/social'
 
 /**
  * Route Tree Configuration
@@ -24,6 +25,7 @@ const routeTree = rootRoute.addChildren([
     budgetsRoute,
     expensesRoute,
     aiAssistantRoute,
+    socialRoute,
 ])
 
 /**
