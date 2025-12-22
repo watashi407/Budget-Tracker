@@ -22,9 +22,7 @@ export function LoginPage() {
 
     // Redirect to dashboard when user is authenticated
     useEffect(() => {
-        console.log('[LoginPage] Auth state check - User:', user ? user.email : 'null', 'Loading:', loading)
         if (user) {
-            console.log('[LoginPage] User authenticated, navigating to /')
             navigate({ to: '/' })
         }
     }, [user, loading, navigate])
@@ -36,8 +34,7 @@ export function LoginPage() {
         try {
             setLoading(true)
             await signInWithGoogle()
-        } catch (error) {
-            console.error('[LoginPage] Google sign in error:', error)
+        } catch {
             setLoading(false)
         }
     }
@@ -51,12 +48,9 @@ export function LoginPage() {
         setLoading(true)
 
         try {
-            console.log('[LoginPage] Attempting sign in with:', email)
             await signIn(email, password)
-            console.log('[LoginPage] Sign in successful')
             // Navigation handled by useEffect
         } catch (err: unknown) {
-            console.error('[LoginPage] Sign in error:', err)
             let message = err instanceof Error ? err.message : 'Failed to sign in'
             if (message.toLowerCase().includes('pwned') || message.toLowerCase().includes('security')) {
                 message = 'Security alert: This password has been exposed. Please reset your password.'

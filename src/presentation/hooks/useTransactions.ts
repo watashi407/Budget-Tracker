@@ -3,11 +3,9 @@ import { useSupabaseRealtime } from '@/presentation/hooks/useSupabaseRealtime'
 import type { Transaction, CreateTransactionInput, UpdateTransactionInput } from '@/domain/entities/Transaction'
 import { SupabaseTransactionRepository } from '@/data/repositories/SupabaseTransactionRepository'
 import { useAuth } from '@/presentation/context/AuthContext'
-import { BUDGETS_QUERY_KEY } from './useBudgets'
+import { queryKeys } from '@/lib/queryFactories'
 
 const transactionRepository = new SupabaseTransactionRepository()
-
-export const TRANSACTIONS_QUERY_KEY = 'transactions'
 
 /**
  * Custom hook for transaction CRUD operations using TanStack Query
@@ -16,11 +14,15 @@ export const TRANSACTIONS_QUERY_KEY = 'transactions'
 export function useTransactions(budgetId?: string) {
     const { user } = useAuth()
     const queryClient = useQueryClient()
-    const queryKey = [TRANSACTIONS_QUERY_KEY, user?.id, budgetId || 'all']
+    const queryKey = user
+        ? budgetId
+            ? queryKeys.transactions.byBudget(budgetId)
+            : queryKeys.transactions.byUser(user.id)
+        : queryKeys.transactions.all
 
     useSupabaseRealtime({
         tableName: 'transactions',
-        queryKey,
+        queryKey: queryKey as string[],
     })
 
     // Fetch Transactions
@@ -66,9 +68,10 @@ export function useTransactions(budgetId?: string) {
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY, user?.id] })
-            // Also invalidate budgets to update spent amounts
-            queryClient.invalidateQueries({ queryKey: [BUDGETS_QUERY_KEY, user?.id] })
+            if (user) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.transactions.byUser(user.id) })
+                queryClient.invalidateQueries({ queryKey: queryKeys.budgets.byUser(user.id) })
+            }
         },
     })
 
@@ -93,8 +96,10 @@ export function useTransactions(budgetId?: string) {
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY, user?.id] })
-            queryClient.invalidateQueries({ queryKey: [BUDGETS_QUERY_KEY, user?.id] })
+            if (user) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.transactions.byUser(user.id) })
+                queryClient.invalidateQueries({ queryKey: queryKeys.budgets.byUser(user.id) })
+            }
         },
     })
 
@@ -119,8 +124,10 @@ export function useTransactions(budgetId?: string) {
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [TRANSACTIONS_QUERY_KEY, user?.id] })
-            queryClient.invalidateQueries({ queryKey: [BUDGETS_QUERY_KEY, user?.id] })
+            if (user) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.transactions.byUser(user.id) })
+                queryClient.invalidateQueries({ queryKey: queryKeys.budgets.byUser(user.id) })
+            }
         },
     })
 

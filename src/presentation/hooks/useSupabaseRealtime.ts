@@ -33,7 +33,6 @@ export function useSupabaseRealtime({
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } as any,
                 () => {
-                    console.log(`Realtime change detected in ${tableName}, invalidating query`, queryKey)
                     queryClient.invalidateQueries({ queryKey })
                 }
             )

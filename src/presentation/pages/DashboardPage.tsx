@@ -47,16 +47,25 @@ export function DashboardPage() {
         })
     }, [transactions, dateFilter])
 
-    const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0)
+    // Memoize expensive calculations
+    const totalBudget = useMemo(() =>
+        budgets.reduce((sum, b) => sum + b.amount, 0),
+        [budgets]
+    )
 
-    // Calculate totals based on FILTERED transactions
-    const totalIncome = filteredTransactions
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0)
+    const totalIncome = useMemo(() =>
+        filteredTransactions
+            .filter(t => t.type === 'income')
+            .reduce((sum, t) => sum + t.amount, 0),
+        [filteredTransactions]
+    )
 
-    const totalExpenses = filteredTransactions
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0)
+    const totalExpenses = useMemo(() =>
+        filteredTransactions
+            .filter(t => t.type === 'expense')
+            .reduce((sum, t) => sum + t.amount, 0),
+        [filteredTransactions]
+    )
 
     // Forecast Logic (Simple linear projection)
     const forecast = useMemo(() => {

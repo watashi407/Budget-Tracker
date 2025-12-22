@@ -5,6 +5,7 @@ import { Input } from '@/presentation/components/ui/input'
 import { Label } from '@/presentation/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/presentation/components/ui/dialog'
+import { FormSubmitButton } from '@/presentation/components/FormSubmitButton'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { AlertCircle } from 'lucide-react'
 import { BUDGET_CATEGORIES, OTHERS_CATEGORY } from '@/constants/categories'
@@ -81,8 +82,6 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
     }
 
     const [state, formAction, isPending] = useActionState(async (_prevState: { success: boolean; error: string | null }, formData: FormData) => {
-        console.log('[CreateBudgetDialog] Submitting form via Action...')
-
         // Validate all fields first
         if (!validateAllFields()) {
             return { success: false, error: 'Please fix the errors above' }
@@ -130,9 +129,7 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
                 icon: 'wallet', // Default icon
             }
 
-            console.log('[CreateBudgetDialog] Calling createBudget...')
             await createBudget(input)
-            console.log('[CreateBudgetDialog] createBudget resolved. Closing dialog.')
 
             // Reset form
             setName('')
@@ -145,7 +142,6 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
             onOpenChange(false)
             return { success: true, error: null }
         } catch (err: unknown) {
-            console.error('[CreateBudgetDialog] Error:', err)
             return { success: false, error: err instanceof Error ? err.message : 'Failed to create budget' }
         }
     }, { success: false, error: null })
@@ -325,9 +321,9 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
                         <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isPending}>
-                            {isPending ? 'Creating...' : 'Create Budget'}
-                        </Button>
+                        <FormSubmitButton pendingText="Creating...">
+                            Create Budget
+                        </FormSubmitButton>
                     </DialogFooter>
                 </form>
             </DialogContent>

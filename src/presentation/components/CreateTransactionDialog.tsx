@@ -6,6 +6,7 @@ import { Label } from '@/presentation/components/ui/label'
 import { Textarea } from '@/presentation/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/presentation/components/ui/dialog'
+import { FormSubmitButton } from '@/presentation/components/FormSubmitButton'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
@@ -90,8 +91,6 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
     }
 
     const [state, formAction, isPending] = useActionState(async (_prevState: { success: boolean; error: string | null }, formData: FormData) => {
-        console.log('[CreateTransactionDialog] Submitting form via Action...')
-
         // Validate all fields first
         if (!validateAllFields()) {
             return { success: false, error: 'Please fix the errors above' }
@@ -305,9 +304,9 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
                         <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isPending}>
-                            {isPending ? 'Adding...' : 'Add Transaction'}
-                        </Button>
+                        <FormSubmitButton pendingText="Adding...">
+                            Add Transaction
+                        </FormSubmitButton>
                     </DialogFooter>
                 </form>
             </DialogContent>

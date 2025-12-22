@@ -36,12 +36,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         let mounted = true
-        console.log('[AuthContext] AuthProvider mounted')
 
         // Failsafe: If loading takes too long, force it to false
         const failsafeTimeout = setTimeout(() => {
             if (mounted && loading) {
-                console.error('[AuthContext] Failsafe triggered: Auth loading timed out after 8s. Forcing loading false.')
                 setLoading(false)
             }
         }, 8000)
@@ -58,20 +56,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         })
 
         // Listen for auth state changes - this is the SINGLE SOURCE OF TRUTH
-        // INITIAL_SESSION fires when Supabase finishes restoring from localStorage
         const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return
 
-            console.log('[AuthContext] Auth state change:', event, session?.user?.email)
-
             switch (event) {
                 case 'INITIAL_SESSION':
-                    // This fires when Supabase finishes checking localStorage
                     if (session?.user) {
-                        console.log('[AuthContext] Initial session restored:', session.user.email)
                         setUser(mapSessionUser(session.user))
                     } else {
-                        console.log('[AuthContext] No initial session found')
                         setUser(null)
                     }
                     setLoading(false)
@@ -79,7 +71,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                 case 'SIGNED_IN':
                     if (session?.user) {
-                        console.log('[AuthContext] User signed in:', session.user.email)
                         setUser(mapSessionUser(session.user))
                         setLoading(false)
                     }
@@ -87,20 +78,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                 case 'TOKEN_REFRESHED':
                     if (session?.user) {
-                        console.log('[AuthContext] Token refreshed for:', session.user.email)
                         setUser(mapSessionUser(session.user))
                     }
                     break
 
                 case 'SIGNED_OUT':
-                    console.log('[AuthContext] User signed out')
                     setUser(null)
                     setLoading(false)
                     break
 
                 case 'USER_UPDATED':
                     if (session?.user) {
-                        console.log('[AuthContext] User updated:', session.user.email)
                         setUser(mapSessionUser(session.user))
                     }
                     break
@@ -108,7 +96,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         })
 
         return () => {
-            console.log('[AuthContext] AuthProvider unmounting')
             mounted = false
             clearTimeout(failsafeTimeout)
             data.subscription.unsubscribe()
@@ -116,25 +103,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-
-
     /**
      * Sign in with email and password
      */
     async function signIn(email: string, password: string) {
         try {
-            console.log('[AuthContext] Signing in user:', email)
             const user = await authRepository.signIn(email, password)
-            console.log('[AuthContext] Sign in successful, user:', user.email)
             setUser(user)
-            // We don't strictly need to set loading false here if we want to wait for the auth state change,
-            // but setting it here provides immediate feedback.
-            // Let's log the state change we are about to make.
-            console.log('[AuthContext] Manually setting user state after successful signIn')
             setLoading(false)
         } catch (error) {
-            console.error('[AuthContext] Sign in failed:', error)
-            setLoading(false) // Also set loading false on error
+            setLoading(false)
             throw error
         }
     }
@@ -168,7 +146,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async function updateProfile(userId: string, updates: Partial<User>) {
         const updatedUser = await authRepository.updateProfile(userId, updates)
         setUser(updatedUser)
-        // Optionally update cache/local storage if needed, but state should drive UI
     }
 
     /**
@@ -207,7 +184,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
     const context = use(AuthContext)
     if (context === undefined) {
-        console.error('[useAuth] Called outside of AuthProvider. Check that AuthProvider wraps your component tree.')
         throw new Error('useAuth must be used within an AuthProvider. Make sure AuthProvider wraps your entire app in main.tsx')
     }
     return context

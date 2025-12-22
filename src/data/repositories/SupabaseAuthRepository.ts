@@ -39,31 +39,15 @@ export class SupabaseAuthRepository implements IAuthRepository {
      * Sign in an existing user
      */
     async signIn(email: string, password: string): Promise<User> {
-        console.log('[SupabaseAuthRepository] Calling signInWithPassword for:', email)
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        })
 
-        try {
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            })
+        if (error) throw error
+        if (!data.user) throw new Error('Sign in failed')
 
-            if (error) {
-                console.error('[SupabaseAuthRepository] Supabase auth error:', error)
-                throw error
-            }
-            if (!data.user) {
-                console.error('[SupabaseAuthRepository] No user data returned')
-                throw new Error('Sign in failed')
-            }
-
-            console.log('[SupabaseAuthRepository] Sign in successful, user ID:', data.user.id)
-            return this.mapUser(data.user)
-        } catch (err) {
-            console.error('[SupabaseAuthRepository] signIn exception:', err)
-            // If timeout but we have a session (checked via getSession), we might consider it success?
-            // But for now, let's just throw to unblock the UI
-            throw err
-        }
+        return this.mapUser(data.user)
     }
 
     /**
@@ -77,10 +61,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
             },
         })
 
-        if (error) {
-            console.error('[SupabaseAuthRepository] Google auth error:', error)
-            throw error
-        }
+        if (error) throw error
     }
 
     /**
@@ -94,49 +75,32 @@ export class SupabaseAuthRepository implements IAuthRepository {
     /**
      * Get the currently authenticated user
      */
-    /**
-     * Get the currently authenticated user
-     */
     async getCurrentUser(): Promise<User | null> {
-        console.log('[SupabaseAuthRepository] getCurrentUser called')
-
         const timeoutPromise = (ms: number, name: string) => new Promise<{ data: { session: null }; error: { message: string } } | { data: { user: null }; error: { message: string } }>((_, reject) =>
             setTimeout(() => reject(new Error(`${name} timed out after ${ms}ms`)), ms)
         )
 
         try {
-            // Priority 1: Get session directly first (faster and often sufficient)
-            // Wrap in race to prevent hanging
-            console.log('[SupabaseAuthRepository] Calling getSession with timeout...')
             const { data: { session }, error: sessionError } = await Promise.race([
                 supabase.auth.getSession(),
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 timeoutPromise(10000, 'getSession') as Promise<any>
             ])
-            console.log('[SupabaseAuthRepository] getSession returned', session ? 'Session found' : 'No session', sessionError ? sessionError : '')
 
-            if (sessionError) {
-                console.error('[SupabaseAuthRepository] getSession error:', sessionError)
-                return null
-            }
+            if (sessionError) return null
 
             if (!session?.user) {
-                // Double check with getUser just in case session is stale but valid
-                console.log('[SupabaseAuthRepository] No session user, checking getUser with timeout...')
                 const { data: { user }, error: userError } = await Promise.race([
                     supabase.auth.getUser(),
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     timeoutPromise(10000, 'getUser') as Promise<any>
                 ])
 
-                if (userError || !user) {
-                    console.log('[SupabaseAuthRepository] getUser failed or empty:', userError)
-                    return null
-                }
+                if (userError || !user) return null
                 return this.mapUser(user)
             }
 
-            // If we have a session, fetch profile data including currency from profiles table
+            // Fetch currency from profiles table
             const { data: profile } = await supabase
                 .from('profiles')
                 .select('currency')
@@ -145,8 +109,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
 
             return this.mapUser(session.user, profile?.currency)
 
-        } catch (err) {
-            console.error('[SupabaseAuthRepository] getCurrentUser exception:', err)
+        } catch {
             return null
         }
     }

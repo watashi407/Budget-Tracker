@@ -3,10 +3,9 @@ import { useSupabaseRealtime } from '@/presentation/hooks/useSupabaseRealtime'
 import type { Budget, CreateBudgetInput, UpdateBudgetInput } from '@/domain/entities/Budget'
 import { SupabaseBudgetRepository } from '@/data/repositories/SupabaseBudgetRepository'
 import { useAuth } from '@/presentation/context/AuthContext'
+import { queryKeys } from '@/lib/queryFactories'
 
 const budgetRepository = new SupabaseBudgetRepository()
-
-export const BUDGETS_QUERY_KEY = 'budgets'
 
 /**
  * Custom hook for budget CRUD operations using TanStack Query
@@ -15,11 +14,11 @@ export const BUDGETS_QUERY_KEY = 'budgets'
 export function useBudgets() {
     const { user } = useAuth()
     const queryClient = useQueryClient()
-    const queryKey = [BUDGETS_QUERY_KEY, user?.id]
+    const queryKey = user ? queryKeys.budgets.byUser(user.id) : queryKeys.budgets.all
 
     useSupabaseRealtime({
         tableName: 'budgets',
-        queryKey,
+        queryKey: queryKey as string[],
     })
 
     // Fetch Budgets
@@ -142,7 +141,7 @@ export function useBudgets() {
 export function useBudget(id: string) {
     const { user } = useAuth()
     const queryClient = useQueryClient()
-    const queryKey = [BUDGETS_QUERY_KEY, user?.id, id]
+    const queryKey = user ? [...queryKeys.budgets.byUser(user.id), id] : [...queryKeys.budgets.all, id]
 
     useSupabaseRealtime({
         tableName: 'budgets',
@@ -154,7 +153,7 @@ export function useBudget(id: string) {
         queryFn: async () => {
             if (!user) return null
             // Try to find in cache first
-            const budgets = queryClient.getQueryData<Budget[]>([BUDGETS_QUERY_KEY, user.id])
+            const budgets = queryClient.getQueryData<Budget[]>(queryKeys.budgets.byUser(user.id))
             const cached = budgets?.find(b => b.id === id)
             if (cached) return cached
 
@@ -163,7 +162,7 @@ export function useBudget(id: string) {
         enabled: !!user && !!id,
         initialData: () => {
             if (!user) return undefined
-            const budgets = queryClient.getQueryData<Budget[]>([BUDGETS_QUERY_KEY, user.id])
+            const budgets = queryClient.getQueryData<Budget[]>(queryKeys.budgets.byUser(user.id))
             return budgets?.find(b => b.id === id)
         }
     })

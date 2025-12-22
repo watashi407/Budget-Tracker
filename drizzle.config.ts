@@ -1,16 +1,16 @@
-import { defineConfig } from 'drizzle-kit';
-import * as dotenv from 'dotenv';
-dotenv.config();
+import 'dotenv/config'
+import { defineConfig } from 'drizzle-kit'
 
-console.log('Drizzle config loaded');
-
+/**
+ * Drizzle Kit Configuration
+ * Used for database migrations and schema management with Supabase.
+ * Run: npx drizzle-kit generate / npx drizzle-kit push
+ */
 export default defineConfig({
-    schema: './src/db/schema.ts',
     out: './drizzle',
+    schema: './src/db/schema.ts',
     dialect: 'postgresql',
     dbCredentials: {
-        url: process.env.DATABASE_URL || process.env.VITE_SUPABASE_URL || '',
+        url: process.env.DATABASE_URL!,
     },
-    verbose: true,
-    strict: true,
-});
+})

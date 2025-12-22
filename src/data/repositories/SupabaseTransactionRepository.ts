@@ -62,8 +62,6 @@ export class SupabaseTransactionRepository implements ITransactionRepository {
      * Create a new transaction
      */
     async create(userId: string, input: CreateTransactionInput): Promise<Transaction> {
-        console.log('[SupabaseTransactionRepository] Creating transaction for user:', userId)
-
         const { data, error } = await supabase
             .from(this.tableName)
             .insert({
@@ -78,10 +76,7 @@ export class SupabaseTransactionRepository implements ITransactionRepository {
             .select()
             .single()
 
-        if (error) {
-            console.error('[SupabaseTransactionRepository] Error creating transaction:', error)
-            throw error
-        }
+        if (error) throw error
 
         // Update budget spent amount if budget_id is provided
         if (input.budgetId && input.type === 'expense') {

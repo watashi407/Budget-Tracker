@@ -5,6 +5,7 @@ import { Input } from '@/presentation/components/ui/input'
 import { Label } from '@/presentation/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/presentation/components/ui/dialog'
+import { FormSubmitButton } from '@/presentation/components/FormSubmitButton'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { AlertCircle } from 'lucide-react'
 import { BUDGET_CATEGORIES, OTHERS_CATEGORY } from '@/constants/categories'
@@ -302,9 +303,9 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
                         <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isPending}>
-                            {isPending ? 'Saving...' : 'Save Changes'}
-                        </Button>
+                        <FormSubmitButton pendingText="Saving...">
+                            Save Changes
+                        </FormSubmitButton>
                     </DialogFooter>
                 </form>
             </DialogContent>

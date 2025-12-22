@@ -44,37 +44,28 @@ export class SupabaseBudgetRepository implements IBudgetRepository {
     }
 
     async create(userId: string, input: CreateBudgetInput): Promise<Budget> {
-        console.log('[SupabaseBudgetRepository] Creating budget for user:', userId, 'Input:', input)
+        const { data, error } = await supabase
+            .from(this.tableName)
+            .insert({
+                user_id: userId,
+                name: input.name,
+                category: input.category,
+                amount: Number(input.amount),
+                spent: 0,
+                period: input.period,
+                start_date: input.startDate.toISOString(),
+                end_date: input.endDate.toISOString(),
+                color: input.color || null,
+                icon: input.icon || 'wallet', // Default icon
+            })
+            .select()
+            .single()
 
-        try {
-            const { data, error } = await supabase
-                .from(this.tableName)
-                .insert({
-                    user_id: userId,
-                    name: input.name,
-                    category: input.category,
-                    amount: Number(input.amount),
-                    spent: 0,
-                    period: input.period,
-                    start_date: input.startDate.toISOString(),
-                    end_date: input.endDate.toISOString(),
-                    color: input.color || null,
-                    icon: input.icon || 'wallet', // Default icon
-                })
-                .select()
-                .single()
-
-            if (error) {
-                console.error('[SupabaseBudgetRepository] Error creating budget:', error)
-                throw new Error(`Failed to create budget: ${error.message} (Code: ${error.code})`)
-            }
-
-            console.log('[SupabaseBudgetRepository] Budget created successfully:', data)
-            return this.mapToDomain(data)
-        } catch (err) {
-            console.error('[SupabaseBudgetRepository] Exception:', err)
-            throw err
+        if (error) {
+            throw new Error(`Failed to create budget: ${error.message} (Code: ${error.code})`)
         }
+
+        return this.mapToDomain(data)
     }
 
     /**

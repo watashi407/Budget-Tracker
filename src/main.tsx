@@ -14,11 +14,13 @@ import './index.css'
  */
 
 // Create a QueryClient instance for TanStack Query
-const queryClient = new QueryClient({
+// Exported for use in route loaders for data prefetching
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
       refetchOnWindowFocus: false,
+      gcTime: 1000 * 60 * 30, // 30 minutes garbage collection
     },
   },
 })

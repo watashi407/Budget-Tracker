@@ -1,3 +1,4 @@
+import React, { useMemo } from 'react'
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from 'recharts'
 import type { Budget } from '@/domain/entities/Budget'
 import { BarChart3 } from 'lucide-react'
@@ -7,17 +8,18 @@ interface SpendingChartProps {
     budgets: Budget[]
 }
 
-export function SpendingChart({ budgets }: SpendingChartProps) {
+export const SpendingChart = React.memo(function SpendingChart({ budgets }: SpendingChartProps) {
     const { formatCurrency } = useCurrency()
 
-    const data = budgets.map(b => ({
+    // Memoize chart data transformation
+    const data = useMemo(() => budgets.map(b => ({
         name: b.name,
         budget: b.amount,
         spent: b.spent,
         remaining: Math.max(0, b.amount - b.spent),
         isOverBudget: b.spent > b.amount,
         color: b.color || 'hsl(var(--primary))'
-    }))
+    })), [budgets])
 
     if (budgets.length === 0) {
         return (
@@ -111,4 +113,4 @@ export function SpendingChart({ budgets }: SpendingChartProps) {
             </div>
         </div>
     )
-}
+})

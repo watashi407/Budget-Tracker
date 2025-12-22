@@ -1,4 +1,4 @@
-import { useTransition } from 'react'
+import React, { useTransition } from 'react'
 import { Link } from '@tanstack/react-router'
 import type { Budget } from '@/domain/entities/Budget'
 
@@ -13,7 +13,7 @@ interface BudgetCardProps {
     onEdit?: (budget: Budget) => void
 }
 
-export function BudgetCard({ budget, onEdit }: BudgetCardProps) {
+export const BudgetCard = React.memo(function BudgetCard({ budget, onEdit }: BudgetCardProps) {
     const { deleteBudget } = useBudgets()
     const { formatCurrency } = useCurrency()
     const [, startTransition] = useTransition()
@@ -120,4 +120,4 @@ export function BudgetCard({ budget, onEdit }: BudgetCardProps) {
             </div>
         </div>
     )
-}
+})

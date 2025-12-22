@@ -14,10 +14,7 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
     const { user, loading } = useAuth()
 
-    console.log('[ProtectedRoute] Check - User:', user?.email, 'Loading:', loading)
-
     if (loading) {
-        console.log('[ProtectedRoute] Loading...')
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -26,7 +23,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     }
 
     if (!user) {
-        console.log('[ProtectedRoute] No user, redirecting to login')
         return <Navigate to="/login" />
     }
 
