@@ -3,17 +3,15 @@ import { useAuth } from '@/presentation/context/AuthContext'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
+import { useGlobalActions } from '@/presentation/context/GlobalActionsContext'
 import { Button } from '@/presentation/components/ui/button'
 
-import { CreateBudgetDialog } from '@/presentation/components/CreateBudgetDialog'
 import { EditBudgetDialog } from '@/presentation/components/EditBudgetDialog'
-import { CreateTransactionDialog } from '@/presentation/components/CreateTransactionDialog'
 import { BudgetList } from '@/presentation/components/BudgetList'
 import { TransactionList } from '@/presentation/components/TransactionList'
-import { AIInsightsDialog } from '@/presentation/components/AIInsightsDialog'
 import { ExportReportDialog } from '@/presentation/components/ExportReportDialog'
 import { SpendingChart } from '@/presentation/components/SpendingChart'
-import { PlusCircle, TrendingUp, TrendingDown, Activity, Sparkles, Download } from 'lucide-react'
+import { PlusCircle, TrendingUp, TrendingDown, Activity, Download } from 'lucide-react'
 import type { Budget } from '@/domain/entities/Budget'
 
 
@@ -23,10 +21,8 @@ export function DashboardPage() {
     const { budgets } = useBudgets()
     const { transactions } = useTransactions()
     const { formatCurrency } = useCurrency()
+    const { openTransactionDialog, openBudgetDialog } = useGlobalActions()
 
-    const [showBudgetDialog, setShowBudgetDialog] = useState(false)
-    const [showTransactionDialog, setShowTransactionDialog] = useState(false)
-    const [showAIDialog, setShowAIDialog] = useState(false)
     const [showExportDialog, setShowExportDialog] = useState(false)
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
     const [dateFilter, setDateFilter] = useState<DateFilter>('MTD')
@@ -121,11 +117,11 @@ export function DashboardPage() {
                         <Download className="w-4 h-4 mr-2" />
                         EXPORT
                     </Button>
-                    <Button onClick={() => setShowTransactionDialog(true)}>
+                    <Button onClick={openTransactionDialog}>
                         <PlusCircle className="w-4 h-4 mr-2" />
                         ADD TRANSACTION
                     </Button>
-                    <Button onClick={() => setShowBudgetDialog(true)} variant="outline">
+                    <Button onClick={openBudgetDialog} variant="outline">
                         <PlusCircle className="w-4 h-4 mr-2" />
                         NEW BUDGET
                     </Button>
@@ -219,20 +215,9 @@ export function DashboardPage() {
 
                 <BudgetList
                     onEdit={(b) => setEditingBudget(b)}
-                    onAddNew={() => setShowBudgetDialog(true)}
+                    onAddNew={openBudgetDialog}
                 />
             </div>
-
-            {/* Floating AI Assistant Button */}
-            <Button
-                onClick={() => setShowAIDialog(true)}
-                className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg bg-gradient-to-br from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 transition-all hover:scale-105"
-                size="icon"
-                aria-label="Open AI Budget Assistant"
-            >
-                <Sparkles className="w-6 h-6 text-white" />
-                <span className="sr-only">AI Budget Assistant</span>
-            </Button>
 
             {/* Recent Transactions */}
             <div>
@@ -241,7 +226,7 @@ export function DashboardPage() {
                         <span className="w-1 h-4 bg-white inline-block" />
                         TRANSACTION LOG ({dateFilter})
                     </h2>
-                    <Button onClick={() => setShowTransactionDialog(true)} variant="ghost" size="sm" className="text-xs font-mono text-muted-foreground hover:text-primary">
+                    <Button onClick={openTransactionDialog} variant="ghost" size="sm" className="text-xs font-mono text-muted-foreground hover:text-primary">
                         + ADD ENTRY
                     </Button>
                 </div>
@@ -254,14 +239,11 @@ export function DashboardPage() {
             </div>
 
             {/* Dialogs */}
-            <CreateBudgetDialog open={showBudgetDialog} onOpenChange={setShowBudgetDialog} />
             <EditBudgetDialog
                 open={!!editingBudget}
                 onOpenChange={(open) => !open && setEditingBudget(null)}
                 budget={editingBudget}
             />
-            <CreateTransactionDialog open={showTransactionDialog} onOpenChange={setShowTransactionDialog} />
-            <AIInsightsDialog open={showAIDialog} onOpenChange={setShowAIDialog} />
             <ExportReportDialog
                 open={showExportDialog}
                 onOpenChange={setShowExportDialog}
