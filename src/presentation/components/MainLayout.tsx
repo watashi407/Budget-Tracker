@@ -229,25 +229,25 @@ function useSpeedDialActions({ openTransactionDialog, openBudgetDialog, openAiDi
                         icon: Bot,
                         label: 'Evaluate AI',
                         onClick: openAiDialog,
-                        color: 'text-orange-500'
+                        color: 'bg-orange-500 text-white hover:bg-orange-600 border-none'
                     },
                     {
                         icon: MessageCircle,
                         label: 'Global Chat',
                         onClick: () => openChat(),
-                        color: 'text-blue-500'
+                        color: 'bg-orange-500 text-white hover:bg-orange-600 border-none'
                     },
                     {
                         icon: Receipt,
                         label: 'New Transaction',
                         onClick: openTransactionDialog,
-                        color: 'text-primary'
+                        color: 'bg-orange-500 text-white hover:bg-orange-600 border-none'
                     },
                     {
                         icon: Wallet,
                         label: 'New Budget',
                         onClick: openBudgetDialog,
-                        color: 'text-green-500'
+                        color: 'bg-orange-500 text-white hover:bg-orange-600 border-none'
                     }
                 ]}
             />
