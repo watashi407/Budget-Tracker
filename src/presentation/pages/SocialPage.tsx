@@ -24,8 +24,6 @@ export function SocialPage() {
     const { user } = useAuth()
     const {
         comments,
-        comments,
-        onlineUsers,
         filter,
         setFilter,
         loading,
@@ -33,7 +31,6 @@ export function SocialPage() {
         stats,
         createComment,
         deleteComment,
-        toggleLike,
         toggleLike
     } = useSocial()
 
