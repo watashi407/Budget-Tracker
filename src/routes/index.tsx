@@ -1,18 +1,14 @@
 import { createRoute } from '@tanstack/react-router'
 import { Route as RootRoute } from './__root'
-import { DashboardPage } from '@/presentation/pages/DashboardPage'
-import { ProtectedRoute } from '@/presentation/components/ProtectedRoute'
+import { LandingPage } from '@/presentation/pages/LandingPage'
 
 /**
- * Dashboard Route (Protected)
- * Main dashboard view for authenticated users
+ * Landing Page Route (Public)
+ * Main entry point for new visitors
  */
 export const Route = createRoute({
     getParentRoute: () => RootRoute,
     path: '/',
-    component: () => (
-        <ProtectedRoute>
-            <DashboardPage />
-        </ProtectedRoute>
-    ),
+    component: LandingPage,
 })
+

@@ -58,7 +58,7 @@ export function SignupPage() {
 
         try {
             await signUp(email, password, fullName)
-            navigate({ to: '/' })
+            navigate({ to: '/dashboard' })
         } catch (err: unknown) {
             console.error('[SignupPage] Signup error:', err)
             let message = err instanceof Error ? err.message : 'Failed to create account'

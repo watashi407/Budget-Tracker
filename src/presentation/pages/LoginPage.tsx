@@ -23,7 +23,7 @@ export function LoginPage() {
     // Redirect to dashboard when user is authenticated
     useEffect(() => {
         if (user) {
-            navigate({ to: '/' })
+            navigate({ to: '/dashboard' })
         }
     }, [user, loading, navigate])
 
