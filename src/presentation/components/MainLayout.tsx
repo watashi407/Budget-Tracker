@@ -61,7 +61,7 @@ export function MainLayout() {
                     <div className="px-4 py-2 text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
                         Navigation
                     </div>
-                    <Link to="/" className="w-full">
+                    <Link to="/dashboard" className="w-full">
                         <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-sm font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg group">
                             <LayoutDashboard className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                             <span>Dashboard</span>
@@ -151,7 +151,7 @@ export function MainLayout() {
                 {mobileMenuOpen && (
                     <div className="md:hidden absolute top-16 left-0 right-0 bg-card/95 backdrop-blur-xl border-b border-border z-30 animate-slide-down">
                         <nav className="p-4 space-y-2">
-                            <Link to="/" onClick={() => setMobileMenuOpen(false)}>
+                            <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
                                 <Button variant="ghost" className="w-full justify-start gap-3">
                                     <LayoutDashboard className="h-4 w-4" />
                                     Dashboard

@@ -8,11 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/presentation/components/ui/dialog'
 import { FormSubmitButton } from '@/presentation/components/FormSubmitButton'
 import { EmailVerificationMessage } from '@/presentation/components/EmailVerificationMessage'
+import { FileUpload } from '@/presentation/components/FileUpload'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
 import { useAuth } from '@/presentation/context/AuthContext'
-import { AlertCircle } from 'lucide-react'
+import { storageService } from '@/data/services/SupabaseStorageService'
+import { AlertCircle, Paperclip } from 'lucide-react'
 
 /**
  * CreateTransactionDialog Component
@@ -48,6 +50,10 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
     const [description, setDescription] = useState('')
     const [budgetId, setBudgetId] = useState(defaultBudgetId || '')
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+
+    // File attachment state
+    const [selectedFile, setSelectedFile] = useState<File | null>(null)
+    const [uploadError, setUploadError] = useState<string | null>(null)
 
     // Field-level errors
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
@@ -122,7 +128,21 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
                 date: new Date(dateStr),
             }
 
-            await createTransaction(input)
+            const transaction = await createTransaction(input)
+
+            // Upload file attachment if selected
+            if (selectedFile && transaction) {
+                try {
+                    await storageService.uploadAttachment({
+                        file: selectedFile,
+                        entityType: 'transaction',
+                        entityId: transaction.id,
+                    })
+                } catch (uploadErr) {
+                    console.error('Failed to upload attachment:', uploadErr)
+                    // Don't fail the whole transaction for attachment error
+                }
+            }
 
             // Reset form
             setType('expense')
@@ -131,6 +151,8 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
             setDescription('')
             setBudgetId('')
             setDate(new Date().toISOString().split('T')[0])
+            setSelectedFile(null)
+            setUploadError(null)
             setFieldErrors({})
             onOpenChange(false)
             return { success: true, error: null }
@@ -143,6 +165,8 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
     const handleOpenChange = (isOpen: boolean) => {
         if (!isOpen) {
             setFieldErrors({})
+            setSelectedFile(null)
+            setUploadError(null)
         }
         onOpenChange(isOpen)
     }
@@ -308,6 +332,22 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
                                         {fieldErrors.description}
                                     </p>
                                 )}
+                            </div>
+
+                            {/* File Attachment */}
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    <Paperclip className="w-4 h-4" />
+                                    Attachment (Optional)
+                                </Label>
+                                <FileUpload
+                                    onFileSelect={setSelectedFile}
+                                    onFileRemove={() => setSelectedFile(null)}
+                                    selectedFile={selectedFile}
+                                    uploading={isPending}
+                                    error={uploadError || undefined}
+                                    disabled={isPending}
+                                />
                             </div>
                         </div>
 

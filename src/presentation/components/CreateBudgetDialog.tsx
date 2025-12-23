@@ -7,9 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/presentation/components/ui/dialog'
 import { FormSubmitButton } from '@/presentation/components/FormSubmitButton'
 import { EmailVerificationMessage } from '@/presentation/components/EmailVerificationMessage'
+import { FileUpload } from '@/presentation/components/FileUpload'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useAuth } from '@/presentation/context/AuthContext'
-import { AlertCircle } from 'lucide-react'
+import { storageService } from '@/data/services/SupabaseStorageService'
+import { AlertCircle, Paperclip } from 'lucide-react'
 import { BUDGET_CATEGORIES, OTHERS_CATEGORY } from '@/constants/categories'
 
 /**
@@ -40,6 +42,10 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
     const [amount, setAmount] = useState('')
     const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('monthly')
     const [color, setColor] = useState('#3b82f6')
+
+    // File attachment state
+    const [selectedFile, setSelectedFile] = useState<File | null>(null)
+    const [uploadError, setUploadError] = useState<string | null>(null)
 
     // Derived category value (either selected or custom)
     const category = selectedCategory === OTHERS_CATEGORY ? customCategory : selectedCategory
@@ -133,7 +139,21 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
                 icon: 'wallet', // Default icon
             }
 
-            await createBudget(input)
+            const budget = await createBudget(input)
+
+            // Upload file attachment if selected
+            if (selectedFile && budget) {
+                try {
+                    await storageService.uploadAttachment({
+                        file: selectedFile,
+                        entityType: 'budget',
+                        entityId: budget.id,
+                    })
+                } catch (uploadErr) {
+                    console.error('Failed to upload attachment:', uploadErr)
+                    // Don't fail the whole budget creation for attachment error
+                }
+            }
 
             // Reset form
             setName('')
@@ -142,6 +162,8 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
             setAmount('')
             setPeriod('monthly')
             setColor('#3b82f6')
+            setSelectedFile(null)
+            setUploadError(null)
             setFieldErrors({})
             onOpenChange(false)
             return { success: true, error: null }
@@ -154,6 +176,8 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
     const handleOpenChange = (isOpen: boolean) => {
         if (!isOpen) {
             setFieldErrors({})
+            setSelectedFile(null)
+            setUploadError(null)
         }
         onOpenChange(isOpen)
     }
@@ -325,6 +349,22 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
                                         disabled={isPending}
                                     />
                                 </div>
+                            </div>
+
+                            {/* File Attachment */}
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2">
+                                    <Paperclip className="w-4 h-4" />
+                                    Attachment (Optional)
+                                </Label>
+                                <FileUpload
+                                    onFileSelect={setSelectedFile}
+                                    onFileRemove={() => setSelectedFile(null)}
+                                    selectedFile={selectedFile}
+                                    uploading={isPending}
+                                    error={uploadError || undefined}
+                                    disabled={isPending}
+                                />
                             </div>
                         </div>
 
