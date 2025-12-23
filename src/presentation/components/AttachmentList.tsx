@@ -12,10 +12,9 @@ import {
     Download,
     Trash2,
     Loader2,
-    ExternalLink,
     Eye
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+
 
 interface AttachmentListProps {
     attachments: Attachment[]

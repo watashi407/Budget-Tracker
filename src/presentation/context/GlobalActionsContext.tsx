@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, type ReactNode } from 'react'
 import { CreateTransactionDialog } from '@/presentation/components/CreateTransactionDialog'
 import { CreateBudgetDialog } from '@/presentation/components/CreateBudgetDialog'
 import { AIInsightsDialog } from '@/presentation/components/AIInsightsDialog'

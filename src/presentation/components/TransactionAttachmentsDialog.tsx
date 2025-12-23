@@ -4,7 +4,6 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogDescription,
 } from '@/presentation/components/ui/dialog'
 import { Button } from '@/presentation/components/ui/button'
 import { Separator } from '@/presentation/components/ui/separator'
@@ -12,7 +11,7 @@ import { Badge } from '@/presentation/components/ui/badge'
 import { FileUpload } from '@/presentation/components/FileUpload'
 import { AttachmentList } from '@/presentation/components/AttachmentList'
 import { useAttachments } from '@/presentation/hooks/useAttachments'
-import { Paperclip, AlertCircle, Calendar, Tag, CreditCard, ChevronRight } from 'lucide-react'
+import { Paperclip, AlertCircle, Calendar, Tag } from 'lucide-react'
 import type { Transaction } from '@/domain/entities/Transaction'
 import { cn } from '@/lib/utils'
 

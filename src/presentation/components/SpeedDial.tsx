@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Plus, X, Sparkles, PlusCircle, MessageCircle, LayoutGrid } from 'lucide-react'
+import { Plus, X, LayoutGrid } from 'lucide-react'
 import { Button } from '@/presentation/components/ui/button'
 import { cn } from '@/lib/utils'
 
