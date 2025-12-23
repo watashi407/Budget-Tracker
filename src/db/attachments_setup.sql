@@ -25,18 +25,23 @@ CREATE INDEX IF NOT EXISTS idx_attachments_user
 -- 3. Enable RLS
 ALTER TABLE public.attachments ENABLE ROW LEVEL SECURITY;
 
--- 4. RLS Policies - Users can only access their own attachments
+-- 4. RLS Policies - Drop existing and recreate
+DROP POLICY IF EXISTS "Users can view own attachments" ON public.attachments;
+DROP POLICY IF EXISTS "Users can create own attachments" ON public.attachments;
+DROP POLICY IF EXISTS "Users can delete own attachments" ON public.attachments;
+
+-- Use explicit casting to ensure UUID comparison works
 CREATE POLICY "Users can view own attachments"
     ON public.attachments FOR SELECT
-    USING (auth.uid() = user_id);
+    USING (user_id = auth.uid());
 
 CREATE POLICY "Users can create own attachments"
     ON public.attachments FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK (user_id = auth.uid());
 
 CREATE POLICY "Users can delete own attachments"
     ON public.attachments FOR DELETE
-    USING (auth.uid() = user_id);
+    USING (user_id = auth.uid());
 
 -- ============================================
 -- Storage Bucket Setup (Run in Dashboard or CLI)

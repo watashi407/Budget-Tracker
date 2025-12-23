@@ -2,8 +2,11 @@ import { useParams, Link } from '@tanstack/react-router'
 import { useBudget } from '@/presentation/hooks/useBudgets'
 import { TransactionList } from '@/presentation/components/TransactionList'
 import { Button } from '@/presentation/components/ui/button'
-import { ArrowLeft, Wallet, Calendar, TrendingUp, PlusCircle } from 'lucide-react'
+import { ArrowLeft, Wallet, Calendar, TrendingUp, PlusCircle, Paperclip, ChevronDown, ChevronUp, Upload, AlertCircle } from 'lucide-react'
 import { CreateTransactionDialog } from '@/presentation/components/CreateTransactionDialog'
+import { FileUpload } from '@/presentation/components/FileUpload'
+import { AttachmentList } from '@/presentation/components/AttachmentList'
+import { useAttachments } from '@/presentation/hooks/useAttachments'
 import { useState } from 'react'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
 
@@ -12,6 +15,26 @@ export function BudgetDetailsPage() {
     const { data: budget, isLoading, error } = useBudget(budgetId)
     const { formatCurrency } = useCurrency()
     const [showTransactionDialog, setShowTransactionDialog] = useState(false)
+    const [showAttachments, setShowAttachments] = useState(false)
+    const [selectedFile, setSelectedFile] = useState<File | null>(null)
+
+    const {
+        attachments,
+        loading: attachmentsLoading,
+        uploading,
+        deletingIds,
+        error: attachmentError,
+        uploadAttachment,
+        deleteAttachment,
+    } = useAttachments('budget', budgetId)
+
+    const handleUpload = async () => {
+        if (!selectedFile) return
+        const result = await uploadAttachment(selectedFile)
+        if (result) {
+            setSelectedFile(null)
+        }
+    }
 
     if (isLoading) {
         return (
@@ -25,7 +48,7 @@ export function BudgetDetailsPage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
                 <h2 className="text-xl font-bold text-destructive">Budget Not Found</h2>
-                <Link to="/">
+                <Link to="/dashboard">
                     <Button variant="outline">Return to Dashboard</Button>
                 </Link>
             </div>
@@ -40,7 +63,7 @@ export function BudgetDetailsPage() {
         <div className="space-y-8 animate-fade-in">
             {/* Header */}
             <div className="flex flex-col gap-4">
-                <Link to="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors w-fit">
+                <Link to="/dashboard" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors w-fit">
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back to Dashboard
                 </Link>
@@ -101,6 +124,72 @@ export function BudgetDetailsPage() {
                         {formatCurrency(remaining)}
                     </p>
                 </div>
+            </div>
+
+            {/* Attachments Section */}
+            <div className="rounded-xl bg-card/80 border border-border/50 backdrop-blur-sm overflow-hidden">
+                <button
+                    onClick={() => setShowAttachments(!showAttachments)}
+                    className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
+                >
+                    <div className="flex items-center gap-2">
+                        <Paperclip className="w-5 h-5 text-primary" />
+                        <span className="font-semibold text-foreground">Attachments</span>
+                        {attachments.length > 0 && (
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                {attachments.length}
+                            </span>
+                        )}
+                    </div>
+                    {showAttachments ? (
+                        <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                    ) : (
+                        <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                    )}
+                </button>
+
+                {showAttachments && (
+                    <div className="p-4 pt-0 space-y-4 border-t border-border/50">
+                        {/* Error Display */}
+                        {attachmentError && (
+                            <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                                <AlertCircle className="w-4 h-4 shrink-0" />
+                                {attachmentError}
+                            </div>
+                        )}
+
+                        {/* Upload Section */}
+                        <div className="space-y-2">
+                            <FileUpload
+                                onFileSelect={setSelectedFile}
+                                onFileRemove={() => setSelectedFile(null)}
+                                selectedFile={selectedFile}
+                                uploading={uploading}
+                            />
+                            {selectedFile && (
+                                <div className="flex justify-end">
+                                    <Button
+                                        size="sm"
+                                        onClick={handleUpload}
+                                        disabled={uploading}
+                                        className="gap-2"
+                                    >
+                                        <Upload className="w-4 h-4" />
+                                        {uploading ? 'Uploading...' : 'Upload File'}
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Attachment List */}
+                        <AttachmentList
+                            attachments={attachments}
+                            onDelete={deleteAttachment}
+                            loading={attachmentsLoading}
+                            deletingIds={deletingIds}
+                        />
+                    </div>
+                )}
             </div>
 
             {/* Transactions */}

@@ -1,5 +1,5 @@
 import { useTransition, useState, useMemo } from 'react'
-import { Trash2, ArrowUpRight, ArrowDownLeft, Receipt, Lock, Unlock, Edit, Search, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Trash2, ArrowUpRight, ArrowDownLeft, Receipt, Lock, Unlock, Edit, Search, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Paperclip } from 'lucide-react'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
 import { useAuth } from '@/presentation/context/AuthContext'
@@ -9,6 +9,7 @@ import { Input } from '@/presentation/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
 import { EditTransactionDialog } from '@/presentation/components/EditTransactionDialog'
 import { DeleteConfirmDialog } from '@/presentation/components/DeleteConfirmDialog'
+import { TransactionAttachmentsDialog } from '@/presentation/components/TransactionAttachmentsDialog'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -37,6 +38,7 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<{ id: string; description: string } | null>(null)
     const [showVerificationDialog, setShowVerificationDialog] = useState(false)
+    const [attachmentTransaction, setAttachmentTransaction] = useState<Transaction | null>(null)
 
     const isEmailVerified = user?.emailVerified
 
@@ -218,6 +220,9 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
                                         >
                                             {transaction.isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
                                         </button>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setAttachmentTransaction(transaction)} title="Attachments">
+                                            <Paperclip className="w-3.5 h-3.5" />
+                                        </Button>
                                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingTransaction(transaction)} disabled={transaction.isLocked || isPending}>
                                             <Edit className="w-3.5 h-3.5" />
                                         </Button>
@@ -287,7 +292,16 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
                                 </div>
 
                                 {/* Desktop: Actions */}
-                                <div className="hidden sm:flex col-span-1 justify-center gap-1">
+                                <div className="hidden sm:flex col-span-1 justify-center gap-0.5">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                        onClick={() => setAttachmentTransaction(transaction)}
+                                        title="Attachments"
+                                    >
+                                        <Paperclip className="w-3.5 h-3.5" />
+                                    </Button>
                                     <Button
                                         variant="ghost"
                                         size="icon"
@@ -403,6 +417,12 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
                 title={`Delete "${deleteTarget?.description}"?`}
                 description="This will permanently delete this transaction. This action cannot be undone."
                 isPending={isPending}
+            />
+
+            <TransactionAttachmentsDialog
+                open={!!attachmentTransaction}
+                onOpenChange={(open) => !open && setAttachmentTransaction(null)}
+                transaction={attachmentTransaction}
             />
 
             <AlertDialog open={showVerificationDialog} onOpenChange={setShowVerificationDialog}>
