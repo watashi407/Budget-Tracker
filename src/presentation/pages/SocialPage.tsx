@@ -2,7 +2,6 @@ import { useState, useTransition } from 'react'
 import { useSocial } from '@/presentation/hooks/useSocial'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { CommentCard } from '@/presentation/components/CommentCard'
-import { LiveChat } from '@/presentation/components/LiveChat'
 import { Button } from '@/presentation/components/ui/button'
 import { Textarea } from '@/presentation/components/ui/textarea'
 import { Label } from '@/presentation/components/ui/label'
@@ -16,7 +15,6 @@ import {
     Sparkles,
     Plus,
     Loader2,
-    Users,
     TrendingUp
 } from 'lucide-react'
 
@@ -26,21 +24,19 @@ export function SocialPage() {
     const { user } = useAuth()
     const {
         comments,
-        chatMessages,
+        comments,
         onlineUsers,
         filter,
         setFilter,
         loading,
-        chatLoading,
         userVotes,
         stats,
         createComment,
         deleteComment,
         toggleLike,
-        sendChatMessage
+        toggleLike
     } = useSocial()
 
-    const [chatOpen, setChatOpen] = useState(false)
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [replyToId, setReplyToId] = useState<string | null>(null)
     const [isPending, startTransition] = useTransition()
@@ -87,9 +83,7 @@ export function SocialPage() {
         })
     }
 
-    const handleSendChatMessage = async (content: string) => {
-        await sendChatMessage({ content })
-    }
+
 
     const filterButtons: { value: FilterType; label: string; icon: React.ReactNode }[] = [
         { value: 'all', label: 'All', icon: <MessageSquare className="w-4 h-4" /> },
@@ -199,24 +193,7 @@ export function SocialPage() {
                 )}
             </div>
 
-            {/* Chat FAB */}
-            <Button
-                size="lg"
-                className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-40"
-                onClick={() => setChatOpen(!chatOpen)}
-            >
-                <Users className="w-6 h-6" />
-            </Button>
 
-            {/* Live Chat Panel */}
-            <LiveChat
-                messages={chatMessages}
-                loading={chatLoading}
-                onSendMessage={handleSendChatMessage}
-                isOpen={chatOpen}
-                onClose={() => setChatOpen(false)}
-                onlineUsers={onlineUsers}
-            />
 
             {/* Create Comment Dialog */}
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
