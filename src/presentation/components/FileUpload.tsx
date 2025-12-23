@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback } from 'react'
 import { Button } from '@/presentation/components/ui/button'
 import { validateFile, ALLOWED_FILE_TYPES, formatFileSize, MAX_FILE_SIZE } from '@/domain/entities/Attachment'
-import { Upload, X, FileIcon, Loader2, AlertCircle } from 'lucide-react'
+import { Upload, X, File as FileIcon, Loader2, AlertCircle, Image as ImageIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface FileUploadProps {
     onFileSelect: (file: File) => void
@@ -10,11 +11,12 @@ interface FileUploadProps {
     uploading?: boolean
     error?: string
     disabled?: boolean
+    className?: string
 }
 
 /**
  * FileUpload Component
- * Drag and drop file upload with validation.
+ * Modern drag and drop file upload with validation and visual feedback.
  */
 export function FileUpload({
     onFileSelect,
@@ -23,6 +25,7 @@ export function FileUpload({
     uploading = false,
     error,
     disabled = false,
+    className,
 }: FileUploadProps) {
     const [isDragging, setIsDragging] = useState(false)
     const [localError, setLocalError] = useState<string | null>(null)
@@ -81,75 +84,30 @@ export function FileUpload({
         }
     }, [disabled, uploading])
 
-    const handleRemove = useCallback(() => {
+    const handleRemove = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation()
         setLocalError(null)
         onFileRemove?.()
     }, [onFileRemove])
 
     const displayError = error || localError
 
-    // If a file is selected, show file preview
-    if (selectedFile) {
-        return (
-            <div className="space-y-2">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border/50">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <div className="shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <FileIcon className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
-                                {selectedFile.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                                {formatFileSize(selectedFile.size)}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {uploading ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                        ) : (
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={handleRemove}
-                                disabled={disabled}
-                            >
-                                <X className="h-4 w-4" />
-                            </Button>
-                        )}
-                    </div>
-                </div>
-                {displayError && (
-                    <div className="flex items-center gap-2 text-destructive text-sm">
-                        <AlertCircle className="h-4 w-4" />
-                        {displayError}
-                    </div>
-                )}
-            </div>
-        )
-    }
-
-    // Drop zone
     return (
-        <div className="space-y-2">
+        <div className={cn("space-y-3", className)}>
             <div
                 onClick={handleClick}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`
-                    relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer
-                    transition-all duration-200
-                    ${isDragging
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border/50 hover:border-primary/50 hover:bg-muted/30'
-                    }
-                    ${disabled || uploading ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
+                className={cn(
+                    "relative group cursor-pointer overflow-hidden rounded-xl border-2 border-dashed transition-all duration-200",
+                    "flex flex-col items-center justify-center p-8 text-center",
+                    isDragging
+                        ? "border-primary bg-primary/5 scale-[1.01]"
+                        : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50",
+                    (disabled || uploading) && "pointer-events-none opacity-60",
+                    selectedFile && "border-primary/50 bg-primary/5 border-solid"
+                )}
             >
                 <input
                     ref={fileInputRef}
@@ -159,18 +117,73 @@ export function FileUpload({
                     accept={ALLOWED_FILE_TYPES.join(',')}
                     disabled={disabled || uploading}
                 />
-                <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-foreground font-medium">
-                    Drop a file here or click to browse
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                    Images, PDF, Word, Excel, CSV (max {formatFileSize(MAX_FILE_SIZE)})
-                </p>
+
+                {selectedFile ? (
+                    // Selected State
+                    <div className="flex flex-col items-center animate-in fade-in zoom-in-95 duration-200">
+                        <div className="h-12 w-12 rounded-lg bg-background shadow-sm ring-1 ring-border flex items-center justify-center mb-3">
+                            {selectedFile.type.startsWith('image/') ? (
+                                <ImageIcon className="h-6 w-6 text-primary" />
+                            ) : (
+                                <FileIcon className="h-6 w-6 text-primary" />
+                            )}
+                        </div>
+                        <p className="text-sm font-medium text-foreground max-w-[200px] truncate">
+                            {selectedFile.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {formatFileSize(selectedFile.size)}
+                        </p>
+
+                        {!uploading && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleRemove}
+                                className="mt-3 h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            >
+                                <X className="h-4 w-4 mr-1.5" />
+                                Remove
+                            </Button>
+                        )}
+                    </div>
+                ) : (
+                    // Empty State
+                    <div className="flex flex-col items-center">
+                        <div className={cn(
+                            "h-10 w-10 rounded-full bg-muted flex items-center justify-center mb-4 transition-transform duration-200",
+                            "group-hover:scale-110 group-hover:bg-primary/10 group-hover:text-primary"
+                        )}>
+                            <Upload className="h-5 w-5" />
+                        </div>
+                        <p className="text-sm font-medium text-foreground">
+                            Click to upload or drag and drop
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1.5">
+                            Images, Documents or Spreadsheets
+                        </p>
+                        <p className="text-[10px] text-muted-foreground/60 mt-1">
+                            Max size {formatFileSize(MAX_FILE_SIZE)}
+                        </p>
+                    </div>
+                )}
+
+                {/* Loading Overlay */}
+                {uploading && (
+                    <div className="absolute inset-0 z-10 bg-background/50 backdrop-blur-[1px] flex items-center justify-center">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-background shadow-lg rounded-full ring-1 ring-border">
+                            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                            <span className="text-xs font-medium">Uploading...</span>
+                        </div>
+                    </div>
+                )}
             </div>
+
+            {/* Error Message */}
             {displayError && (
-                <div className="flex items-center gap-2 text-destructive text-sm">
-                    <AlertCircle className="h-4 w-4" />
-                    {displayError}
+                <div className="flex items-center gap-2 text-destructive text-xs px-1 animate-in slide-in-from-top-1">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    <span>{displayError}</span>
                 </div>
             )}
         </div>
