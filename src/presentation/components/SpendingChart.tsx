@@ -49,7 +49,7 @@ export const SpendingChart = React.memo(function SpendingChart({ budgets }: Spen
                     </div>
                 </div>
             </div>
-            <div className="h-[300px] w-full">
+            <div className="h-[300px] w-full min-h-[300px] min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
                         <XAxis

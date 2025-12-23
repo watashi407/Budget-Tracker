@@ -1,7 +1,6 @@
 import { useActionState, useState } from 'react'
 import type { CreateTransactionInput } from '@/domain/entities/Transaction'
 import { Button } from '@/presentation/components/ui/button'
-import { Input } from '@/presentation/components/ui/input'
 import { Label } from '@/presentation/components/ui/label'
 import { Textarea } from '@/presentation/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
