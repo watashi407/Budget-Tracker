@@ -1,13 +1,12 @@
 import { useRef } from 'react'
 import {
-    PieChart,
     TrendingUp,
     CreditCard,
     DollarSign,
     ShieldCheck,
     Wallet
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+
 
 export function LandingGraphic() {
     const containerRef = useRef<HTMLDivElement>(null)

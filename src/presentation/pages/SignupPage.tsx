@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { Button } from '@/presentation/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/presentation/components/ui/card'
+import { Card } from '@/presentation/components/ui/card'
 import { FormField } from '@/presentation/components/FormField'
 import { Wallet, Loader2 } from 'lucide-react'
 
