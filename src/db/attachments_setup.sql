@@ -43,28 +43,47 @@ CREATE POLICY "Users can delete own attachments"
     ON public.attachments FOR DELETE
     USING (user_id = auth.uid());
 
+-- 5. Grant table access to authenticated users (required alongside RLS)
+GRANT SELECT, INSERT, DELETE ON public.attachments TO authenticated;
+GRANT USAGE ON SCHEMA public TO authenticated;
+
 -- ============================================
--- Storage Bucket Setup (Run in Dashboard or CLI)
+-- Storage Bucket Policies (Run these SQL commands)
 -- ============================================
--- 
--- 1. Go to Supabase Dashboard > Storage
--- 2. Create a new bucket named "attachments"
--- 3. Set it to PRIVATE (not public)
--- 4. Add these policies:
---
--- Policy 1: Allow authenticated users to upload to their folder
--- Name: "Users can upload to own folder"
--- Allowed operation: INSERT
--- Policy: (bucket_id = 'attachments') AND (auth.uid()::text = (storage.foldername(name))[1])
---
--- Policy 2: Allow users to read their own files
--- Name: "Users can read own files"
--- Allowed operation: SELECT
--- Policy: (bucket_id = 'attachments') AND (auth.uid()::text = (storage.foldername(name))[1])
---
--- Policy 3: Allow users to delete their own files
--- Name: "Users can delete own files"
--- Allowed operation: DELETE
--- Policy: (bucket_id = 'attachments') AND (auth.uid()::text = (storage.foldername(name))[1])
---
--- ============================================
+
+-- First, create the bucket if it doesn't exist (do this in Dashboard > Storage > New Bucket)
+-- Bucket name: attachments (private)
+
+-- Then run these policies:
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('attachments', 'attachments', false)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage policies for the attachments bucket
+DROP POLICY IF EXISTS "Users can upload to own folder" ON storage.objects;
+DROP POLICY IF EXISTS "Users can read own files" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete own files" ON storage.objects;
+
+CREATE POLICY "Users can upload to own folder"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (
+    bucket_id = 'attachments' 
+    AND (storage.foldername(name))[1] = auth.uid()::text
+);
+
+CREATE POLICY "Users can read own files"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (
+    bucket_id = 'attachments' 
+    AND (storage.foldername(name))[1] = auth.uid()::text
+);
+
+CREATE POLICY "Users can delete own files"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (
+    bucket_id = 'attachments' 
+    AND (storage.foldername(name))[1] = auth.uid()::text
+);

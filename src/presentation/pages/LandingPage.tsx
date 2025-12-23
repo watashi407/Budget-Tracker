@@ -1,5 +1,7 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { Button } from '@/presentation/components/ui/button'
+import { useAuth } from '@/presentation/context/AuthContext'
 import {
     Wallet,
     Sparkles,
@@ -15,8 +17,18 @@ import {
 /**
  * LandingPage Component
  * Premium landing page with dark mode aesthetic inspired by modern SaaS designs.
+ * Redirects to dashboard if user is already logged in.
  */
 export function LandingPage() {
+    const { user, loading } = useAuth()
+    const navigate = useNavigate()
+
+    // Redirect to dashboard if already logged in
+    useEffect(() => {
+        if (!loading && user) {
+            navigate({ to: '/dashboard' })
+        }
+    }, [user, loading, navigate])
     const features = [
         {
             icon: Sparkles,

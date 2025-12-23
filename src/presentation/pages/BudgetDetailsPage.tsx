@@ -126,6 +126,15 @@ export function BudgetDetailsPage() {
                 </div>
             </div>
 
+            {/* Transactions */}
+            <div className="space-y-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2 text-foreground">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    Transaction History
+                </h2>
+                <TransactionList budgetId={budget.id} />
+            </div>
+
             {/* Attachments Section */}
             <div className="rounded-xl bg-card/80 border border-border/50 backdrop-blur-sm overflow-hidden">
                 <button
@@ -190,15 +199,6 @@ export function BudgetDetailsPage() {
                         />
                     </div>
                 )}
-            </div>
-
-            {/* Transactions */}
-            <div className="space-y-4">
-                <h2 className="text-lg font-semibold flex items-center gap-2 text-foreground">
-                    <TrendingUp className="w-5 h-5 text-primary" />
-                    Transaction History
-                </h2>
-                <TransactionList budgetId={budget.id} />
             </div>
 
             <CreateTransactionDialog
