@@ -2,6 +2,7 @@ import { Link, Outlet } from "@tanstack/react-router"
 import { useAuth } from "@/presentation/context/AuthContext"
 import { ThemeToggle } from "./ThemeToggle"
 import { EmailVerificationBanner } from "./EmailVerificationBanner"
+import { GlobalLiveChat } from "./GlobalLiveChat"
 import { Wallet, LayoutDashboard, Settings, LogOut, Menu, X, Receipt, Sparkles, Users } from "lucide-react"
 import { Button } from "./ui/button"
 import { Toaster } from "@/presentation/components/ui/toaster"
@@ -197,6 +198,7 @@ export function MainLayout() {
                     <Outlet />
                 </div>
             </main>
+            <GlobalLiveChat />
             <Toaster />
         </div>
     )
