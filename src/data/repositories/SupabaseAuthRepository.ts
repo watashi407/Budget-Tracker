@@ -57,7 +57,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/`,
+                redirectTo: `${window.location.origin}/dashboard`,
             },
         })
 
@@ -122,6 +122,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
             fullName: user.user_metadata.full_name,
             avatarUrl: user.user_metadata.avatar_url,
             currency: currency || 'USD',
+            emailVerified: user.email_confirmed_at !== null && user.email_confirmed_at !== undefined,
             createdAt: new Date(user.created_at),
             updatedAt: new Date(user.updated_at || user.created_at),
         }

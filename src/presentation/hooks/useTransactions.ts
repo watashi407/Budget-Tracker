@@ -4,6 +4,7 @@ import type { Transaction, CreateTransactionInput, UpdateTransactionInput } from
 import { SupabaseTransactionRepository } from '@/data/repositories/SupabaseTransactionRepository'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { queryKeys } from '@/lib/queryFactories'
+import { QUERY_CONFIG } from '@/constants/ui'
 
 const transactionRepository = new SupabaseTransactionRepository()
 
@@ -35,7 +36,7 @@ export function useTransactions(budgetId?: string) {
                 : transactionRepository.getAll(user.id)
         },
         enabled: !!user,
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: QUERY_CONFIG.STALE_TIME,
     })
 
     // Create Transaction

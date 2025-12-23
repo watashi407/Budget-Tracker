@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react'
-import { Search, Wallet, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Wallet } from 'lucide-react'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import type { Budget } from '@/domain/entities/Budget'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
 import { BudgetCard } from '@/presentation/components/BudgetCard'
+import { PaginationControls } from '@/presentation/components/shared/PaginationControls'
+import { PAGINATION } from '@/constants/ui'
 
 interface BudgetListProps {
     initialBudgets?: Budget[]
@@ -29,7 +30,7 @@ export function BudgetList({
 
     // Pagination States
     const [currentPage, setCurrentPage] = useState(1)
-    const [itemsPerPage, setItemsPerPage] = useState(6)
+    const [itemsPerPage, setItemsPerPage] = useState(PAGINATION.DEFAULT_ITEMS_PER_PAGE)
 
     const budgets = initialBudgets || fetchedBudgets
 
@@ -121,79 +122,17 @@ export function BudgetList({
             )}
 
             {/* Pagination Controls */}
-            {filteredBudgets.length > 3 && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border/30">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>Show</span>
-                        <Select
-                            value={itemsPerPage.toString()}
-                            onValueChange={(value) => setItemsPerPage(Number(value))}
-                        >
-                            <SelectTrigger className="w-16 h-8 text-xs">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="3">3</SelectItem>
-                                <SelectItem value="4">4</SelectItem>
-                                <SelectItem value="5">5</SelectItem>
-                                <SelectItem value="6">6</SelectItem>
-                                <SelectItem value="7">7</SelectItem>
-                                <SelectItem value="8">8</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <span>per page</span>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                        <span className="text-xs text-muted-foreground mr-2">
-                            {startIndex + 1}-{Math.min(endIndex, filteredBudgets.length)} of {filteredBudgets.length}
-                        </span>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPage === 1}
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </Button>
-                        <div className="flex items-center gap-1">
-                            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                                let pageNum: number
-                                if (totalPages <= 5) {
-                                    pageNum = i + 1
-                                } else if (currentPage <= 3) {
-                                    pageNum = i + 1
-                                } else if (currentPage >= totalPages - 2) {
-                                    pageNum = totalPages - 4 + i
-                                } else {
-                                    pageNum = currentPage - 2 + i
-                                }
-                                return (
-                                    <Button
-                                        key={pageNum}
-                                        variant={currentPage === pageNum ? 'default' : 'ghost'}
-                                        size="icon"
-                                        className="h-8 w-8 text-xs"
-                                        onClick={() => setCurrentPage(pageNum)}
-                                    >
-                                        {pageNum}
-                                    </Button>
-                                )
-                            })}
-                        </div>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                            disabled={currentPage === totalPages || totalPages === 0}
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </Button>
-                    </div>
-                </div>
-            )}
+            <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredBudgets.length}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
+                minItemsToShow={3}
+            />
         </div>
     )
 }

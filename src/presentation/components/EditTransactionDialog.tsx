@@ -12,6 +12,7 @@ import { useTransactions } from '@/presentation/hooks/useTransactions'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
 import { useAuth } from '@/presentation/context/AuthContext'
+import { FormField } from '@/presentation/components/FormField'
 import { AlertCircle } from 'lucide-react'
 
 /**
@@ -199,78 +200,45 @@ export function EditTransactionDialog({ open, onOpenChange, transaction }: EditT
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="amount" className="flex items-center gap-1">
-                                        Amount ({activeCurrency?.symbol}) <span className="text-destructive">*</span>
-                                    </Label>
-                                    <Input
-                                        id="amount"
-                                        name="amount"
-                                        type="number"
-                                        step="0.01"
-                                        min="0.01"
-                                        placeholder={`0.00`}
-                                        value={amount}
-                                        onChange={(e) => setAmount(e.target.value)}
-                                        onBlur={(e) => handleBlur('amount', e.target.value)}
-                                        required
-                                        disabled={isPending}
-                                        className={fieldErrors.amount ? 'border-destructive focus-visible:ring-destructive' : ''}
-                                    />
-                                    {fieldErrors.amount && (
-                                        <p className="text-destructive text-xs flex items-center gap-1 mt-1">
-                                            <AlertCircle className="w-3 h-3" />
-                                            {fieldErrors.amount}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="date" className="flex items-center gap-1">
-                                        Date <span className="text-destructive">*</span>
-                                    </Label>
-                                    <Input
-                                        id="date"
-                                        name="date"
-                                        type="date"
-                                        value={date}
-                                        onChange={(e) => setDate(e.target.value)}
-                                        onBlur={(e) => handleBlur('date', e.target.value)}
-                                        required
-                                        disabled={isPending}
-                                        className={fieldErrors.date ? 'border-destructive focus-visible:ring-destructive' : ''}
-                                    />
-                                    {fieldErrors.date && (
-                                        <p className="text-destructive text-xs flex items-center gap-1 mt-1">
-                                            <AlertCircle className="w-3 h-3" />
-                                            {fieldErrors.date}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="category" className="flex items-center gap-1">
-                                    Category <span className="text-destructive">*</span>
-                                </Label>
-                                <Input
-                                    id="category"
-                                    name="category"
-                                    placeholder="e.g., Food, Salary, Rent"
-                                    value={category}
-                                    onChange={(e) => setCategory(e.target.value)}
-                                    onBlur={(e) => handleBlur('category', e.target.value)}
+                                <FormField
+                                    label={`Amount (${activeCurrency?.symbol})`}
+                                    name="amount"
+                                    type="number"
+                                    step="0.01"
+                                    min="0.01"
+                                    placeholder="0.00"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    onBlur={(e) => handleBlur('amount', e.target.value)}
                                     required
                                     disabled={isPending}
-                                    className={fieldErrors.category ? 'border-destructive focus-visible:ring-destructive' : ''}
+                                    error={fieldErrors.amount}
                                 />
-                                {fieldErrors.category && (
-                                    <p className="text-destructive text-xs flex items-center gap-1 mt-1">
-                                        <AlertCircle className="w-3 h-3" />
-                                        {fieldErrors.category}
-                                    </p>
-                                )}
+
+                                <FormField
+                                    label="Date"
+                                    name="date"
+                                    type="date"
+                                    value={date}
+                                    onChange={(e) => setDate(e.target.value)}
+                                    onBlur={(e) => handleBlur('date', e.target.value)}
+                                    required
+                                    disabled={isPending}
+                                    error={fieldErrors.date}
+                                />
                             </div>
+
+                            <FormField
+                                label="Category"
+                                name="category"
+                                placeholder="e.g., Food, Salary, Rent"
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                                onBlur={(e) => handleBlur('category', e.target.value)}
+                                required
+                                disabled={isPending}
+                                error={fieldErrors.category}
+                            />
 
                             <div className="space-y-2">
                                 <Label htmlFor="budget">Budget (Optional)</Label>

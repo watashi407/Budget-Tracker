@@ -1,13 +1,10 @@
 import { useTransition, useState, useMemo } from 'react'
-import { Trash2, ArrowUpRight, ArrowDownLeft, Receipt, Lock, Unlock, Edit, Search, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Paperclip } from 'lucide-react'
+import { Receipt, Search, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Mail } from 'lucide-react'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
 import { useAuth } from '@/presentation/context/AuthContext'
 import type { Transaction } from '@/domain/entities/Transaction'
-import { Button } from '@/presentation/components/ui/button'
-import { Input } from '@/presentation/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
-import { EditTransactionDialog } from '@/presentation/components/EditTransactionDialog'
+
 import { DeleteConfirmDialog } from '@/presentation/components/DeleteConfirmDialog'
 import { TransactionAttachmentsDialog } from '@/presentation/components/TransactionAttachmentsDialog'
 import {
@@ -20,7 +17,13 @@ import {
     AlertDialogTitle,
 } from '@/presentation/components/ui/alert-dialog'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
-import { Mail } from 'lucide-react'
+
+import { PAGINATION } from '@/constants/ui'
+import { PaginationControls } from '@/presentation/components/shared/PaginationControls'
+import { Button } from '@/presentation/components/ui/button'
+import { Input } from '@/presentation/components/ui/input'
+import { EditTransactionDialog } from '@/presentation/components/EditTransactionDialog'
+import { TransactionRow } from '@/presentation/components/TransactionRow'
 
 interface TransactionListProps {
     budgetId?: string
@@ -48,7 +51,7 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
 
     // Pagination States
     const [currentPage, setCurrentPage] = useState(1)
-    const [itemsPerPage, setItemsPerPage] = useState(5)
+    const [itemsPerPage, setItemsPerPage] = useState(PAGINATION.DEFAULT_ITEMS_PER_PAGE)
 
     const transactions = initialTransactions || fetchedTransactions
 
@@ -176,232 +179,34 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
                     {/* Rows */}
                     <div className="divide-y divide-border/30">
                         {displayTransactions.map((transaction) => (
-                            <div
+                            <TransactionRow
                                 key={transaction.id}
-                                className={`flex flex-col sm:grid sm:grid-cols-12 gap-2 md:gap-4 p-3 sm:items-center hover:bg-muted/30 transition-colors group text-xs ${transaction.isLocked ? 'opacity-75 bg-muted/10' : ''}`}
-                            >
-                                {/* Mobile: Top Row with Icon, Description, Amount */}
-                                <div className="flex items-center justify-between sm:hidden">
-                                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                                        <div className={`p-1.5 rounded-lg shrink-0 ${transaction.type === 'income'
-                                            ? 'bg-success/10 text-success'
-                                            : 'bg-destructive/10 text-destructive'
-                                            }`}>
-                                            {transaction.type === 'income' ? (
-                                                <ArrowUpRight className="w-4 h-4" />
-                                            ) : (
-                                                <ArrowDownLeft className="w-4 h-4" />
-                                            )}
-                                        </div>
-                                        <div className="flex flex-col min-w-0">
-                                            <span className="truncate font-medium text-foreground">
-                                                {transaction.description}
-                                            </span>
-                                            <span className="text-[10px] text-muted-foreground">
-                                                {transaction.category}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <span className={`font-semibold shrink-0 ${transaction.type === 'income' ? 'text-success' : 'text-destructive'}`}>
-                                        {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                                    </span>
-                                </div>
-
-                                {/* Mobile: Bottom Row with Date and Actions */}
-                                <div className="flex items-center justify-between sm:hidden pl-8">
-                                    <span className="text-[10px] text-muted-foreground">
-                                        {new Date(transaction.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
-                                    </span>
-                                    <div className="flex items-center gap-1">
-                                        <button
-                                            onClick={() => handleLockToggle(transaction)}
-                                            className={`p-1.5 rounded-lg ${transaction.isLocked ? 'text-primary' : 'text-muted-foreground'}`}
-                                            disabled={isPending}
-                                        >
-                                            {transaction.isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-                                        </button>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setAttachmentTransaction(transaction)} title="Attachments">
-                                            <Paperclip className="w-3.5 h-3.5" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingTransaction(transaction)} disabled={transaction.isLocked || isPending}>
-                                            <Edit className="w-3.5 h-3.5" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteClick(transaction.id, transaction.description)} disabled={transaction.isLocked || isPending}>
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </Button>
-                                    </div>
-                                </div>
-
-                                {/* Desktop: Lock Status */}
-                                <div className="hidden sm:flex col-span-1 justify-center">
-                                    <button
-                                        onClick={() => handleLockToggle(transaction)}
-                                        className={`p-1.5 rounded-lg transition-colors ${transaction.isLocked ? 'text-primary' : 'text-muted-foreground hover:text-primary opacity-50 hover:opacity-100'}`}
-                                        title={transaction.isLocked ? "Unlock Transaction" : "Lock Transaction"}
-                                        disabled={isPending}
-                                    >
-                                        {transaction.isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-                                    </button>
-                                </div>
-
-                                {/* Desktop: Description */}
-                                <div className="hidden sm:flex col-span-4 md:col-span-3 items-center gap-2 overflow-hidden">
-                                    <div className={`p-1.5 rounded-lg shrink-0 ${transaction.type === 'income'
-                                        ? 'bg-success/10 text-success'
-                                        : 'bg-destructive/10 text-destructive'
-                                        }`}>
-                                        {transaction.type === 'income' ? (
-                                            <ArrowUpRight className="w-3.5 h-3.5" />
-                                        ) : (
-                                            <ArrowDownLeft className="w-3.5 h-3.5" />
-                                        )}
-                                    </div>
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="truncate font-medium text-foreground group-hover:text-primary transition-colors">
-                                            {transaction.description}
-                                        </span>
-                                        {transaction.budgetId && (
-                                            <span className="text-[10px] text-muted-foreground truncate">
-                                                {budgets.find(b => b.id === transaction.budgetId)?.name}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Desktop: Category */}
-                                <div className="hidden md:block col-span-2">
-                                    <span className="px-2 py-1 rounded-lg bg-muted text-[10px] text-muted-foreground uppercase font-medium">
-                                        {transaction.category}
-                                    </span>
-                                </div>
-
-                                {/* Desktop: Date */}
-                                <div className="hidden sm:block col-span-2 text-right text-muted-foreground">
-                                    {new Date(transaction.date).toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: '2-digit',
-                                    })}
-                                </div>
-
-                                {/* Desktop: Amount */}
-                                <div className="hidden sm:block col-span-2 text-right font-semibold">
-                                    <span className={transaction.type === 'income' ? 'text-success' : 'text-destructive'}>
-                                        {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                                    </span>
-                                </div>
-
-                                {/* Desktop: Actions */}
-                                <div className="hidden sm:flex col-span-1 justify-center gap-0.5">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-muted-foreground hover:text-primary"
-                                        onClick={() => setAttachmentTransaction(transaction)}
-                                        title="Attachments"
-                                    >
-                                        <Paperclip className="w-3.5 h-3.5" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-muted-foreground hover:text-primary"
-                                        onClick={() => setEditingTransaction(transaction)}
-                                        disabled={transaction.isLocked || isPending}
-                                        title={transaction.isLocked ? "Transaction is locked" : "Edit"}
-                                    >
-                                        <Edit className="w-3.5 h-3.5" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                        onClick={() => handleDeleteClick(transaction.id, transaction.description)}
-                                        disabled={transaction.isLocked || isPending}
-                                        title={transaction.isLocked ? "Transaction is locked" : "Delete"}
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                    </Button>
-                                </div>
-                            </div>
+                                transaction={transaction}
+                                onLockToggle={handleLockToggle}
+                                onEdit={setEditingTransaction}
+                                onDelete={handleDeleteClick}
+                                onAttachments={setAttachmentTransaction}
+                                isPending={isPending}
+                                formatCurrency={formatCurrency}
+                                budgetName={transaction.budgetId ? budgets.find(b => b.id === transaction.budgetId)?.name : undefined}
+                            />
                         ))}
                     </div>
                 </div>
             )}
 
             {/* Pagination Controls */}
-            {showPagination && !limit && filteredTransactions.length > 0 && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border/30">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>Show</span>
-                        <Select
-                            value={itemsPerPage.toString()}
-                            onValueChange={(value) => setItemsPerPage(Number(value))}
-                        >
-                            <SelectTrigger className="w-16 h-8 text-xs">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="3">3</SelectItem>
-                                <SelectItem value="4">4</SelectItem>
-                                <SelectItem value="5">5</SelectItem>
-                                <SelectItem value="6">6</SelectItem>
-                                <SelectItem value="7">7</SelectItem>
-                                <SelectItem value="8">8</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <span>per page</span>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                        <span className="text-xs text-muted-foreground mr-2">
-                            {startIndex + 1}-{Math.min(endIndex, filteredTransactions.length)} of {filteredTransactions.length}
-                        </span>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPage === 1}
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </Button>
-                        <div className="flex items-center gap-1">
-                            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                                let pageNum: number
-                                if (totalPages <= 5) {
-                                    pageNum = i + 1
-                                } else if (currentPage <= 3) {
-                                    pageNum = i + 1
-                                } else if (currentPage >= totalPages - 2) {
-                                    pageNum = totalPages - 4 + i
-                                } else {
-                                    pageNum = currentPage - 2 + i
-                                }
-                                return (
-                                    <Button
-                                        key={pageNum}
-                                        variant={currentPage === pageNum ? 'default' : 'ghost'}
-                                        size="icon"
-                                        className="h-8 w-8 text-xs"
-                                        onClick={() => setCurrentPage(pageNum)}
-                                    >
-                                        {pageNum}
-                                    </Button>
-                                )
-                            })}
-                        </div>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                            disabled={currentPage === totalPages}
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </Button>
-                    </div>
-                </div>
+            {showPagination && !limit && (
+                <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={filteredTransactions.length}
+                    startIndex={startIndex}
+                    endIndex={endIndex}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                />
             )}
 
             <EditTransactionDialog

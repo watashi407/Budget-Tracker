@@ -1,13 +1,12 @@
 import { useEffect, useState, useCallback } from "react"
 import { Moon, Sun, Monitor } from "lucide-react"
 import { Button } from "@/presentation/components/ui/button"
-
-type Theme = "dark" | "light" | "system"
+import { STORAGE_KEYS, type Theme } from '@/constants/ui'
 
 export function ThemeToggle() {
     const [theme, setTheme] = useState<Theme>(() => {
         if (typeof window !== 'undefined') {
-            return (localStorage.getItem('theme') as Theme) || 'system'
+            return (localStorage.getItem(STORAGE_KEYS.THEME) as Theme) || 'system'
         }
         return 'system'
     })
@@ -28,7 +27,7 @@ export function ThemeToggle() {
             }
 
             root.classList.add(effectiveTheme)
-            localStorage.setItem('theme', newTheme)
+            localStorage.setItem(STORAGE_KEYS.THEME, newTheme)
         })
     }, [])
 

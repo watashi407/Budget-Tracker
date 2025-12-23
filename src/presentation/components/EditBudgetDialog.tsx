@@ -9,6 +9,7 @@ import { FormSubmitButton } from '@/presentation/components/FormSubmitButton'
 import { EmailVerificationMessage } from '@/presentation/components/EmailVerificationMessage'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useAuth } from '@/presentation/context/AuthContext'
+import { FormField } from '@/presentation/components/FormField'
 import { AlertCircle } from 'lucide-react'
 import { BUDGET_CATEGORIES, OTHERS_CATEGORY } from '@/constants/categories'
 
@@ -170,27 +171,16 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
                                 </div>
                             )}
 
-                            <div className="space-y-2">
-                                <Label htmlFor="edit-name" className="flex items-center gap-1">
-                                    Budget Name <span className="text-destructive">*</span>
-                                </Label>
-                                <Input
-                                    id="edit-name"
-                                    name="name"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    onBlur={(e) => handleBlur('name', e.target.value)}
-                                    required
-                                    disabled={isPending}
-                                    className={fieldErrors.name ? 'border-destructive focus-visible:ring-destructive' : ''}
-                                />
-                                {fieldErrors.name && (
-                                    <p className="text-destructive text-xs flex items-center gap-1 mt-1">
-                                        <AlertCircle className="w-3 h-3" />
-                                        {fieldErrors.name}
-                                    </p>
-                                )}
-                            </div>
+                            <FormField
+                                label="Budget Name"
+                                name="name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                onBlur={(e) => handleBlur('name', e.target.value)}
+                                required
+                                disabled={isPending}
+                                error={fieldErrors.name}
+                            />
 
                             <div className="space-y-2">
                                 <Label htmlFor="edit-category" className="flex items-center gap-1">
@@ -223,49 +213,44 @@ export function EditBudgetDialog({ open, onOpenChange, budget }: EditBudgetDialo
                                     </SelectContent>
                                 </Select>
                                 <input type="hidden" name="category" value={category} />
-                                {selectedCategory === OTHERS_CATEGORY && (
-                                    <Input
-                                        placeholder="Enter custom category"
-                                        value={customCategory}
-                                        onChange={(e) => setCustomCategory(e.target.value)}
-                                        onBlur={(e) => handleBlur('category', e.target.value)}
-                                        disabled={isPending}
-                                        className={`mt-2 ${fieldErrors.category ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                                    />
-                                )}
-                                {fieldErrors.category && (
-                                    <p className="text-destructive text-xs flex items-center gap-1 mt-1">
-                                        <AlertCircle className="w-3 h-3" />
-                                        {fieldErrors.category}
-                                    </p>
+                                {selectedCategory === OTHERS_CATEGORY ? (
+                                    <div className="mt-2">
+                                        <FormField
+                                            label="Specify Category"
+                                            name="customCategory"
+                                            placeholder="Enter custom category"
+                                            value={customCategory}
+                                            onChange={(e) => setCustomCategory(e.target.value)}
+                                            onBlur={(e) => handleBlur('category', e.target.value)}
+                                            disabled={isPending}
+                                            error={fieldErrors.category}
+                                            required
+                                        />
+                                    </div>
+                                ) : (
+                                    fieldErrors.category && (
+                                        <p className="text-destructive text-xs flex items-center gap-1 mt-1">
+                                            <AlertCircle className="w-3 h-3" />
+                                            {fieldErrors.category}
+                                        </p>
+                                    )
                                 )}
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="edit-amount" className="flex items-center gap-1">
-                                        Amount <span className="text-destructive">*</span>
-                                    </Label>
-                                    <Input
-                                        id="edit-amount"
-                                        name="amount"
-                                        type="number"
-                                        step="0.01"
-                                        min="0.01"
-                                        value={amount}
-                                        onChange={(e) => setAmount(e.target.value)}
-                                        onBlur={(e) => handleBlur('amount', e.target.value)}
-                                        required
-                                        disabled={isPending}
-                                        className={fieldErrors.amount ? 'border-destructive focus-visible:ring-destructive' : ''}
-                                    />
-                                    {fieldErrors.amount && (
-                                        <p className="text-destructive text-xs flex items-center gap-1 mt-1">
-                                            <AlertCircle className="w-3 h-3" />
-                                            {fieldErrors.amount}
-                                        </p>
-                                    )}
-                                </div>
+                                <FormField
+                                    label="Amount"
+                                    name="amount"
+                                    type="number"
+                                    step="0.01"
+                                    min="0.01"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    onBlur={(e) => handleBlur('amount', e.target.value)}
+                                    required
+                                    disabled={isPending}
+                                    error={fieldErrors.amount}
+                                />
 
                                 <div className="space-y-2">
                                     <Label htmlFor="edit-period">Period</Label>

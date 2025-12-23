@@ -52,36 +52,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: supabaseUser.email!,
             fullName: supabaseUser.user_metadata?.full_name,
             avatarUrl: supabaseUser.user_metadata?.avatar_url,
-            emailVerified: undefined, // Will be set by updateWithServerData
+            emailVerified: supabaseUser.email_confirmed_at !== null && supabaseUser.email_confirmed_at !== undefined,
             createdAt: new Date(supabaseUser.created_at),
             updatedAt: new Date(supabaseUser.updated_at || supabaseUser.created_at),
         })
 
-        // Async function to update user with data from profiles table (non-blocking)
-        // Reads verified status from profiles.verified column (the source of truth)
+        // Async function to update user with currency from profiles table (non-blocking)
         const updateWithServerData = async (userId: string) => {
             try {
-                // Get verified status and currency from profiles table
+                // Get currency from profiles table
                 const { data: profileData } = await supabase
                     .from('profiles')
-                    .select('verified, currency')
+                    .select('currency')
                     .eq('id', userId)
                     .maybeSingle()
 
                 if (mounted) {
-                    // Always update emailVerified - use false if no profile or verified is false
-                    const isVerified = profileData?.verified === true
                     setUser(prev => prev ? {
                         ...prev,
-                        emailVerified: isVerified,
                         currency: profileData?.currency || prev.currency || 'USD',
                     } : null)
                 }
             } catch {
-                // On error, set emailVerified to false (safer default)
-                if (mounted) {
-                    setUser(prev => prev ? { ...prev, emailVerified: false } : null)
-                }
+                // Ignore errors
             }
         }
 

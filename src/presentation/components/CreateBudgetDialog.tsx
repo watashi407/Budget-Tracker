@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { FormSubmitButton } from '@/presentation/components/FormSubmitButton'
 import { EmailVerificationMessage } from '@/presentation/components/EmailVerificationMessage'
 import { FileUpload } from '@/presentation/components/FileUpload'
+import { FormField } from '@/presentation/components/FormField'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { storageService } from '@/data/services/SupabaseStorageService'
@@ -207,28 +208,17 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
                                 </div>
                             )}
 
-                            <div className="space-y-2">
-                                <Label htmlFor="name" className="flex items-center gap-1">
-                                    Budget Name <span className="text-destructive">*</span>
-                                </Label>
-                                <Input
-                                    id="name"
-                                    name="name"
-                                    placeholder="e.g., Groceries, Entertainment"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    onBlur={(e) => handleBlur('name', e.target.value)}
-                                    required
-                                    disabled={isPending}
-                                    className={fieldErrors.name ? 'border-destructive focus-visible:ring-destructive' : ''}
-                                />
-                                {fieldErrors.name && (
-                                    <p className="text-destructive text-xs flex items-center gap-1 mt-1">
-                                        <AlertCircle className="w-3 h-3" />
-                                        {fieldErrors.name}
-                                    </p>
-                                )}
-                            </div>
+                            <FormField
+                                label="Budget Name"
+                                name="name"
+                                placeholder="e.g., Groceries, Entertainment"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                onBlur={(e) => handleBlur('name', e.target.value)}
+                                required
+                                disabled={isPending}
+                                error={fieldErrors.name}
+                            />
 
                             <div className="space-y-2">
                                 <Label htmlFor="category" className="flex items-center gap-1">
@@ -263,50 +253,45 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
                                 </Select>
                                 {/* Hidden input to submit the actual category value */}
                                 <input type="hidden" name="category" value={category} />
-                                {selectedCategory === OTHERS_CATEGORY && (
-                                    <Input
-                                        placeholder="Enter custom category"
-                                        value={customCategory}
-                                        onChange={(e) => setCustomCategory(e.target.value)}
-                                        onBlur={(e) => handleBlur('category', e.target.value)}
-                                        disabled={isPending}
-                                        className={`mt-2 ${fieldErrors.category ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                                    />
-                                )}
-                                {fieldErrors.category && (
-                                    <p className="text-destructive text-xs flex items-center gap-1 mt-1">
-                                        <AlertCircle className="w-3 h-3" />
-                                        {fieldErrors.category}
-                                    </p>
+                                {selectedCategory === OTHERS_CATEGORY ? (
+                                    <div className="mt-2">
+                                        <FormField
+                                            label="Specify Category"
+                                            name="customCategory"
+                                            placeholder="Enter custom category"
+                                            value={customCategory}
+                                            onChange={(e) => setCustomCategory(e.target.value)}
+                                            onBlur={(e) => handleBlur('category', e.target.value)}
+                                            disabled={isPending}
+                                            error={fieldErrors.category}
+                                            required
+                                        />
+                                    </div>
+                                ) : (
+                                    fieldErrors.category && (
+                                        <p className="text-destructive text-xs flex items-center gap-1 mt-1">
+                                            <AlertCircle className="w-3 h-3" />
+                                            {fieldErrors.category}
+                                        </p>
+                                    )
                                 )}
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="amount" className="flex items-center gap-1">
-                                        Amount <span className="text-destructive">*</span>
-                                    </Label>
-                                    <Input
-                                        id="amount"
-                                        name="amount"
-                                        type="number"
-                                        step="0.01"
-                                        min="0.01"
-                                        placeholder="0.00"
-                                        value={amount}
-                                        onChange={(e) => setAmount(e.target.value)}
-                                        onBlur={(e) => handleBlur('amount', e.target.value)}
-                                        required
-                                        disabled={isPending}
-                                        className={fieldErrors.amount ? 'border-destructive focus-visible:ring-destructive' : ''}
-                                    />
-                                    {fieldErrors.amount && (
-                                        <p className="text-destructive text-xs flex items-center gap-1 mt-1">
-                                            <AlertCircle className="w-3 h-3" />
-                                            {fieldErrors.amount}
-                                        </p>
-                                    )}
-                                </div>
+                                <FormField
+                                    label="Amount"
+                                    name="amount"
+                                    type="number"
+                                    step="0.01"
+                                    min="0.01"
+                                    placeholder="0.00"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    onBlur={(e) => handleBlur('amount', e.target.value)}
+                                    required
+                                    disabled={isPending}
+                                    error={fieldErrors.amount}
+                                />
 
                                 <div className="space-y-2">
                                     <Label htmlFor="period">Period</Label>

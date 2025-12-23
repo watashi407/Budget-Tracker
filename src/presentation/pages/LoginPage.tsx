@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { Button } from '@/presentation/components/ui/button'
-import { Input } from '@/presentation/components/ui/input'
-import { Label } from '@/presentation/components/ui/label'
+import { FormField } from '@/presentation/components/FormField'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/presentation/components/ui/card'
 import { Wallet, Loader2 } from 'lucide-react'
 
@@ -90,40 +89,37 @@ export function LoginPage() {
                                 {error}
                             </div>
                         )}
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                placeholder="name@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                disabled={loading}
-                                className="h-11"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="password">Password</Label>
+                        <FormField
+                            label="Email"
+                            name="email"
+                            type="email"
+                            placeholder="name@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            disabled={loading}
+                            className="h-11"
+                        />
+
+                        <FormField
+                            label="Password"
+                            name="password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            disabled={loading}
+                            className="h-11"
+                            labelExtra={
                                 <Link
                                     to="/forgot-password"
                                     className="text-xs text-primary hover:text-primary/80 transition-colors"
                                 >
                                     Forgot password?
                                 </Link>
-                            </div>
-                            <Input
-                                id="password"
-                                type="password"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                disabled={loading}
-                                className="h-11"
-                            />
-                        </div>
+                            }
+                        />
                     </CardContent>
                     <CardFooter className="flex flex-col space-y-4 pt-2">
                         <Button

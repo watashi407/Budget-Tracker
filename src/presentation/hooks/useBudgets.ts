@@ -4,6 +4,7 @@ import type { Budget, CreateBudgetInput, UpdateBudgetInput } from '@/domain/enti
 import { SupabaseBudgetRepository } from '@/data/repositories/SupabaseBudgetRepository'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { queryKeys } from '@/lib/queryFactories'
+import { QUERY_CONFIG } from '@/constants/ui'
 
 const budgetRepository = new SupabaseBudgetRepository()
 
@@ -29,7 +30,7 @@ export function useBudgets() {
             return budgetRepository.getAll(user.id)
         },
         enabled: !!user,
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: QUERY_CONFIG.STALE_TIME,
     })
 
     // Create Budget
