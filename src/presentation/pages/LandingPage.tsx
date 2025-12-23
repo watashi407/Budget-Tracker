@@ -4,6 +4,8 @@ import { Button } from '@/presentation/components/ui/button'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { SupabaseSocialRepository } from '@/data/repositories/SupabaseSocialRepository'
 import type { SocialComment } from '@/domain/entities/Social'
+import { LandingGraphic } from '@/presentation/components/LandingGraphic'
+import { LandingFooter } from '@/presentation/components/LandingFooter'
 import {
     Dialog,
     DialogContent,
@@ -115,7 +117,7 @@ export function LandingPage() {
     ]
 
     return (
-        <div className="min-h-screen bg-background relative overflow-hidden">
+        <div className="min-h-screen bg-background relative overflow-hidden font-sans">
             {/* Ambient Background Effects */}
             <div className="fixed inset-0 pointer-events-none">
                 {/* Primary glow */}
@@ -173,57 +175,72 @@ export function LandingPage() {
 
             {/* Hero Section */}
             <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-5xl mx-auto text-center">
-                    {/* Badge */}
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8 animate-fade-in">
-                        <Sparkles className="h-4 w-4" />
-                        AI-Powered Budget Management
-                    </div>
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+                        {/* Left Column: Text & CTA */}
+                        <div className="text-center lg:text-left">
+                            {/* Badge */}
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8 animate-fade-in mx-auto lg:mx-0">
+                                <Sparkles className="h-4 w-4" />
+                                AI-Powered Budget Management
+                            </div>
 
-                    {/* Main Headline */}
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground mb-6 animate-slide-up">
-                        Take Control of Your
-                        <span className="block mt-2 bg-gradient-to-r from-primary via-orange-500 to-amber-500 bg-clip-text text-transparent">
-                            Financial Future
-                        </span>
-                    </h1>
+                            {/* Main Headline */}
+                            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground mb-6 animate-slide-up leading-tight">
+                                Take Control of Your
+                                <span className="block mt-2 bg-gradient-to-r from-primary via-orange-500 to-amber-500 bg-clip-text text-transparent pb-3">
+                                    Financial Future
+                                </span>
+                            </h1>
 
-                    {/* Subheadline */}
-                    <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-slide-up" style={{ animationDelay: '100ms' }}>
-                        Smart budgeting made simple. Track expenses, get AI-powered insights,
-                        and achieve your financial goals with our intuitive platform.
-                    </p>
+                            {/* Subheadline */}
+                            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 mb-10 animate-slide-up leading-relaxed" style={{ animationDelay: '100ms' }}>
+                                Smart budgeting made simple. Track expenses, get AI-powered insights,
+                                and achieve your financial goals with our intuitive platform.
+                            </p>
 
-                    {/* CTA Buttons */}
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: '200ms' }}>
-                        <Link to="/signup">
-                            <Button variant="glow" size="lg" className="text-lg px-8 h-14 gap-2">
-                                Start Free Today
-                                <ChevronRight className="h-5 w-5" />
-                            </Button>
-                        </Link>
-                        <a href="#features">
-                            <Button variant="outline" size="lg" className="text-lg px-8 h-14 border-border/50 hover:border-primary/50">
-                                Learn More
-                            </Button>
-                        </a>
-                    </div>
+                            {/* CTA Buttons */}
+                            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 animate-slide-up" style={{ animationDelay: '200ms' }}>
+                                <Link to="/signup">
+                                    <Button variant="glow" size="lg" className="text-lg px-8 h-14 gap-2 shadow-lg shadow-primary/25">
+                                        Start Free Today
+                                        <ChevronRight className="h-5 w-5" />
+                                    </Button>
+                                </Link>
+                                <a href="#features">
+                                    <Button variant="outline" size="lg" className="text-lg px-8 h-14 border-border/50 hover:border-primary/50">
+                                        Learn More
+                                    </Button>
+                                </a>
+                            </div>
 
-                    {/* Social Proof */}
-                    <div className="mt-16 flex flex-col items-center gap-4 animate-fade-in" style={{ animationDelay: '400ms' }}>
-                        <div className="flex -space-x-3">
-                            {[...Array(5)].map((_, i) => (
-                                <div
-                                    key={i}
-                                    className="w-10 h-10 rounded-full border-2 border-background bg-gradient-to-br from-muted to-muted-foreground/30 flex items-center justify-center text-xs font-medium text-muted-foreground"
-                                >
-                                    {String.fromCharCode(65 + i)}
+                            {/* Social Proof */}
+                            <div className="mt-12 flex items-center justify-center lg:justify-start gap-4 animate-fade-in group" style={{ animationDelay: '400ms' }}>
+                                <div className="flex -space-x-3">
+                                    {[...Array(5)].map((_, i) => (
+                                        <div
+                                            key={i}
+                                            className="w-10 h-10 rounded-full border-2 border-background bg-gradient-to-br from-muted to-muted-foreground/30 flex items-center justify-center text-xs font-medium text-muted-foreground transform transition-transform group-hover:translate-x-1"
+                                            style={{ transitionDelay: `${i * 50}ms` }}
+                                        >
+                                            {String.fromCharCode(65 + i)}
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
+                                <div className="text-sm text-muted-foreground text-left">
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-foreground font-semibold">1,000+</span>
+                                        <span>users</span>
+                                    </div>
+                                    <span className="text-xs">managing their finances</span>
+                                </div>
+                            </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                            Trusted by <span className="text-foreground font-semibold">1,000+</span> users managing their finances
-                        </p>
+
+                        {/* Right Column: Graphic */}
+                        <div className="relative animate-fade-in mx-auto w-full max-w-[500px] lg:max-w-none" style={{ animationDelay: '300ms' }}>
+                            <LandingGraphic />
+                        </div>
                     </div>
                 </div>
             </section>
@@ -427,39 +444,7 @@ export function LandingPage() {
             </section>
 
             {/* Footer */}
-            <footer className="relative border-t border-border/50 py-12 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                        {/* Logo */}
-                        <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary via-orange-500 to-orange-600 flex items-center justify-center">
-                                <Wallet className="h-4 w-4 text-white" />
-                            </div>
-                            <span className="text-lg font-semibold text-foreground">
-                                Watashi Pocket
-                            </span>
-                        </div>
-
-                        {/* Links */}
-                        <nav className="flex items-center gap-6">
-                            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                                Features
-                            </a>
-                            <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                                Sign In
-                            </Link>
-                            <Link to="/signup" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                                Sign Up
-                            </Link>
-                        </nav>
-
-                        {/* Copyright */}
-                        <p className="text-sm text-muted-foreground">
-                            © {new Date().getFullYear()} Watashi Pocket. All rights reserved.
-                        </p>
-                    </div>
-                </div>
-            </footer>
+            <LandingFooter />
 
             {/* Login Modal for unauthenticated users */}
             <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>

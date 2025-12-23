@@ -81,26 +81,25 @@ export function SpeedDial({ actions }: SpeedDialProps) {
                 ))}
             </div>
 
-            {/* Main Trigger Button */}
             <Button
                 size="icon"
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    "h-14 w-14 rounded-full shadow-lg transition-all duration-300",
+                    "h-14 w-14 rounded-full shadow-lg transition-all duration-300 p-0 grid place-items-center",
                     "bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 hover:scale-105",
                     isOpen && "rotate-90"
                 )}
             >
-                <div className="relative h-7 w-7">
+                <div className="relative h-7 w-7 flex items-center justify-center">
                     <LayoutGrid
                         className={cn(
-                            "absolute inset-0 h-full w-full text-white transition-all duration-300",
+                            "absolute h-full w-full text-white transition-all duration-300",
                             isOpen ? "opacity-0 rotate-90 scale-50" : "opacity-100 rotate-0 scale-100"
                         )}
                     />
                     <X
                         className={cn(
-                            "absolute inset-0 h-full w-full text-white transition-all duration-300",
+                            "absolute h-full w-full text-white transition-all duration-300",
                             isOpen ? "opacity-100 rotate-0 scale-100" : "opacity-0 -rotate-90 scale-50"
                         )}
                     />

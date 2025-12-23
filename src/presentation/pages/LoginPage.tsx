@@ -60,112 +60,158 @@ export function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-background">
-            {/* Background Effects */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.12),transparent_50%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_50%,hsl(var(--secondary)/0.08),transparent_50%)]" />
+        <div className="min-h-screen w-full grid lg:grid-cols-2 relative overflow-hidden bg-background">
+            {/* Left Side - Branding & Visuals */}
+            <div className="hidden lg:flex flex-col justify-center items-center relative bg-zinc-900 p-12 overflow-hidden">
+                {/* Background Effects */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,hsl(var(--primary)/0.2),transparent_60%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,hsl(var(--secondary)/0.1),transparent_50%)]" />
+                <div className="absolute top-0 right-0 w-full h-full bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.4))]" />
 
-            <Card className="w-full max-w-md mx-4 bg-card/80 backdrop-blur-xl border-border/50 shadow-2xl relative z-10">
-                <CardHeader className="space-y-4 text-center pb-6">
-                    <div className="flex justify-center mb-2">
-                        <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary via-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-primary/25 ring-1 ring-white/20">
-                            <Wallet className="h-8 w-8 text-white drop-shadow-md" />
+                {/* Content */}
+                <div className="relative z-10 w-full max-w-lg">
+                    <div className="mb-12">
+                        <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary via-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-primary/25 mb-6">
+                            <Wallet className="h-8 w-8 text-white" />
                         </div>
+                        <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
+                            Welcome back to <br />
+                            <span className="text-primary">Watashi Pocket</span>
+                        </h1>
+                        <p className="text-zinc-400 text-lg leading-relaxed">
+                            Your personal finance companion. Track, analyze, and optimize your spending with the power of AI.
+                        </p>
                     </div>
-                    <div className="space-y-1">
-                        <CardTitle className="text-2xl font-bold text-foreground">
-                            Welcome Back
-                        </CardTitle>
-                        <CardDescription>
-                            Enter your credentials to access Watashi Pocket
-                        </CardDescription>
+
+                    {/* Graphic simulation reusing cards styled elements if LandingGraphic is too big, or just specific visual elements */}
+                    <div className="relative">
+                        <div className="absolute -left-12 top-10 w-72 h-72 bg-primary/20 rounded-full blur-[100px]" />
+                        <Card className="bg-white/5 border-white/10 backdrop-blur-xl p-6 rounded-2xl shadow-2xl skew-y-3 transform rotate-2 hover:rotate-1 hover:skew-y-2 transition-all duration-500 cursor-default">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                                    <span className="text-green-500 text-lg font-bold">↑</span>
+                                </div>
+                                <div>
+                                    <div className="text-sm text-zinc-400">Monthly Savings</div>
+                                    <div className="text-xl font-bold text-white">+$2,450.00</div>
+                                </div>
+                            </div>
+                            <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                                <div className="h-full w-3/4 bg-gradient-to-r from-green-500 to-emerald-400" />
+                            </div>
+                        </Card>
                     </div>
-                </CardHeader>
-                <form onSubmit={handleSubmit}>
-                    <CardContent className="space-y-4">
+                </div>
+            </div>
+
+            {/* Right Side - Login Form */}
+            <div className="flex items-center justify-center p-6 sm:p-12 relative">
+                {/* Mobile Background (Shown only on small screens) */}
+                <div className="lg:hidden absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.1),transparent_50%)] -z-10" />
+
+                <div className="w-full max-w-md space-y-8">
+                    {/* Mobile Logo */}
+                    <div className="lg:hidden flex flex-col items-center text-center space-y-2 mb-8">
+                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary via-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-primary/25">
+                            <Wallet className="h-6 w-6 text-white" />
+                        </div>
+                        <h2 className="text-2xl font-bold">Watashi Pocket</h2>
+                    </div>
+
+                    <div className="text-center lg:text-left space-y-2">
+                        <h2 className="text-3xl font-bold tracking-tight">Sign in</h2>
+                        <p className="text-muted-foreground">
+                            Enter your email below to access your account
+                        </p>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         {error && (
-                            <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+                            <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
                                 <span className="h-1.5 w-1.5 rounded-full bg-destructive shrink-0" />
                                 {error}
                             </div>
                         )}
-                        <FormField
-                            label="Email"
-                            name="email"
-                            type="email"
-                            placeholder="name@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            disabled={loading}
-                            className="h-11"
-                        />
 
-                        <FormField
-                            label="Password"
-                            name="password"
-                            type="password"
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            disabled={loading}
-                            className="h-11"
-                            labelExtra={
-                                <Link
-                                    to="/forgot-password"
-                                    className="text-xs text-primary hover:text-primary/80 transition-colors"
-                                >
-                                    Forgot password?
-                                </Link>
-                            }
-                        />
-                    </CardContent>
-                    <CardFooter className="flex flex-col space-y-4 pt-2">
+                        <div className="space-y-4">
+                            <FormField
+                                label="Email"
+                                name="email"
+                                type="email"
+                                placeholder="name@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                disabled={loading}
+                                className="h-12 bg-background/50 border-input/50 focus:bg-background transition-colors"
+                            />
+
+                            <FormField
+                                label="Password"
+                                name="password"
+                                type="password"
+                                placeholder="••••••••"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                disabled={loading}
+                                className="h-12 bg-background/50 border-input/50 focus:bg-background transition-colors"
+                                labelExtra={
+                                    <Link
+                                        to="/forgot-password"
+                                        className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                                    >
+                                        Forgot password?
+                                    </Link>
+                                }
+                            />
+                        </div>
+
                         <Button
                             type="submit"
-                            className="w-full h-11 text-base font-medium"
+                            className="w-full h-12 text-base font-medium shadow-lg shadow-primary/20"
                             variant="glow"
                             disabled={loading}
                         >
                             {loading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    signing in...
+                                    Signing in...
                                 </>
-                            ) : 'Sign in'}
+                            ) : 'Sign In'}
                         </Button>
 
-                        <div className="relative">
+                        <div className="relative my-8">
                             <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t border-border" />
+                                <span className="w-full border-t border-border/50" />
                             </div>
                             <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                                <span className="bg-background px-4 text-muted-foreground">Or continue with</span>
                             </div>
                         </div>
 
                         <Button
                             type="button"
                             variant="outline"
-                            className="w-full h-11 relative"
+                            className="w-full h-12 relative border-input/50 hover:bg-accent/50 hover:text-accent-foreground"
                             onClick={handleGoogleSignIn}
                             disabled={loading}
                         >
                             <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
                                 <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
                             </svg>
-                            Sign in with Google
+                            Google
                         </Button>
-                        <div className="text-sm text-center text-muted-foreground">
+
+                        <div className="text-center text-sm text-muted-foreground pt-4">
                             Don't have an account?{' '}
-                            <Link to="/signup" className="text-primary hover:text-primary/80 font-medium transition-colors">
-                                Sign up
+                            <Link to="/signup" className="text-primary hover:text-primary/80 font-medium transition-colors hover:underline underline-offset-4">
+                                Create an account
                             </Link>
                         </div>
-                    </CardFooter>
-                </form>
-            </Card>
+                    </form>
+                </div>
+            </div>
         </div>
     )
 }
