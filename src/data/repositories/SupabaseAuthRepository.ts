@@ -30,6 +30,8 @@ export class SupabaseAuthRepository implements IAuthRepository {
             email: data.user.email!,
             fullName: data.user.user_metadata.full_name,
             avatarUrl: data.user.user_metadata.avatar_url,
+            emailVerified: false,
+            hasCompletedOnboarding: false,
             createdAt: new Date(data.user.created_at),
             updatedAt: new Date(data.user.updated_at || data.user.created_at),
         }

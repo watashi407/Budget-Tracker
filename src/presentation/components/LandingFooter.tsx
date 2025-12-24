@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Wallet, Facebook, Github, Linkedin, Mail } from 'lucide-react'
+import { Wallet, Facebook, Github, Linkedin } from 'lucide-react'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
 
