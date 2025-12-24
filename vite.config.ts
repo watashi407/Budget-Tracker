@@ -22,6 +22,7 @@ export default defineConfig({
           'vendor-query': ['@tanstack/react-query'],
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-charts': ['recharts'],
+          'vendor-utils': ['xlsx', 'jspdf', 'jspdf-autotable', 'html2canvas'],
           'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-slot', '@radix-ui/react-select'],
         },
       },
