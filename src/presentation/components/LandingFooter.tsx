@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Wallet, Twitter, Github, Linkedin } from 'lucide-react'
+import { Wallet, Facebook, Github, Linkedin, Mail } from 'lucide-react'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
 
@@ -24,9 +24,9 @@ export function LandingFooter() {
                             Take control of your future today.
                         </p>
                         <div className="flex items-center gap-4 pt-2">
-                            <SocialLink href="#" icon={Twitter} label="Twitter" />
-                            <SocialLink href="#" icon={Github} label="GitHub" />
-                            <SocialLink href="#" icon={Linkedin} label="LinkedIn" />
+                            <SocialLink href="https://web.facebook.com/mayatamaw" icon={Facebook} label="Facebook" />
+                            <SocialLink href="https://github.com/watashi407" icon={Github} label="GitHub" />
+                            <SocialLink href="https://www.linkedin.com/in/alvin-gultiano-0b3220239" icon={Linkedin} label="LinkedIn" />
                         </div>
                     </div>
 
@@ -43,6 +43,7 @@ export function LandingFooter() {
                         <h4 className="font-semibold text-foreground mb-4">Company</h4>
                         <ul className="space-y-3 text-sm">
                             <FooterLink href="#about">About</FooterLink>
+                            <FooterLink href="mailto:alvin.gultiano@evsu.edu.ph">Contact</FooterLink>
                         </ul>
                     </div>
 
@@ -80,6 +81,8 @@ function SocialLink({ href, icon: Icon, label }: { href: string, icon: any, labe
         <a
             href={href}
             aria-label={label}
+            target="_blank"
+            rel="noopener noreferrer"
             className="p-2 rounded-full hover:bg-white/5 text-muted-foreground hover:text-primary transition-all hover:scale-110"
         >
             <Icon className="h-4 w-4" />
