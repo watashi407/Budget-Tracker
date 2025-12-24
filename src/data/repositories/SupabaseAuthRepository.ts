@@ -100,14 +100,14 @@ export class SupabaseAuthRepository implements IAuthRepository {
                 return this.mapUser(user)
             }
 
-            // Fetch currency from profiles table
+            // Fetch profile data (currency, onboarding)
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('currency')
+                .select('currency, has_completed_onboarding')
                 .eq('id', session.user.id)
                 .single()
 
-            return this.mapUser(session.user, profile?.currency)
+            return this.mapUser(session.user, profile?.currency, profile?.has_completed_onboarding)
 
         } catch {
             return null
@@ -115,7 +115,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private mapUser(user: any, currency?: string): User {
+    private mapUser(user: any, currency?: string, hasCompletedOnboarding?: boolean): User {
         return {
             id: user.id,
             email: user.email!,
@@ -123,6 +123,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
             avatarUrl: user.user_metadata.avatar_url,
             currency: currency || 'USD',
             emailVerified: user.email_confirmed_at !== null && user.email_confirmed_at !== undefined,
+            hasCompletedOnboarding: hasCompletedOnboarding,
             createdAt: new Date(user.created_at),
             updatedAt: new Date(user.updated_at || user.created_at),
         }
@@ -172,11 +173,11 @@ export class SupabaseAuthRepository implements IAuthRepository {
 
         const { data: profile } = await supabase
             .from('profiles')
-            .select('currency')
+            .select('currency, has_completed_onboarding')
             .eq('id', user.id)
             .single()
 
-        return this.mapUser(user, profile?.currency)
+        return this.mapUser(user, profile?.currency, profile?.has_completed_onboarding)
     }
 
     /**
@@ -186,6 +187,18 @@ export class SupabaseAuthRepository implements IAuthRepository {
         const { error } = await supabase.auth.updateUser({
             password,
         })
+        if (error) throw error
+    }
+
+    /**
+     * Mark onboarding as completed for the user
+     */
+    async completeOnboarding(userId: string): Promise<void> {
+        const { error } = await supabase
+            .from('profiles')
+            .update({ has_completed_onboarding: true })
+            .eq('id', userId)
+
         if (error) throw error
     }
 }

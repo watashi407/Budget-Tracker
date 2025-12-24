@@ -166,7 +166,7 @@ export default function SettingsPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="space-y-2">
+                    <div className="grid gap-2" id="settings-currency">
                         <Label htmlFor="currency">Currency</Label>
                         <Select
                             value={currency}

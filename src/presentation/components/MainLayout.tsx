@@ -10,6 +10,7 @@ import { GlobalActionsProvider, useGlobalActions } from '@/presentation/context/
 import { Button } from "./ui/button"
 import { Toaster } from "@/presentation/components/ui/toaster"
 import { useState } from "react"
+import { OnboardingTour } from "./OnboardingTour"
 
 export function MainLayout() {
     const { user, signOut, loading } = useAuth()
@@ -84,19 +85,19 @@ export function MainLayout() {
                                 <span>Expenses</span>
                             </Button>
                         </Link>
-                        <Link to="/ai-assistant" className="w-full">
+                        <Link to="/ai-assistant" className="w-full" id="nav-ai">
                             <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-sm font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg group">
                                 <Sparkles className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                 <span>AI Assistant</span>
                             </Button>
                         </Link>
-                        <Link to="/social" className="w-full">
+                        <Link to="/social" className="w-full" id="nav-social">
                             <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-sm font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg group">
                                 <Users className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                 <span>Social</span>
                             </Button>
                         </Link>
-                        <Link to="/settings" className="w-full">
+                        <Link to="/settings" className="w-full" id="nav-settings">
                             <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-sm font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg group">
                                 <Settings className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                 <span>Settings</span>
@@ -208,6 +209,9 @@ export function MainLayout() {
 
                 {/* Global Speed Dial */}
                 <GlobalSpeedDial />
+
+                {/* Onboarding Tour */}
+                <OnboardingTour />
             </div>
         </GlobalActionsProvider>
     )

@@ -79,7 +79,7 @@ export function DashboardPage() {
     return (
         <div className="space-y-8">
             {/* Quick Actions & Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4" id="dashboard-header">
                 <div>
                     <div className="axis-header">SYSTEM STATUS</div>
                     <h1 className="text-3xl font-bold tracking-tight">DASHBOARD</h1>
@@ -117,11 +117,11 @@ export function DashboardPage() {
                         <Download className="w-4 h-4 mr-2" />
                         EXPORT
                     </Button>
-                    <Button onClick={openTransactionDialog}>
+                    <Button onClick={openTransactionDialog} id="btn-add-transaction">
                         <PlusCircle className="w-4 h-4 mr-2" />
                         ADD TRANSACTION
                     </Button>
-                    <Button onClick={openBudgetDialog} variant="outline">
+                    <Button onClick={openBudgetDialog} variant="outline" id="btn-new-budget">
                         <PlusCircle className="w-4 h-4 mr-2" />
                         NEW BUDGET
                     </Button>

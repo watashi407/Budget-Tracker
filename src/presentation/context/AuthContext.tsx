@@ -19,6 +19,7 @@ interface AuthContextType {
     updateProfile: (userId: string, updates: Partial<User>) => Promise<void>
     updatePassword: (password: string) => Promise<void>
     signInWithGoogle: () => Promise<void>
+    completeOnboarding: () => Promise<void>
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -60,10 +61,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Async function to update user with currency from profiles table (non-blocking)
         const updateWithServerData = async (userId: string) => {
             try {
-                // Get currency from profiles table
+                // Get currency and onboarding from profiles table
                 const { data: profileData } = await supabase
                     .from('profiles')
-                    .select('currency')
+                    .select('currency, has_completed_onboarding')
                     .eq('id', userId)
                     .maybeSingle()
 
@@ -71,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     setUser(prev => prev ? {
                         ...prev,
                         currency: profileData?.currency || prev.currency || 'USD',
+                        hasCompletedOnboarding: profileData?.has_completed_onboarding,
                     } : null)
                 }
             } catch {
@@ -189,6 +191,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await authRepository.signInWithGoogle()
     }
 
+    /**
+     * Complete onboarding
+     */
+    async function completeOnboarding() {
+        if (!user) return
+        await authRepository.completeOnboarding(user.id)
+        setUser(prev => prev ? { ...prev, hasCompletedOnboarding: true } : null)
+    }
+
     const value: AuthContextType = {
         user,
         loading,
@@ -199,6 +210,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updateProfile,
         updatePassword,
         signInWithGoogle,
+        completeOnboarding,
     }
 
     return <AuthContext value={value}>{children}</AuthContext>

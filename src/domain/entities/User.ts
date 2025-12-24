@@ -9,7 +9,8 @@ export interface User {
     fullName?: string
     avatarUrl?: string
     currency?: string
-    emailVerified?: boolean
+    emailVerified: boolean
+    hasCompletedOnboarding?: boolean
     createdAt: Date
     updatedAt: Date
 }
