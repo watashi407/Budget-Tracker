@@ -4,6 +4,9 @@ import { NewsService, type NewsItem } from '@/data/services/NewsService'
 import { Sparkles, Calendar, ArrowRight, Clock } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 
+// Track failed image URLs globally to avoid retrying
+const failedImages = new Set<string>()
+
 export function NewsSection() {
     const [news, setNews] = useState<NewsItem[]>([])
     const [loading, setLoading] = useState(true)
@@ -51,12 +54,17 @@ export function NewsSection() {
                         <Link to="/news/$newsId" params={{ newsId: featured.id }}>
                             <article className="group relative bg-card rounded-2xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 cursor-pointer">
                                 <div className="grid md:grid-cols-2 gap-0">
-                                    {featured.images && featured.images.length > 0 ? (
+                                    {featured.images && featured.images.length > 0 && !failedImages.has(featured.images[0]) ? (
                                         <div className="relative h-64 md:h-full overflow-hidden">
                                             <img
                                                 src={featured.images[0]}
                                                 alt={featured.title}
                                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                onError={(e) => {
+                                                    failedImages.add(featured.images[0])
+                                                    e.currentTarget.style.display = 'none'
+                                                    e.currentTarget.parentElement?.classList.add('bg-gradient-to-br', 'from-primary/20', 'to-transparent')
+                                                }}
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                                             {featured.images.length > 1 && (
@@ -103,12 +111,16 @@ export function NewsSection() {
                         {rest.map((item) => (
                             <Link key={item.id} to="/news/$newsId" params={{ newsId: item.id }}>
                                 <article className="group bg-card rounded-xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 cursor-pointer h-full">
-                                    {item.images && item.images.length > 0 ? (
-                                        <div className="relative h-48 overflow-hidden">
+                                    {item.images && item.images.length > 0 && !failedImages.has(item.images[0]) ? (
+                                        <div className="relative h-48 overflow-hidden bg-gradient-to-br from-muted to-muted/50">
                                             <img
                                                 src={item.images[0]}
                                                 alt={item.title}
                                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                onError={(e) => {
+                                                    failedImages.add(item.images[0])
+                                                    e.currentTarget.style.display = 'none'
+                                                }}
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
                                             {item.images.length > 1 && (

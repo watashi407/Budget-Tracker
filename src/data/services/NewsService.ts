@@ -28,12 +28,37 @@ export const NewsService = {
 
         if (error) throw error
 
-        // Parse images from JSONB
-        const parsedData = (data || []).map(item => ({
-            ...item,
-            images: Array.isArray(item.images) ? item.images :
-                (item.images ? JSON.parse(item.images) : [])
-        })) as NewsItem[]
+        // Parse images from JSONB, with fallback to legacy image_url
+        const parsedData = (data || []).map(item => {
+            let images: string[] = []
+
+            // Try to parse images JSONB column
+            if (item.images) {
+                if (Array.isArray(item.images)) {
+                    images = item.images.filter((url: unknown) => typeof url === 'string' && url.startsWith('http'))
+                } else if (typeof item.images === 'string') {
+                    try {
+                        const parsed = JSON.parse(item.images)
+                        images = Array.isArray(parsed) ? parsed.filter((url: unknown) => typeof url === 'string' && url.startsWith('http')) : []
+                    } catch {
+                        // If it's a URL string directly
+                        if (item.images.startsWith('http')) {
+                            images = [item.images]
+                        }
+                    }
+                }
+            }
+
+            // Fallback to legacy image_url column if no images
+            if (images.length === 0 && item.image_url && typeof item.image_url === 'string' && item.image_url.startsWith('http')) {
+                images = [item.image_url]
+            }
+
+            return {
+                ...item,
+                images
+            }
+        }) as NewsItem[]
 
         // Update cache
         newsCache = { data: parsedData, timestamp: Date.now() }
@@ -168,6 +193,33 @@ export const NewsService = {
             await supabase.storage.from('news-images').remove([filePath])
         } catch (error) {
             console.error('Failed to delete image:', error)
+        }
+    },
+
+    // List all images in the news-images bucket
+    async listStorageImages(): Promise<string[]> {
+        try {
+            const { data, error } = await supabase.storage
+                .from('news-images')
+                .list('', {
+                    limit: 100,
+                    sortBy: { column: 'created_at', order: 'desc' }
+                })
+
+            if (error) throw error
+
+            // Convert file names to public URLs
+            return (data || [])
+                .filter(file => file.name && !file.name.startsWith('.'))
+                .map(file => {
+                    const { data: urlData } = supabase.storage
+                        .from('news-images')
+                        .getPublicUrl(file.name)
+                    return urlData.publicUrl
+                })
+        } catch (error) {
+            console.error('Failed to list storage images:', error)
+            return []
         }
     }
 }

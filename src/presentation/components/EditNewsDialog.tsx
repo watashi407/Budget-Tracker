@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { NewsService, type NewsItem } from '@/data/services/NewsService'
 import { Button } from '@/presentation/components/ui/button'
-import { X, Loader2, Save, ImagePlus } from 'lucide-react'
+import { X, Loader2, Save, ImagePlus, FolderOpen } from 'lucide-react'
 
 interface EditNewsDialogProps {
     newsItem: NewsItem
@@ -17,6 +17,11 @@ export function EditNewsDialog({ newsItem, onClose, onSaved }: EditNewsDialogPro
     const [newImagePreviews, setNewImagePreviews] = useState<string[]>([])
     const [saving, setSaving] = useState(false)
 
+    // Storage image picker state
+    const [showStoragePicker, setShowStoragePicker] = useState(false)
+    const [storageImages, setStorageImages] = useState<string[]>([])
+    const [loadingStorage, setLoadingStorage] = useState(false)
+
     // Close on escape key
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
@@ -25,6 +30,32 @@ export function EditNewsDialog({ newsItem, onClose, onSaved }: EditNewsDialogPro
         window.addEventListener('keydown', handleEscape)
         return () => window.removeEventListener('keydown', handleEscape)
     }, [onClose])
+
+    // Load storage images when picker is opened
+    async function loadStorageImages() {
+        setLoadingStorage(true)
+        try {
+            const images = await NewsService.listStorageImages()
+            setStorageImages(images)
+        } catch (error) {
+            console.error('Failed to load storage images:', error)
+        } finally {
+            setLoadingStorage(false)
+        }
+    }
+
+    function toggleStoragePicker() {
+        if (!showStoragePicker) {
+            loadStorageImages()
+        }
+        setShowStoragePicker(!showStoragePicker)
+    }
+
+    function selectStorageImage(url: string) {
+        if (existingImages.includes(url)) return // Already selected
+        if (existingImages.length + newImages.length >= 5) return // Max 5 images
+        setExistingImages([...existingImages, url])
+    }
 
     function handleNewImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
         const files = Array.from(e.target.files || [])
@@ -179,17 +210,80 @@ export function EditNewsDialog({ newsItem, onClose, onSaved }: EditNewsDialogPro
 
                         {/* Add More Button */}
                         {totalImages < 5 && (
-                            <label className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 border border-dashed border-border hover:border-primary/50 cursor-pointer transition-colors w-fit">
-                                <ImagePlus className="w-5 h-5 text-muted-foreground" />
-                                <span className="text-sm text-muted-foreground">Add Images</span>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    multiple
-                                    onChange={handleNewImageSelect}
-                                    className="hidden"
-                                />
-                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                <label className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 border border-dashed border-border hover:border-primary/50 cursor-pointer transition-colors">
+                                    <ImagePlus className="w-5 h-5 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">Upload New</span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handleNewImageSelect}
+                                        className="hidden"
+                                    />
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={toggleStoragePicker}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 border border-primary/30 hover:border-primary/50 transition-colors"
+                                >
+                                    <FolderOpen className="w-5 h-5 text-primary" />
+                                    <span className="text-sm text-primary font-medium">Browse Storage</span>
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Storage Image Picker */}
+                        {showStoragePicker && (
+                            <div className="border border-border rounded-lg p-4 bg-muted/30">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h4 className="text-sm font-medium">Select from Storage</h4>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowStoragePicker(false)}
+                                        className="p-1 hover:bg-muted rounded"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                {loadingStorage ? (
+                                    <div className="flex items-center justify-center py-8">
+                                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                    </div>
+                                ) : storageImages.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground text-center py-4">No images in storage</p>
+                                ) : (
+                                    <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+                                        {storageImages.map((url, index) => {
+                                            const isSelected = existingImages.includes(url)
+                                            return (
+                                                <button
+                                                    key={index}
+                                                    type="button"
+                                                    onClick={() => selectStorageImage(url)}
+                                                    disabled={isSelected}
+                                                    className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${isSelected
+                                                            ? 'border-primary bg-primary/10 opacity-50'
+                                                            : 'border-transparent hover:border-primary/50'
+                                                        }`}
+                                                >
+                                                    <img
+                                                        src={url}
+                                                        alt={`Storage ${index + 1}`}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%23ddd" width="100" height="100"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="12">Error</text></svg>'}
+                                                    />
+                                                    {isSelected && (
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-primary/20">
+                                                            <span className="text-xs font-medium text-primary">Added</span>
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
                 </form>
