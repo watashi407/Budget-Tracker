@@ -1,4 +1,4 @@
-import React, { createContext, use, useEffect, useState } from 'react'
+import React, { createContext, useEffect, useState } from 'react'
 import type { User } from '@/domain/entities/User'
 import { SupabaseAuthRepository } from '@/data/repositories/SupabaseAuthRepository'
 import { supabase } from '@/lib/supabase'
@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase'
 interface AuthContextType {
     user: User | null
     loading: boolean
+    isAdmin: boolean
     signIn: (email: string, password: string) => Promise<void>
     signUp: (email: string, password: string, fullName?: string) => Promise<void>
     signOut: () => Promise<void>
@@ -58,13 +59,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             updatedAt: new Date(supabaseUser.updated_at || supabaseUser.created_at),
         })
 
-        // Async function to update user with currency from profiles table (non-blocking)
+        // Async function to update user with currency and role from profiles table (non-blocking)
         const updateWithServerData = async (userId: string) => {
             try {
-                // Get currency and onboarding from profiles table
+                // Get currency, onboarding, and role from profiles table
                 const { data: profileData } = await supabase
                     .from('profiles')
-                    .select('currency, has_completed_onboarding')
+                    .select('currency, has_completed_onboarding, role')
                     .eq('id', userId)
                     .maybeSingle()
 
@@ -73,6 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         ...prev,
                         currency: profileData?.currency || prev.currency || 'USD',
                         hasCompletedOnboarding: profileData?.has_completed_onboarding,
+                        role: (profileData?.role as 'admin' | 'user') || 'user',
                     } : null)
                 }
             } catch {
@@ -203,6 +205,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const value: AuthContextType = {
         user,
         loading,
+        isAdmin: user?.role === 'admin',
         signIn,
         signUp,
         signOut,
@@ -221,7 +224,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
  */
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
-    const context = use(AuthContext)
+    const context = React.useContext(AuthContext)
     if (context === undefined) {
         throw new Error('useAuth must be used within an AuthProvider. Make sure AuthProvider wraps your entire app in main.tsx')
     }

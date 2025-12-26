@@ -46,8 +46,18 @@ export const profiles = pgTable('profiles', {
     fullName: text('full_name'),
     avatarUrl: text('avatar_url'),
     currency: text('currency').default('USD'),
+    role: text('role').default('user'), // 'admin' or 'user'
     verified: boolean('verified').default(false),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+})
+
+export const news = pgTable('news', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    title: text('title').notNull(),
+    content: text('content').notNull(),
+    authorId: uuid('author_id').references(() => profiles.id).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
 // Relations

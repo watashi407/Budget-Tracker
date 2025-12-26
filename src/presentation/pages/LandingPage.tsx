@@ -6,6 +6,7 @@ import { SupabaseSocialRepository } from '@/data/repositories/SupabaseSocialRepo
 import type { SocialComment } from '@/domain/entities/Social'
 import { LandingGraphic } from '@/presentation/components/LandingGraphic'
 import { LandingFooter } from '@/presentation/components/LandingFooter'
+import { NewsSection } from '@/presentation/components/NewsSection'
 import {
     Dialog,
     DialogContent,
@@ -144,6 +145,9 @@ export function LandingPage() {
 
                         {/* Navigation */}
                         <nav className="hidden md:flex items-center gap-8">
+                            <a href="#news" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                                News
+                            </a>
                             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                                 Features
                             </a>
@@ -244,6 +248,11 @@ export function LandingPage() {
                     </div>
                 </div>
             </section>
+
+            {/* News Section */}
+            <NewsSection />
+
+            {/* Features Section */}
 
             {/* Features Section */}
             <section id="features" className="relative py-24 px-4 sm:px-6 lg:px-8">

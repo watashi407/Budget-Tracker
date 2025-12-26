@@ -3,7 +3,7 @@ import { useAuth } from "@/presentation/context/AuthContext"
 import { ThemeToggle } from "./ThemeToggle"
 import { EmailVerificationBanner } from "./EmailVerificationBanner"
 import { GlobalLiveChat } from "./GlobalLiveChat"
-import { Wallet, LayoutDashboard, Settings, LogOut, Menu, X, Receipt, Sparkles, Users, Bot, MessageCircle } from "lucide-react"
+import { Wallet, LayoutDashboard, Settings, LogOut, Menu, X, Receipt, Sparkles, Users, Bot, MessageCircle, Shield } from "lucide-react"
 import { SpeedDial } from '@/presentation/components/SpeedDial'
 import { openChat } from '@/lib/chatEvents'
 import { GlobalActionsProvider, useGlobalActions } from '@/presentation/context/GlobalActionsContext'
@@ -13,7 +13,7 @@ import { useState } from "react"
 import { OnboardingTour } from "./OnboardingTour"
 
 export function MainLayout() {
-    const { user, signOut, loading } = useAuth()
+    const { user, signOut, loading, isAdmin } = useAuth()
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
     // If loading, show a full-screen spinner
@@ -103,6 +103,14 @@ export function MainLayout() {
                                 <span>Settings</span>
                             </Button>
                         </Link>
+                        {isAdmin && (
+                            <Link to="/admin" className="w-full" id="nav-admin">
+                                <Button variant="ghost" className="w-full justify-start gap-3 h-10 text-sm font-medium hover:bg-orange-500/10 hover:text-orange-500 transition-all duration-200 rounded-lg group">
+                                    <Shield className="h-4 w-4 text-orange-500 group-hover:text-orange-600 transition-colors" />
+                                    <span className="text-orange-500">Admin</span>
+                                </Button>
+                            </Link>
+                        )}
                     </nav>
 
                     <div className="p-4 border-t border-border/50 space-y-4 bg-muted/30 relative z-10">
@@ -187,6 +195,14 @@ export function MainLayout() {
                                         Settings
                                     </Button>
                                 </Link>
+                                {isAdmin && (
+                                    <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
+                                        <Button variant="ghost" className="w-full justify-start gap-3 text-orange-500">
+                                            <Shield className="h-4 w-4" />
+                                            Admin
+                                        </Button>
+                                    </Link>
+                                )}
                                 <Button
                                     variant="ghost"
                                     onClick={signOut}

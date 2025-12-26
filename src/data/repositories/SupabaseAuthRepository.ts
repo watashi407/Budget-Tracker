@@ -105,11 +105,16 @@ export class SupabaseAuthRepository implements IAuthRepository {
             // Fetch profile data (currency, onboarding)
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('currency, has_completed_onboarding')
+                .select('currency, has_completed_onboarding, role')
                 .eq('id', session.user.id)
                 .single()
 
-            return this.mapUser(session.user, profile?.currency, profile?.has_completed_onboarding)
+            return this.mapUser(
+                session.user,
+                profile?.currency,
+                profile?.has_completed_onboarding,
+                profile?.role as 'admin' | 'user'
+            )
 
         } catch {
             return null
@@ -117,13 +122,14 @@ export class SupabaseAuthRepository implements IAuthRepository {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private mapUser(user: any, currency?: string, hasCompletedOnboarding?: boolean): User {
+    private mapUser(user: any, currency?: string, hasCompletedOnboarding?: boolean, role?: 'admin' | 'user'): User {
         return {
             id: user.id,
             email: user.email!,
             fullName: user.user_metadata.full_name,
             avatarUrl: user.user_metadata.avatar_url,
             currency: currency || 'USD',
+            role: role || 'user',
             emailVerified: user.email_confirmed_at !== null && user.email_confirmed_at !== undefined,
             hasCompletedOnboarding: hasCompletedOnboarding,
             createdAt: new Date(user.created_at),
@@ -175,11 +181,16 @@ export class SupabaseAuthRepository implements IAuthRepository {
 
         const { data: profile } = await supabase
             .from('profiles')
-            .select('currency, has_completed_onboarding')
+            .select('currency, has_completed_onboarding, role')
             .eq('id', user.id)
             .single()
 
-        return this.mapUser(user, profile?.currency, profile?.has_completed_onboarding)
+        return this.mapUser(
+            user,
+            profile?.currency,
+            profile?.has_completed_onboarding,
+            profile?.role as 'admin' | 'user'
+        )
     }
 
     /**
