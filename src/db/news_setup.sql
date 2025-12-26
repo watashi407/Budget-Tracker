@@ -80,27 +80,65 @@ CREATE POLICY "Admins can delete news"
 -- ============================================
 
 -- ============================================
--- IMAGE ATTACHMENTS MIGRATION
+-- MULTI-IMAGE SUPPORT MIGRATION
 -- Run this AFTER the news table exists
 -- ============================================
 
--- Add image_url column for news images
+-- Add images column as JSONB array (supports multiple images)
 ALTER TABLE public.news 
-ADD COLUMN IF NOT EXISTS image_url TEXT;
+ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]'::jsonb;
+
+-- Migrate existing image_url data to images array (if exists)
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'news' 
+        AND column_name = 'image_url'
+    ) THEN
+        UPDATE public.news 
+        SET images = jsonb_build_array(image_url) 
+        WHERE image_url IS NOT NULL AND images = '[]'::jsonb;
+    END IF;
+END $$;
 
 -- ============================================
--- STORAGE SETUP (Manual step in Supabase Dashboard)
--- 1. Go to Storage -> Create new bucket
--- 2. Name: "news-images"
--- 3. Set to PUBLIC
+-- STORAGE POLICIES FOR news-images BUCKET
+-- Run AFTER creating the bucket in Supabase Dashboard
 -- ============================================
 
--- Storage policies for news-images bucket (run after creating bucket)
--- Allow anyone to view images
--- INSERT INTO storage.policies (name, bucket_id, mode, definition)
--- VALUES ('Public Access', 'news-images', 'SELECT', 'true');
+-- Allow authenticated admins to upload images
+DROP POLICY IF EXISTS "Admins can upload news images" ON storage.objects;
+CREATE POLICY "Admins can upload news images"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (
+    bucket_id = 'news-images' 
+    AND public.is_admin()
+);
 
--- Allow admins to upload images
--- CREATE POLICY "Admins can upload news images"
--- ON storage.objects FOR INSERT
--- WITH CHECK (bucket_id = 'news-images' AND public.is_admin());
+-- Allow anyone to view news images (public bucket)
+DROP POLICY IF EXISTS "Public can view news images" ON storage.objects;
+CREATE POLICY "Public can view news images"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'news-images');
+
+-- Allow admins to delete news images
+DROP POLICY IF EXISTS "Admins can delete news images" ON storage.objects;
+CREATE POLICY "Admins can delete news images"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (
+    bucket_id = 'news-images' 
+    AND public.is_admin()
+);
+
+-- Allow admins to update news images
+DROP POLICY IF EXISTS "Admins can update news images" ON storage.objects;
+CREATE POLICY "Admins can update news images"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (bucket_id = 'news-images' AND public.is_admin())
+WITH CHECK (bucket_id = 'news-images' AND public.is_admin());

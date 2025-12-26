@@ -57,8 +57,8 @@ export function AdminDashboard() {
     const [newTitle, setNewTitle] = useState('')
     const [newContent, setNewContent] = useState('')
     const [postingNews, setPostingNews] = useState(false)
-    const [selectedImage, setSelectedImage] = useState<File | null>(null)
-    const [imagePreview, setImagePreview] = useState<string | null>(null)
+    const [selectedImages, setSelectedImages] = useState<File[]>([])
+    const [imagePreviews, setImagePreviews] = useState<string[]>([])
 
     useEffect(() => {
         fetchData()
@@ -121,20 +121,31 @@ export function AdminDashboard() {
     }
 
     function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0]
-        if (file) {
-            setSelectedImage(file)
-            const reader = new FileReader()
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string)
-            }
-            reader.readAsDataURL(file)
-        }
+        const files = Array.from(e.target.files || [])
+        if (files.length === 0) return
+
+        // Limit to 5 images total
+        const newFiles = [...selectedImages, ...files].slice(0, 5)
+        setSelectedImages(newFiles)
+
+        // Generate previews
+        Promise.all(newFiles.map(file => {
+            return new Promise<string>((resolve) => {
+                const reader = new FileReader()
+                reader.onloadend = () => resolve(reader.result as string)
+                reader.readAsDataURL(file)
+            })
+        })).then(setImagePreviews)
     }
 
-    function clearImage() {
-        setSelectedImage(null)
-        setImagePreview(null)
+    function removeImage(index: number) {
+        setSelectedImages(prev => prev.filter((_, i) => i !== index))
+        setImagePreviews(prev => prev.filter((_, i) => i !== index))
+    }
+
+    function clearImages() {
+        setSelectedImages([])
+        setImagePreviews([])
     }
 
     async function handlePostNews(e: FormEvent) {
@@ -143,15 +154,15 @@ export function AdminDashboard() {
 
         setPostingNews(true)
         try {
-            let imageUrl: string | undefined
-            if (selectedImage) {
-                imageUrl = await NewsService.uploadNewsImage(selectedImage)
+            let imageUrls: string[] = []
+            if (selectedImages.length > 0) {
+                imageUrls = await NewsService.uploadNewsImages(selectedImages)
             }
-            const newItem = await NewsService.createNews(newTitle, newContent, user.id, imageUrl)
+            const newItem = await NewsService.createNews(newTitle, newContent, user.id, imageUrls)
             setNews([newItem, ...news])
             setNewTitle('')
             setNewContent('')
-            clearImage()
+            clearImages()
         } catch (error) {
             console.error('Failed to post news:', error)
             alert('Failed to post news')
@@ -395,29 +406,37 @@ export function AdminDashboard() {
                             </div>
 
                             {/* Image Upload */}
-                            <div>
-                                {imagePreview ? (
-                                    <div className="relative inline-block">
-                                        <img
-                                            src={imagePreview}
-                                            alt="Preview"
-                                            className="max-w-xs max-h-40 rounded-lg border border-border/50"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={clearImage}
-                                            className="absolute -top-2 -right-2 p-1 bg-destructive text-white rounded-full hover:bg-destructive/80"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
+                            <div className="space-y-3">
+                                {imagePreviews.length > 0 && (
+                                    <div className="flex flex-wrap gap-3">
+                                        {imagePreviews.map((preview, index) => (
+                                            <div key={index} className="relative">
+                                                <img
+                                                    src={preview}
+                                                    alt={`Preview ${index + 1}`}
+                                                    className="w-24 h-24 object-cover rounded-lg border border-border/50"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeImage(index)}
+                                                    className="absolute -top-2 -right-2 p-1 bg-destructive text-white rounded-full hover:bg-destructive/80"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        ))}
                                     </div>
-                                ) : (
+                                )}
+                                {selectedImages.length < 5 && (
                                     <label className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 border border-dashed border-border hover:border-primary/50 cursor-pointer transition-colors w-fit">
                                         <ImagePlus className="w-5 h-5 text-muted-foreground" />
-                                        <span className="text-sm text-muted-foreground">Attach Image</span>
+                                        <span className="text-sm text-muted-foreground">
+                                            {selectedImages.length === 0 ? 'Attach Images' : 'Add More'} ({selectedImages.length}/5)
+                                        </span>
                                         <input
                                             type="file"
                                             accept="image/*"
+                                            multiple
                                             onChange={handleImageSelect}
                                             className="hidden"
                                         />

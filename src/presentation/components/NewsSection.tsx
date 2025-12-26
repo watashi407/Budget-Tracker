@@ -50,14 +50,19 @@ export function NewsSection() {
                     <div className="mb-12 max-w-4xl mx-auto">
                         <article className="group relative bg-card rounded-2xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5">
                             <div className="grid md:grid-cols-2 gap-0">
-                                {featured.image_url ? (
+                                {featured.images && featured.images.length > 0 ? (
                                     <div className="relative h-64 md:h-full overflow-hidden">
                                         <img
-                                            src={featured.image_url}
+                                            src={featured.images[0]}
                                             alt={featured.title}
                                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                                        {featured.images.length > 1 && (
+                                            <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/50 text-white text-xs rounded-full">
+                                                +{featured.images.length - 1} more
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="relative h-64 md:h-full bg-gradient-to-br from-primary/20 via-primary/10 to-transparent flex items-center justify-center">
@@ -98,14 +103,19 @@ export function NewsSection() {
                                 key={item.id}
                                 className="group bg-card rounded-xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1"
                             >
-                                {item.image_url ? (
+                                {item.images && item.images.length > 0 ? (
                                     <div className="relative h-48 overflow-hidden">
                                         <img
-                                            src={item.image_url}
+                                            src={item.images[0]}
                                             alt={item.title}
                                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+                                        {item.images.length > 1 && (
+                                            <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/50 text-white text-xs rounded-full">
+                                                +{item.images.length - 1}
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="h-32 bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
