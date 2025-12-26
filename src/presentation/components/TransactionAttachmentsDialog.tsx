@@ -5,7 +5,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/presentation/components/ui/dialog'
-import { Button } from '@/presentation/components/ui/button'
 import { Separator } from '@/presentation/components/ui/separator'
 import { Badge } from '@/presentation/components/ui/badge'
 import { FileUpload } from '@/presentation/components/FileUpload'
@@ -43,10 +42,18 @@ export function TransactionAttachmentsDialog({
     } = useAttachments('transaction', transaction?.id)
 
     const handleUpload = async () => {
-        if (!selectedFile) return
+        console.log('Upload button clicked') // Debug log
+        if (!selectedFile) {
+            console.log('No file selected') // Debug log
+            return
+        }
 
+        console.log('Starting upload for file:', selectedFile.name) // Debug log
         const result = await uploadAttachment(selectedFile)
+        console.log('Upload result:', result) // Debug log
+
         if (result) {
+            console.log('Upload successful, clearing selection') // Debug log
             setSelectedFile(null)
         }
     }
@@ -135,12 +142,19 @@ export function TransactionAttachmentsDialog({
                                 uploading={uploading}
                             />
                             {selectedFile && !uploading && (
-                                <Button
-                                    className="w-full sm:w-auto self-end"
-                                    onClick={handleUpload}
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        console.log('TransactionAttachmentsDialog: Native button clicked');
+                                        handleUpload();
+                                    }}
+                                    style={{ pointerEvents: 'auto' }}
+                                    className="w-full sm:w-auto self-end inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all duration-200 cursor-pointer"
                                 >
                                     Upload File
-                                </Button>
+                                </button>
                             )}
                         </div>
                     </section>

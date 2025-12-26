@@ -43,6 +43,7 @@ export function SpeedDial({ actions }: SpeedDialProps) {
             ref={containerRef}
             id="speed-dial"
             className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3"
+            style={{ pointerEvents: 'none' }} // Allow clicks to pass through the container
         >
             {/* Actions List */}
             <div className={cn(
@@ -55,7 +56,8 @@ export function SpeedDial({ actions }: SpeedDialProps) {
                         className="flex items-center gap-3 transition-all duration-300"
                         style={{
                             transitionDelay: `${index * 50}ms`,
-                            transform: isOpen ? 'translateY(0)' : 'translateY(10px)'
+                            transform: isOpen ? 'translateY(0)' : 'translateY(10px)',
+                            pointerEvents: isOpen ? 'auto' : 'none' // Only enable clicks when open
                         }}
                     >
                         {/* Label Badge */}
@@ -90,6 +92,7 @@ export function SpeedDial({ actions }: SpeedDialProps) {
                     "bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 hover:scale-105",
                     isOpen && "rotate-90"
                 )}
+                style={{ pointerEvents: 'auto' }} // Main FAB button is always clickable
             >
                 <div className="relative h-7 w-7 flex items-center justify-center">
                     <LayoutGrid

@@ -15,24 +15,35 @@ export class SupabaseStorageService {
      * Upload a file and create an attachment record
      */
     async uploadAttachment(input: CreateAttachmentInput): Promise<Attachment> {
+        console.log('SupabaseStorageService.uploadAttachment called with:', {
+            fileName: input.file.name,
+            type: input.file.type,
+            size: input.file.size
+        });
+
         // Validate file
         const validation = validateFile(input.file)
         if (!validation.valid) {
+            console.error('File validation failed:', validation.error);
             throw new Error(validation.error)
         }
 
         // Get current user
         const { data: userData } = await supabase.auth.getUser()
         if (!userData.user) {
+            console.error('User not authenticated');
             throw new Error('Not authenticated')
         }
+        console.log('User authenticated:', userData.user.id);
 
         // Generate unique file path: userId/entityType/entityId/timestamp_filename
         const timestamp = Date.now()
         const sanitizedFileName = input.file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
         const filePath = `${userData.user.id}/${input.entityType}/${input.entityId}/${timestamp}_${sanitizedFileName}`
+        console.log('Generated file path:', filePath);
 
         // Upload file to storage
+        console.log('Uploading to Supabase storage bucket:', this.bucketName, 'path:', filePath);
         const { error: uploadError } = await supabase.storage
             .from(this.bucketName)
             .upload(filePath, input.file, {
@@ -41,10 +52,13 @@ export class SupabaseStorageService {
             })
 
         if (uploadError) {
+            console.error('Storage upload error:', uploadError);
             throw new Error(`Failed to upload file: ${uploadError.message}`)
         }
+        console.log('Storage upload successful');
 
         // Create attachment record in database
+        console.log('Creating attachment record in database table:', this.tableName);
         const { data, error } = await supabase
             .from(this.tableName)
             .insert({
@@ -60,11 +74,13 @@ export class SupabaseStorageService {
             .single()
 
         if (error) {
+            console.error('Database insert error:', error);
             // Cleanup uploaded file on database error
             await supabase.storage.from(this.bucketName).remove([filePath])
             throw new Error(`Failed to create attachment record: ${error.message}`)
         }
 
+        console.log('Attachment record created:', data);
         return this.mapToAttachment(data)
     }
 

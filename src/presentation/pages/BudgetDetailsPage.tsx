@@ -29,9 +29,18 @@ export function BudgetDetailsPage() {
     } = useAttachments('budget', budgetId)
 
     const handleUpload = async () => {
-        if (!selectedFile) return
+        console.log('BudgetDetailsPage: Upload button clicked') // Debug log
+        if (!selectedFile) {
+            console.log('BudgetDetailsPage: No file selected')
+            return
+        }
+
+        console.log('BudgetDetailsPage: Starting upload for', selectedFile.name)
         const result = await uploadAttachment(selectedFile)
+        console.log('BudgetDetailsPage: Upload result:', result)
+
         if (result) {
+            console.log('BudgetDetailsPage: Upload successful')
             setSelectedFile(null)
         }
     }
@@ -176,16 +185,22 @@ export function BudgetDetailsPage() {
                                 uploading={uploading}
                             />
                             {selectedFile && (
-                                <div className="flex justify-end">
-                                    <Button
-                                        size="sm"
-                                        onClick={handleUpload}
+                                <div className="flex justify-end mt-4">
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            console.log('BudgetDetailsPage: Native button clicked');
+                                            handleUpload();
+                                        }}
                                         disabled={uploading}
-                                        className="gap-2"
+                                        style={{ pointerEvents: 'auto' }}
+                                        className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
                                     >
-                                        <Upload className="w-4 h-4" />
+                                        <Upload className="w-4 h-4" style={{ pointerEvents: 'none' }} />
                                         {uploading ? 'Uploading...' : 'Upload File'}
-                                    </Button>
+                                    </button>
                                 </div>
                             )}
                         </div>
