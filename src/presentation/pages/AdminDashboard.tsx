@@ -18,9 +18,11 @@ import {
     Trash2,
     Send,
     ImagePlus,
-    X
+    X,
+    Pencil
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/presentation/components/ui/tabs'
+import { EditNewsDialog } from '@/presentation/components/EditNewsDialog'
 
 interface UserProfile {
     id: string
@@ -59,6 +61,7 @@ export function AdminDashboard() {
     const [postingNews, setPostingNews] = useState(false)
     const [selectedImages, setSelectedImages] = useState<File[]>([])
     const [imagePreviews, setImagePreviews] = useState<string[]>([])
+    const [editingNews, setEditingNews] = useState<NewsItem | null>(null)
 
     useEffect(() => {
         fetchData()
@@ -470,24 +473,51 @@ export function AdminDashboard() {
                                     <div className="space-y-2 flex-1">
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                             <span>{format(new Date(item.created_at), 'PPP')}</span>
+                                            {item.images && item.images.length > 0 && (
+                                                <span className="text-xs bg-muted px-2 py-0.5 rounded">
+                                                    {item.images.length} image{item.images.length > 1 ? 's' : ''}
+                                                </span>
+                                            )}
                                         </div>
                                         <h3 className="text-xl font-bold">{item.title}</h3>
-                                        <p className="text-muted-foreground whitespace-pre-wrap">{item.content}</p>
+                                        <p className="text-muted-foreground whitespace-pre-wrap line-clamp-2">{item.content}</p>
                                     </div>
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
-                                        onClick={() => handleDeleteNews(item.id)}
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
+                                    <div className="flex gap-2 shrink-0">
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="hover:bg-primary/10 hover:text-primary"
+                                            onClick={() => setEditingNews(item)}
+                                        >
+                                            <Pencil className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                            onClick={() => handleDeleteNews(item.id)}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
                                 </div>
                             ))
                         )}
                     </div>
                 </TabsContent>
             </Tabs>
+
+            {/* Edit News Dialog */}
+            {editingNews && (
+                <EditNewsDialog
+                    newsItem={editingNews}
+                    onClose={() => setEditingNews(null)}
+                    onSaved={(updated) => {
+                        setNews(news.map(n => n.id === updated.id ? updated : n))
+                        setEditingNews(null)
+                    }}
+                />
+            )}
         </div>
     )
 }

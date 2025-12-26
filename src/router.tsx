@@ -12,6 +12,7 @@ import { Route as expensesRoute } from './routes/expenses'
 import { Route as aiAssistantRoute } from './routes/ai-assistant'
 import { Route as socialRoute } from './routes/social'
 import { Route as adminRoute } from './routes/admin'
+import { Route as newsDetailRoute } from './routes/news.$newsId'
 
 /**
  * Route Tree Configuration
@@ -30,6 +31,7 @@ const routeTree = rootRoute.addChildren([
     aiAssistantRoute,
     socialRoute,
     adminRoute,
+    newsDetailRoute,
 ])
 
 /**

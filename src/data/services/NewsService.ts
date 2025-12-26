@@ -68,6 +68,47 @@ export const NewsService = {
         } as NewsItem
     },
 
+    async getNewsById(id: string): Promise<NewsItem | null> {
+        const { data, error } = await supabase
+            .from('news')
+            .select('*')
+            .eq('id', id)
+            .single()
+
+        if (error) {
+            if (error.code === 'PGRST116') return null // Not found
+            throw error
+        }
+
+        return {
+            ...data,
+            images: Array.isArray(data.images) ? data.images :
+                (data.images ? JSON.parse(data.images) : [])
+        } as NewsItem
+    },
+
+    async updateNews(id: string, updates: { title?: string; content?: string; images?: string[] }): Promise<NewsItem> {
+        const { data, error } = await supabase
+            .from('news')
+            .update({
+                ...updates,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', id)
+            .select()
+            .single()
+
+        if (error) throw error
+
+        // Clear cache after updating
+        this.clearCache()
+
+        return {
+            ...data,
+            images: Array.isArray(data.images) ? data.images : []
+        } as NewsItem
+    },
+
     async deleteNews(id: string) {
         // Get news item first to delete its images
         const { data: newsItem } = await supabase

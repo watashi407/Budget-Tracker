@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import { NewsService, type NewsItem } from '@/data/services/NewsService'
 import { Sparkles, Calendar, ArrowRight, Clock } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
@@ -45,53 +46,54 @@ export function NewsSection() {
                     </p>
                 </div>
 
-                {/* Featured Post */}
                 {featured && (
                     <div className="mb-12 max-w-4xl mx-auto">
-                        <article className="group relative bg-card rounded-2xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5">
-                            <div className="grid md:grid-cols-2 gap-0">
-                                {featured.images && featured.images.length > 0 ? (
-                                    <div className="relative h-64 md:h-full overflow-hidden">
-                                        <img
-                                            src={featured.images[0]}
-                                            alt={featured.title}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                                        {featured.images.length > 1 && (
-                                            <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/50 text-white text-xs rounded-full">
-                                                +{featured.images.length - 1} more
+                        <Link to="/news/$newsId" params={{ newsId: featured.id }}>
+                            <article className="group relative bg-card rounded-2xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 cursor-pointer">
+                                <div className="grid md:grid-cols-2 gap-0">
+                                    {featured.images && featured.images.length > 0 ? (
+                                        <div className="relative h-64 md:h-full overflow-hidden">
+                                            <img
+                                                src={featured.images[0]}
+                                                alt={featured.title}
+                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                                            {featured.images.length > 1 && (
+                                                <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/50 text-white text-xs rounded-full">
+                                                    +{featured.images.length - 1} more
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="relative h-64 md:h-full bg-gradient-to-br from-primary/20 via-primary/10 to-transparent flex items-center justify-center">
+                                            <Sparkles className="w-16 h-16 text-primary/30" />
+                                        </div>
+                                    )}
+                                    <div className="p-8 flex flex-col justify-center">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <span className="px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                                                Featured
+                                            </span>
+                                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                <Clock className="w-3 h-3" />
+                                                <span>{formatDistanceToNow(new Date(featured.created_at), { addSuffix: true })}</span>
                                             </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="relative h-64 md:h-full bg-gradient-to-br from-primary/20 via-primary/10 to-transparent flex items-center justify-center">
-                                        <Sparkles className="w-16 h-16 text-primary/30" />
-                                    </div>
-                                )}
-                                <div className="p-8 flex flex-col justify-center">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <span className="px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
-                                            Featured
-                                        </span>
-                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                            <Clock className="w-3 h-3" />
-                                            <span>{formatDistanceToNow(new Date(featured.created_at), { addSuffix: true })}</span>
+                                        </div>
+                                        <h3 className="text-2xl font-bold mb-3 text-foreground group-hover:text-primary transition-colors">
+                                            {featured.title}
+                                        </h3>
+                                        <p className="text-muted-foreground leading-relaxed mb-4 line-clamp-3">
+                                            {featured.content}
+                                        </p>
+                                        <div className="flex items-center gap-2 text-primary font-medium text-sm group-hover:gap-3 transition-all">
+                                            <span>Read more</span>
+                                            <ArrowRight className="w-4 h-4" />
                                         </div>
                                     </div>
-                                    <h3 className="text-2xl font-bold mb-3 text-foreground group-hover:text-primary transition-colors">
-                                        {featured.title}
-                                    </h3>
-                                    <p className="text-muted-foreground leading-relaxed mb-4 line-clamp-3">
-                                        {featured.content}
-                                    </p>
-                                    <div className="flex items-center gap-2 text-primary font-medium text-sm group-hover:gap-3 transition-all">
-                                        <span>Read more</span>
-                                        <ArrowRight className="w-4 h-4" />
-                                    </div>
                                 </div>
-                            </div>
-                        </article>
+                            </article>
+                        </Link>
                     </div>
                 )}
 
@@ -99,48 +101,47 @@ export function NewsSection() {
                 {rest.length > 0 && (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
                         {rest.map((item) => (
-                            <article
-                                key={item.id}
-                                className="group bg-card rounded-xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1"
-                            >
-                                {item.images && item.images.length > 0 ? (
-                                    <div className="relative h-48 overflow-hidden">
-                                        <img
-                                            src={item.images[0]}
-                                            alt={item.title}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-                                        {item.images.length > 1 && (
-                                            <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/50 text-white text-xs rounded-full">
-                                                +{item.images.length - 1}
-                                            </div>
-                                        )}
+                            <Link key={item.id} to="/news/$newsId" params={{ newsId: item.id }}>
+                                <article className="group bg-card rounded-xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 cursor-pointer h-full">
+                                    {item.images && item.images.length > 0 ? (
+                                        <div className="relative h-48 overflow-hidden">
+                                            <img
+                                                src={item.images[0]}
+                                                alt={item.title}
+                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+                                            {item.images.length > 1 && (
+                                                <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/50 text-white text-xs rounded-full">
+                                                    +{item.images.length - 1}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="h-32 bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                                            <Sparkles className="w-8 h-8 text-muted-foreground/30" />
+                                        </div>
+                                    )}
+                                    <div className="p-6">
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                                            <Calendar className="w-3.5 h-3.5" />
+                                            <time dateTime={item.created_at}>
+                                                {format(new Date(item.created_at), 'MMMM d, yyyy')}
+                                            </time>
+                                        </div>
+                                        <h3 className="text-lg font-semibold mb-2 text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                                            {item.title}
+                                        </h3>
+                                        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3 mb-4">
+                                            {item.content}
+                                        </p>
+                                        <div className="flex items-center gap-1.5 text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <span>Read more</span>
+                                            <ArrowRight className="w-3.5 h-3.5" />
+                                        </div>
                                     </div>
-                                ) : (
-                                    <div className="h-32 bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
-                                        <Sparkles className="w-8 h-8 text-muted-foreground/30" />
-                                    </div>
-                                )}
-                                <div className="p-6">
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                                        <Calendar className="w-3.5 h-3.5" />
-                                        <time dateTime={item.created_at}>
-                                            {format(new Date(item.created_at), 'MMMM d, yyyy')}
-                                        </time>
-                                    </div>
-                                    <h3 className="text-lg font-semibold mb-2 text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                                        {item.title}
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3 mb-4">
-                                        {item.content}
-                                    </p>
-                                    <div className="flex items-center gap-1.5 text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <span>Read more</span>
-                                        <ArrowRight className="w-3.5 h-3.5" />
-                                    </div>
-                                </div>
-                            </article>
+                                </article>
+                            </Link>
                         ))}
                     </div>
                 )}
