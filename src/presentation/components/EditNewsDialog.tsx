@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { NewsService, type NewsItem } from '@/data/services/NewsService'
 import { Button } from '@/presentation/components/ui/button'
 import { X, Loader2, Save, ImagePlus, FolderOpen } from 'lucide-react'
+import { useToast } from '@/presentation/components/ui/use-toast'
 
 interface EditNewsDialogProps {
     newsItem: NewsItem
@@ -10,6 +11,7 @@ interface EditNewsDialogProps {
 }
 
 export function EditNewsDialog({ newsItem, onClose, onSaved }: EditNewsDialogProps) {
+    const { toast } = useToast()
     const [title, setTitle] = useState(newsItem.title)
     const [content, setContent] = useState(newsItem.content)
     const [existingImages, setExistingImages] = useState<string[]>(newsItem.images || [])
@@ -110,9 +112,17 @@ export function EditNewsDialog({ newsItem, onClose, onSaved }: EditNewsDialogPro
             })
 
             onSaved(updated)
+            toast({
+                title: 'News updated!',
+                description: 'Your changes have been saved successfully.',
+            })
         } catch (error) {
             console.error('Failed to update news:', error)
-            alert('Failed to update news')
+            toast({
+                title: 'Failed to update news',
+                description: error instanceof Error ? error.message : 'An error occurred',
+                variant: 'destructive',
+            })
         } finally {
             setSaving(false)
         }
@@ -263,8 +273,8 @@ export function EditNewsDialog({ newsItem, onClose, onSaved }: EditNewsDialogPro
                                                     onClick={() => selectStorageImage(url)}
                                                     disabled={isSelected}
                                                     className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${isSelected
-                                                            ? 'border-primary bg-primary/10 opacity-50'
-                                                            : 'border-transparent hover:border-primary/50'
+                                                        ? 'border-primary bg-primary/10 opacity-50'
+                                                        : 'border-transparent hover:border-primary/50'
                                                         }`}
                                                 >
                                                     <img

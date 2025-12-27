@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/presentation/components/ui/tabs'
 import { EditNewsDialog } from '@/presentation/components/EditNewsDialog'
+import { useToast } from '@/presentation/components/ui/use-toast'
 
 interface UserProfile {
     id: string
@@ -46,6 +47,7 @@ interface Stats {
  */
 export function AdminDashboard() {
     const { user } = useAuth()
+    const { toast } = useToast()
     const [users, setUsers] = useState<UserProfile[]>([])
     const [stats, setStats] = useState<Stats | null>(null)
     const [loading, setLoading] = useState(true)
@@ -166,9 +168,17 @@ export function AdminDashboard() {
             setNewTitle('')
             setNewContent('')
             clearImages()
+            toast({
+                title: 'News posted!',
+                description: 'Your news update has been published successfully.',
+            })
         } catch (error) {
             console.error('Failed to post news:', error)
-            alert('Failed to post news')
+            toast({
+                title: 'Failed to post news',
+                description: error instanceof Error ? error.message : 'An error occurred',
+                variant: 'destructive',
+            })
         } finally {
             setPostingNews(false)
         }
@@ -180,9 +190,17 @@ export function AdminDashboard() {
         try {
             await NewsService.deleteNews(id)
             setNews(news.filter(n => n.id !== id))
+            toast({
+                title: 'News deleted',
+                description: 'The news item has been removed.',
+            })
         } catch (error) {
             console.error('Failed to delete news:', error)
-            alert('Failed to delete news')
+            toast({
+                title: 'Failed to delete news',
+                description: error instanceof Error ? error.message : 'An error occurred',
+                variant: 'destructive',
+            })
         }
     }
 
