@@ -1,61 +1,66 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { Button } from '@/presentation/components/ui/button'
 import { FormField } from '@/presentation/components/FormField'
 import { Card } from '@/presentation/components/ui/card'
 import { Wallet, Loader2 } from 'lucide-react'
 
+// Validation schema
+const loginSchema = z.object({
+    email: z.string().email('Please enter a valid email'),
+    password: z.string().min(1, 'Password is required'),
+})
+
+type LoginForm = z.infer<typeof loginSchema>
+
 /**
  * LoginPage Component
  * Handles user authentication with email and password.
- * Part of the Presentation layer in Clean Architecture.
+ * Uses react-hook-form for form state management and zod for validation.
  */
 export function LoginPage() {
     const { signIn, signInWithGoogle, user } = useAuth()
     const navigate = useNavigate()
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [error, setError] = useState('')
-    const [loading, setLoading] = useState(false)
+    const [serverError, setServerError] = useState('')
+
+    const form = useForm<LoginForm>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: { email: '', password: '' },
+    })
+
+    const { isSubmitting } = form.formState
 
     // Redirect to dashboard when user is authenticated
     useEffect(() => {
         if (user) {
             navigate({ to: '/dashboard' })
         }
-    }, [user, loading, navigate])
+    }, [user, navigate])
 
-    /**
-     * Handle Google Sign In
-     */
     async function handleGoogleSignIn() {
         try {
-            setLoading(true)
             await signInWithGoogle()
         } catch {
-            setLoading(false)
+            // Error handled by auth context
         }
     }
 
-    /**
-     * Handle form submission
-     */
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault()
-        setError('')
-        setLoading(true)
+    async function onSubmit(data: LoginForm) {
+        setServerError('')
 
         try {
-            await signIn(email, password)
+            await signIn(data.email, data.password)
             // Navigation handled by useEffect
         } catch (err: unknown) {
             let message = err instanceof Error ? err.message : 'Failed to sign in'
             if (message.toLowerCase().includes('pwned') || message.toLowerCase().includes('security')) {
                 message = 'Security alert: This password has been exposed. Please reset your password.'
             }
-            setError(message)
-            setLoading(false)
+            setServerError(message)
         }
     }
 
@@ -83,7 +88,7 @@ export function LoginPage() {
                         </p>
                     </div>
 
-                    {/* Graphic simulation reusing cards styled elements if LandingGraphic is too big, or just specific visual elements */}
+                    {/* Graphic simulation */}
                     <div className="relative">
                         <div className="absolute -left-12 top-10 w-72 h-72 bg-primary/20 rounded-full blur-[100px]" />
                         <Card className="bg-white/5 border-white/10 backdrop-blur-xl p-6 rounded-2xl shadow-2xl skew-y-3 transform rotate-2 hover:rotate-1 hover:skew-y-2 transition-all duration-500 cursor-default">
@@ -106,7 +111,7 @@ export function LoginPage() {
 
             {/* Right Side - Login Form */}
             <div className="flex items-center justify-center p-6 sm:p-12 relative">
-                {/* Mobile Background (Shown only on small screens) */}
+                {/* Mobile Background */}
                 <div className="lg:hidden absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.1),transparent_50%)] -z-10" />
 
                 <div className="w-full max-w-md space-y-8">
@@ -125,36 +130,33 @@ export function LoginPage() {
                         </p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {error && (
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        {serverError && (
                             <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
                                 <span className="h-1.5 w-1.5 rounded-full bg-destructive shrink-0" />
-                                {error}
+                                {serverError}
                             </div>
                         )}
 
                         <div className="space-y-4">
                             <FormField
                                 label="Email"
-                                name="email"
                                 type="email"
                                 placeholder="name@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                error={form.formState.errors.email?.message}
                                 required
-                                disabled={loading}
+                                disabled={isSubmitting}
                                 className="h-12 bg-background/50 border-input/50 focus:bg-background transition-colors"
+                                {...form.register('email')}
                             />
 
                             <FormField
                                 label="Password"
-                                name="password"
                                 type="password"
                                 placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                error={form.formState.errors.password?.message}
                                 required
-                                disabled={loading}
+                                disabled={isSubmitting}
                                 className="h-12 bg-background/50 border-input/50 focus:bg-background transition-colors"
                                 labelExtra={
                                     <Link
@@ -164,6 +166,7 @@ export function LoginPage() {
                                         Forgot password?
                                     </Link>
                                 }
+                                {...form.register('password')}
                             />
                         </div>
 
@@ -171,9 +174,9 @@ export function LoginPage() {
                             type="submit"
                             className="w-full h-12 text-base font-medium shadow-lg shadow-primary/20"
                             variant="glow"
-                            disabled={loading}
+                            disabled={isSubmitting}
                         >
-                            {loading ? (
+                            {isSubmitting ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     Signing in...
@@ -195,7 +198,7 @@ export function LoginPage() {
                             variant="outline"
                             className="w-full h-12 relative border-input/50 hover:bg-accent/50 hover:text-accent-foreground"
                             onClick={handleGoogleSignIn}
-                            disabled={loading}
+                            disabled={isSubmitting}
                         >
                             <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
                                 <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>

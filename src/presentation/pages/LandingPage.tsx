@@ -7,6 +7,8 @@ import type { SocialComment } from '@/domain/entities/Social'
 import { LandingGraphic } from '@/presentation/components/LandingGraphic'
 import { LandingFooter } from '@/presentation/components/LandingFooter'
 import { NewsSection } from '@/presentation/components/NewsSection'
+import { FeatureCard } from '@/presentation/components/FeatureCard'
+import { LANDING_FEATURES } from '@/constants/landingPageData'
 import {
     Dialog,
     DialogContent,
@@ -18,11 +20,6 @@ import {
 import {
     Wallet,
     Sparkles,
-    TrendingUp,
-    Users,
-    PieChart,
-    Zap,
-    Shield,
     ArrowRight,
     ChevronRight,
     MessageSquare,
@@ -78,44 +75,6 @@ export function LandingPage() {
     const upcomingFeatures = comments.filter(c => c.isUpcomingFeature)
     const suggestions = comments.filter(c => c.type === 'suggestion' && !c.isUpcomingFeature)
     const feedback = comments.filter(c => c.type === 'feedback')
-    const features = [
-        {
-            icon: Sparkles,
-            title: 'AI-Powered Insights',
-            description: 'Get intelligent recommendations and forecasts powered by Gemini AI to optimize your spending.',
-            color: 'from-orange-500 to-amber-500'
-        },
-        {
-            icon: PieChart,
-            title: 'Smart Budgeting',
-            description: 'Create and track budgets with visual analytics that make financial planning effortless.',
-            color: 'from-blue-500 to-cyan-500'
-        },
-        {
-            icon: TrendingUp,
-            title: 'Expense Analytics',
-            description: 'Visualize spending patterns with beautiful charts and identify areas for improvement.',
-            color: 'from-green-500 to-emerald-500'
-        },
-        {
-            icon: Users,
-            title: 'Social Features',
-            description: 'Connect with the community, share tips, and get feedback on your financial journey.',
-            color: 'from-purple-500 to-pink-500'
-        },
-        {
-            icon: Zap,
-            title: 'Real-time Sync',
-            description: 'Access your data anywhere with instant synchronization across all your devices.',
-            color: 'from-yellow-500 to-orange-500'
-        },
-        {
-            icon: Shield,
-            title: 'Bank-Grade Security',
-            description: 'Your financial data is protected with enterprise-level encryption and security.',
-            color: 'from-slate-500 to-zinc-500'
-        }
-    ]
 
     return (
         <div className="min-h-screen bg-background relative overflow-hidden font-sans">
@@ -269,28 +228,8 @@ export function LandingPage() {
 
                     {/* Features Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {features.map((feature, index) => (
-                            <div
-                                key={feature.title}
-                                className="group relative p-6 rounded-2xl bg-card/60 backdrop-blur-lg border border-border/50 hover:border-primary/40 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5"
-                                style={{ animationDelay: `${index * 100}ms` }}
-                            >
-                                {/* Icon */}
-                                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                                    <feature.icon className="h-6 w-6 text-white" />
-                                </div>
-
-                                {/* Content */}
-                                <h3 className="text-lg font-semibold text-foreground mb-2">
-                                    {feature.title}
-                                </h3>
-                                <p className="text-muted-foreground text-sm leading-relaxed">
-                                    {feature.description}
-                                </p>
-
-                                {/* Hover glow effect */}
-                                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                            </div>
+                        {LANDING_FEATURES.map((feature, index) => (
+                            <FeatureCard key={feature.title} feature={feature} index={index} />
                         ))}
                     </div>
                 </div>

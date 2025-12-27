@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { Button } from '@/presentation/components/ui/button'
 import { Input } from '@/presentation/components/ui/input'
@@ -7,35 +10,40 @@ import { Label } from '@/presentation/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/presentation/components/ui/card'
 import { Wallet, Loader2, CheckCircle2 } from 'lucide-react'
 
+// Validation schema
+const forgotPasswordSchema = z.object({
+    email: z.string().email('Please enter a valid email'),
+})
+
+type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>
+
 /**
  * ForgotPasswordPage Component
  * Handles password reset email sending.
- * Part of the Presentation layer in Clean Architecture.
+ * Uses react-hook-form for form state management.
  */
 export function ForgotPasswordPage() {
     const { resetPassword } = useAuth()
-    const [email, setEmail] = useState('')
-    const [error, setError] = useState('')
+    const [serverError, setServerError] = useState('')
     const [success, setSuccess] = useState(false)
-    const [loading, setLoading] = useState(false)
 
-    /**
-     * Handle form submission
-     */
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault()
-        setError('')
+    const form = useForm<ForgotPasswordForm>({
+        resolver: zodResolver(forgotPasswordSchema),
+        defaultValues: { email: '' },
+    })
+
+    const { isSubmitting } = form.formState
+
+    async function onSubmit(data: ForgotPasswordForm) {
+        setServerError('')
         setSuccess(false)
-        setLoading(true)
 
         try {
-            await resetPassword(email)
+            await resetPassword(data.email)
             setSuccess(true)
-            setEmail('')
+            form.reset()
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Failed to send reset email')
-        } finally {
-            setLoading(false)
+            setServerError(err instanceof Error ? err.message : 'Failed to send reset email')
         }
     }
 
@@ -61,12 +69,12 @@ export function ForgotPasswordPage() {
                         </CardDescription>
                     </div>
                 </CardHeader>
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={form.handleSubmit(onSubmit)}>
                     <CardContent className="space-y-4">
-                        {error && (
+                        {serverError && (
                             <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm flex items-center gap-2">
                                 <span className="h-1.5 w-1.5 rounded-full bg-destructive shrink-0" />
-                                {error}
+                                {serverError}
                             </div>
                         )}
                         {success && (
@@ -81,12 +89,15 @@ export function ForgotPasswordPage() {
                                 id="email"
                                 type="email"
                                 placeholder="name@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                disabled={loading}
+                                {...form.register('email')}
+                                disabled={isSubmitting}
                                 className="h-11"
                             />
+                            {form.formState.errors.email && (
+                                <p className="text-destructive text-xs">
+                                    {form.formState.errors.email.message}
+                                </p>
+                            )}
                         </div>
                     </CardContent>
                     <CardFooter className="flex flex-col space-y-4 pt-2">
@@ -94,9 +105,9 @@ export function ForgotPasswordPage() {
                             type="submit"
                             className="w-full h-11 text-base font-medium"
                             variant="glow"
-                            disabled={loading}
+                            disabled={isSubmitting}
                         >
-                            {loading ? (
+                            {isSubmitting ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     Sending...

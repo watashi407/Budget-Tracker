@@ -1,5 +1,6 @@
-
-import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/presentation/components/ui/card'
 import { Button } from '@/presentation/components/ui/button'
@@ -10,26 +11,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useCurrency } from '@/presentation/context/CurrencyContext'
 import { Loader2 } from 'lucide-react'
 
+// Validation schemas
+const profileSchema = z.object({
+    fullName: z.string().min(1, 'Name is required'),
+})
+
+const passwordSchema = z.object({
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+})
+
+type ProfileForm = z.infer<typeof profileSchema>
+type PasswordForm = z.infer<typeof passwordSchema>
+
 export default function SettingsPage() {
     const { user, updateProfile, updatePassword } = useAuth()
     const { currency, setCurrency, availableCurrencies } = useCurrency()
     const { toast } = useToast()
 
-    const [fullName, setFullName] = useState(user?.fullName || '')
-    const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
-    const [isUpdatingCurrency, setIsUpdatingCurrency] = useState(false)
+    // Profile form
+    const profileForm = useForm<ProfileForm>({
+        resolver: zodResolver(profileSchema),
+        defaultValues: { fullName: user?.fullName || '' },
+    })
 
-    const [password, setPassword] = useState('')
-    const [confirmPassword, setConfirmPassword] = useState('')
-    const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
+    // Password form
+    const passwordForm = useForm<PasswordForm>({
+        resolver: zodResolver(passwordSchema),
+        defaultValues: { password: '', confirmPassword: '' },
+    })
 
-    async function handleUpdateProfile(e: React.FormEvent) {
-        e.preventDefault()
+    async function handleUpdateProfile(data: ProfileForm) {
         if (!user) return
 
-        setIsUpdatingProfile(true)
         try {
-            await updateProfile(user.id, { fullName })
+            await updateProfile(user.id, { fullName: data.fullName })
             toast({
                 title: "Profile updated",
                 description: "Your profile information has been updated successfully.",
@@ -41,20 +60,15 @@ export default function SettingsPage() {
                 variant: "destructive",
             })
             console.error(error)
-        } finally {
-            setIsUpdatingProfile(false)
         }
     }
 
     async function handleCurrencyChange(newCurrency: string) {
         if (!user) return
 
-        // Immediately update local state for responsive UI
         setCurrency(newCurrency)
-        setIsUpdatingCurrency(true)
 
         try {
-            // Save to database for cross-device persistence
             await updateProfile(user.id, { currency: newCurrency })
             toast({
                 title: "Currency updated",
@@ -67,41 +81,17 @@ export default function SettingsPage() {
                 variant: "destructive",
             })
             console.error(error)
-        } finally {
-            setIsUpdatingCurrency(false)
         }
     }
 
-    async function handleUpdatePassword(e: React.FormEvent) {
-        e.preventDefault()
-
-        if (password !== confirmPassword) {
-            toast({
-                title: "Error",
-                description: "Passwords do not match.",
-                variant: "destructive",
-            })
-            return
-        }
-
-        if (password.length < 6) {
-            toast({
-                title: "Error",
-                description: "Password must be at least 6 characters.",
-                variant: "destructive",
-            })
-            return
-        }
-
-        setIsUpdatingPassword(true)
+    async function handleUpdatePassword(data: PasswordForm) {
         try {
-            await updatePassword(password)
+            await updatePassword(data.password)
             toast({
                 title: "Password updated",
                 description: "Your password has been changed successfully.",
             })
-            setPassword('')
-            setConfirmPassword('')
+            passwordForm.reset()
         } catch (error) {
             toast({
                 title: "Error",
@@ -109,8 +99,6 @@ export default function SettingsPage() {
                 variant: "destructive",
             })
             console.error(error)
-        } finally {
-            setIsUpdatingPassword(false)
         }
     }
 
@@ -123,6 +111,7 @@ export default function SettingsPage() {
                 </p>
             </div>
 
+            {/* Profile Form */}
             <Card>
                 <CardHeader>
                     <CardTitle>Profile Information</CardTitle>
@@ -130,7 +119,7 @@ export default function SettingsPage() {
                         Update your public profile display name.
                     </CardDescription>
                 </CardHeader>
-                <form onSubmit={handleUpdateProfile}>
+                <form onSubmit={profileForm.handleSubmit(handleUpdateProfile)}>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
@@ -143,21 +132,26 @@ export default function SettingsPage() {
                             <Label htmlFor="fullName">Full Name</Label>
                             <Input
                                 id="fullName"
-                                value={fullName}
-                                onChange={(e) => setFullName(e.target.value)}
+                                {...profileForm.register('fullName')}
                                 placeholder="Enter your full name"
                             />
+                            {profileForm.formState.errors.fullName && (
+                                <p className="text-[0.8rem] text-destructive">
+                                    {profileForm.formState.errors.fullName.message}
+                                </p>
+                            )}
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button type="submit" disabled={isUpdatingProfile}>
-                            {isUpdatingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Button type="submit" disabled={profileForm.formState.isSubmitting}>
+                            {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save Changes
                         </Button>
                     </CardFooter>
                 </form>
             </Card>
 
+            {/* Preferences */}
             <Card>
                 <CardHeader>
                     <CardTitle>Preferences</CardTitle>
@@ -168,20 +162,9 @@ export default function SettingsPage() {
                 <CardContent className="space-y-4">
                     <div className="grid gap-2" id="settings-currency">
                         <Label htmlFor="currency">Currency</Label>
-                        <Select
-                            value={currency}
-                            onValueChange={handleCurrencyChange}
-                            disabled={isUpdatingCurrency}
-                        >
+                        <Select value={currency} onValueChange={handleCurrencyChange}>
                             <SelectTrigger>
-                                {isUpdatingCurrency ? (
-                                    <div className="flex items-center gap-2">
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                        <span>Saving...</span>
-                                    </div>
-                                ) : (
-                                    <SelectValue placeholder="Select currency" />
-                                )}
+                                <SelectValue placeholder="Select currency" />
                             </SelectTrigger>
                             <SelectContent>
                                 {availableCurrencies.map((c) => (
@@ -198,6 +181,7 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
 
+            {/* Security / Password Form */}
             <Card>
                 <CardHeader>
                     <CardTitle>Security</CardTitle>
@@ -205,32 +189,40 @@ export default function SettingsPage() {
                         Update your password to keep your account secure.
                     </CardDescription>
                 </CardHeader>
-                <form onSubmit={handleUpdatePassword}>
+                <form onSubmit={passwordForm.handleSubmit(handleUpdatePassword)}>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="password">New Password</Label>
                             <Input
                                 id="password"
                                 type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                {...passwordForm.register('password')}
                                 placeholder="Enter new password"
                             />
+                            {passwordForm.formState.errors.password && (
+                                <p className="text-[0.8rem] text-destructive">
+                                    {passwordForm.formState.errors.password.message}
+                                </p>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="confirmPassword">Confirm Password</Label>
                             <Input
                                 id="confirmPassword"
                                 type="password"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                {...passwordForm.register('confirmPassword')}
                                 placeholder="Confirm new password"
                             />
+                            {passwordForm.formState.errors.confirmPassword && (
+                                <p className="text-[0.8rem] text-destructive">
+                                    {passwordForm.formState.errors.confirmPassword.message}
+                                </p>
+                            )}
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button type="submit" disabled={isUpdatingPassword}>
-                            {isUpdatingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Button type="submit" disabled={passwordForm.formState.isSubmitting}>
+                            {passwordForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Update Password
                         </Button>
                     </CardFooter>

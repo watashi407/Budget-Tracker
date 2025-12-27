@@ -1,8 +1,7 @@
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { Button } from '@/presentation/components/ui/button'
-import { Badge } from '@/presentation/components/ui/badge'
 import { NewsService, type NewsItem } from '@/data/services/NewsService'
 import { format } from 'date-fns'
 import {
@@ -11,19 +10,14 @@ import {
     Wallet,
     TrendingUp,
     Loader2,
-    Search,
-    ChevronDown,
-    ChevronUp,
-    Plus,
     Trash2,
-    Send,
-    ImagePlus,
-    X,
     Pencil
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/presentation/components/ui/tabs'
 import { EditNewsDialog } from '@/presentation/components/EditNewsDialog'
 import { useToast } from '@/presentation/components/ui/use-toast'
+import { AdminNewsForm } from '@/presentation/components/admin/AdminNewsForm'
+import { AdminUserTable } from '@/presentation/components/admin/AdminUserTable'
 
 interface UserProfile {
     id: string
@@ -51,18 +45,8 @@ export function AdminDashboard() {
     const [users, setUsers] = useState<UserProfile[]>([])
     const [stats, setStats] = useState<Stats | null>(null)
     const [loading, setLoading] = useState(true)
-    const [searchQuery, setSearchQuery] = useState('')
-    const [expandedUser, setExpandedUser] = useState<string | null>(null)
-    const [updatingRole, setUpdatingRole] = useState<string | null>(null)
-
-    // News State
     const [news, setNews] = useState<NewsItem[]>([])
     const [newsLoading, setNewsLoading] = useState(false)
-    const [newTitle, setNewTitle] = useState('')
-    const [newContent, setNewContent] = useState('')
-    const [postingNews, setPostingNews] = useState(false)
-    const [selectedImages, setSelectedImages] = useState<File[]>([])
-    const [imagePreviews, setImagePreviews] = useState<string[]>([])
     const [editingNews, setEditingNews] = useState<NewsItem | null>(null)
 
     useEffect(() => {
@@ -73,7 +57,6 @@ export function AdminDashboard() {
     async function fetchData() {
         setLoading(true)
         try {
-            // Fetch all profiles with their auth email
             const { data: profiles, error: profilesError } = await supabase
                 .from('profiles')
                 .select('id, full_name, role, currency, updated_at')
@@ -81,12 +64,10 @@ export function AdminDashboard() {
 
             if (profilesError) throw profilesError
 
-            // Get user emails from auth (admin only via Edge Function or manual mapping)
-            // For now, we'll show user IDs and names
             const usersWithEmail: UserProfile[] = (profiles || []).map(p => ({
                 id: p.id,
                 full_name: p.full_name,
-                email: `${p.id.slice(0, 8)}...`, // Show truncated ID as placeholder
+                email: `${p.id.slice(0, 8)}...`,
                 role: p.role || 'user',
                 currency: p.currency,
                 created_at: p.updated_at,
@@ -94,7 +75,6 @@ export function AdminDashboard() {
 
             setUsers(usersWithEmail)
 
-            // Fetch stats
             const [budgetCount, transactionCount] = await Promise.all([
                 supabase.from('budgets').select('id', { count: 'exact', head: true }),
                 supabase.from('transactions').select('id', { count: 'exact', head: true }),
@@ -116,71 +96,12 @@ export function AdminDashboard() {
     async function fetchNews() {
         setNewsLoading(true)
         try {
-            const data = await NewsService.getLatestNews(50) // Get more for admin
+            const data = await NewsService.getLatestNews(50)
             setNews(data)
         } catch (error) {
             console.error('Failed to fetch news:', error)
         } finally {
             setNewsLoading(false)
-        }
-    }
-
-    function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
-        const files = Array.from(e.target.files || [])
-        if (files.length === 0) return
-
-        // Limit to 5 images total
-        const newFiles = [...selectedImages, ...files].slice(0, 5)
-        setSelectedImages(newFiles)
-
-        // Generate previews
-        Promise.all(newFiles.map(file => {
-            return new Promise<string>((resolve) => {
-                const reader = new FileReader()
-                reader.onloadend = () => resolve(reader.result as string)
-                reader.readAsDataURL(file)
-            })
-        })).then(setImagePreviews)
-    }
-
-    function removeImage(index: number) {
-        setSelectedImages(prev => prev.filter((_, i) => i !== index))
-        setImagePreviews(prev => prev.filter((_, i) => i !== index))
-    }
-
-    function clearImages() {
-        setSelectedImages([])
-        setImagePreviews([])
-    }
-
-    async function handlePostNews(e: FormEvent) {
-        e.preventDefault()
-        if (!user || !newTitle.trim() || !newContent.trim()) return
-
-        setPostingNews(true)
-        try {
-            let imageUrls: string[] = []
-            if (selectedImages.length > 0) {
-                imageUrls = await NewsService.uploadNewsImages(selectedImages)
-            }
-            const newItem = await NewsService.createNews(newTitle, newContent, user.id, imageUrls)
-            setNews([newItem, ...news])
-            setNewTitle('')
-            setNewContent('')
-            clearImages()
-            toast({
-                title: 'News posted!',
-                description: 'Your news update has been published successfully.',
-            })
-        } catch (error) {
-            console.error('Failed to post news:', error)
-            toast({
-                title: 'Failed to post news',
-                description: error instanceof Error ? error.message : 'An error occurred',
-                variant: 'destructive',
-            })
-        } finally {
-            setPostingNews(false)
         }
     }
 
@@ -204,45 +125,17 @@ export function AdminDashboard() {
         }
     }
 
-    async function toggleUserRole(userId: string, currentRole: 'admin' | 'user') {
-        if (userId === user?.id) {
-            alert('You cannot change your own role!')
-            return
-        }
-
-        setUpdatingRole(userId)
-        const newRole = currentRole === 'admin' ? 'user' : 'admin'
-
-        try {
-            const { error } = await supabase
-                .from('profiles')
-                .update({ role: newRole })
-                .eq('id', userId)
-
-            if (error) throw error
-
-            setUsers(prev => prev.map(u =>
-                u.id === userId ? { ...u, role: newRole } : u
-            ))
-
-            if (stats) {
-                setStats({
-                    ...stats,
-                    adminCount: stats.adminCount + (newRole === 'admin' ? 1 : -1),
-                })
-            }
-        } catch (error) {
-            console.error('Failed to update role:', error)
-            alert('Failed to update user role')
-        } finally {
-            setUpdatingRole(null)
+    function handleUserUpdated(userId: string, newRole: 'admin' | 'user') {
+        setUsers(prev => prev.map(u =>
+            u.id === userId ? { ...u, role: newRole } : u
+        ))
+        if (stats) {
+            setStats({
+                ...stats,
+                adminCount: stats.adminCount + (newRole === 'admin' ? 1 : -1),
+            })
         }
     }
-
-    const filteredUsers = users.filter(u =>
-        u.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.id.toLowerCase().includes(searchQuery.toLowerCase())
-    )
 
     if (loading) {
         return (
@@ -312,169 +205,22 @@ export function AdminDashboard() {
 
                 {/* Users Tab */}
                 <TabsContent value="users" className="space-y-4">
-                    <div className="rounded-xl bg-card/80 border border-border/50 backdrop-blur-sm overflow-hidden">
-                        <div className="p-4 border-b border-border/50 flex items-center justify-between gap-4 flex-wrap">
-                            <h2 className="text-lg font-semibold flex items-center gap-2">
-                                <Users className="w-5 h-5 text-primary" />
-                                User Management
-                            </h2>
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                <input
-                                    type="text"
-                                    placeholder="Search users..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-9 pr-4 py-2 text-sm rounded-lg bg-muted/50 border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="divide-y divide-border/50">
-                            {filteredUsers.length === 0 ? (
-                                <div className="p-8 text-center text-muted-foreground">
-                                    No users found
-                                </div>
-                            ) : (
-                                filteredUsers.map((u) => (
-                                    <div key={u.id} className="p-4">
-                                        <div
-                                            className="flex items-center justify-between cursor-pointer"
-                                            onClick={() => setExpandedUser(expandedUser === u.id ? null : u.id)}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                                    <span className="text-sm font-medium text-primary">
-                                                        {u.full_name?.charAt(0)?.toUpperCase() || '?'}
-                                                    </span>
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium">{u.full_name || 'Unnamed User'}</p>
-                                                    <p className="text-xs text-muted-foreground">{u.id}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
-                                                    {u.role}
-                                                </Badge>
-                                                {expandedUser === u.id ? (
-                                                    <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                                                ) : (
-                                                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {expandedUser === u.id && (
-                                            <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
-                                                <div className="text-sm text-muted-foreground">
-                                                    <p>Currency: {u.currency || 'USD'}</p>
-                                                    <p>User ID: {u.id}</p>
-                                                </div>
-                                                <Button
-                                                    variant={u.role === 'admin' ? 'destructive' : 'default'}
-                                                    size="sm"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        toggleUserRole(u.id, u.role)
-                                                    }}
-                                                    disabled={updatingRole === u.id || u.id === user?.id}
-                                                >
-                                                    {updatingRole === u.id ? (
-                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                    ) : u.role === 'admin' ? (
-                                                        'Remove Admin'
-                                                    ) : (
-                                                        'Make Admin'
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
+                    <AdminUserTable
+                        users={users}
+                        currentUserId={user?.id || ''}
+                        onUserUpdated={handleUserUpdated}
+                    />
                 </TabsContent>
 
                 {/* News Tab */}
                 <TabsContent value="news" className="space-y-6">
                     {/* Create News Form */}
-                    <div className="rounded-xl bg-card/80 border border-border/50 backdrop-blur-sm p-6">
-                        <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-                            <Plus className="w-5 h-5 text-primary" />
-                            Post New Update
-                        </h2>
-                        <form onSubmit={handlePostNews} className="space-y-4">
-                            <div>
-                                <input
-                                    type="text"
-                                    placeholder="Update Title"
-                                    value={newTitle}
-                                    onChange={(e) => setNewTitle(e.target.value)}
-                                    className="w-full px-4 py-2 rounded-lg bg-muted/50 border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <textarea
-                                    placeholder="Update Content..."
-                                    value={newContent}
-                                    onChange={(e) => setNewContent(e.target.value)}
-                                    className="w-full px-4 py-2 rounded-lg bg-muted/50 border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[100px]"
-                                    required
-                                />
-                            </div>
-
-                            {/* Image Upload */}
-                            <div className="space-y-3">
-                                {imagePreviews.length > 0 && (
-                                    <div className="flex flex-wrap gap-3">
-                                        {imagePreviews.map((preview, index) => (
-                                            <div key={index} className="relative">
-                                                <img
-                                                    src={preview}
-                                                    alt={`Preview ${index + 1}`}
-                                                    className="w-24 h-24 object-cover rounded-lg border border-border/50"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeImage(index)}
-                                                    className="absolute -top-2 -right-2 p-1 bg-destructive text-white rounded-full hover:bg-destructive/80"
-                                                >
-                                                    <X className="w-3 h-3" />
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                {selectedImages.length < 5 && (
-                                    <label className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 border border-dashed border-border hover:border-primary/50 cursor-pointer transition-colors w-fit">
-                                        <ImagePlus className="w-5 h-5 text-muted-foreground" />
-                                        <span className="text-sm text-muted-foreground">
-                                            {selectedImages.length === 0 ? 'Attach Images' : 'Add More'} ({selectedImages.length}/5)
-                                        </span>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            multiple
-                                            onChange={handleImageSelect}
-                                            className="hidden"
-                                        />
-                                    </label>
-                                )}
-                            </div>
-
-                            <Button type="submit" disabled={postingNews} className="w-full sm:w-auto gap-2">
-                                {postingNews ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <Send className="w-4 h-4" />
-                                )}
-                                Post Update
-                            </Button>
-                        </form>
-                    </div>
+                    {user && (
+                        <AdminNewsForm
+                            userId={user.id}
+                            onNewsCreated={(newItem) => setNews([newItem, ...news])}
+                        />
+                    )}
 
                     {/* News List */}
                     <div className="space-y-4">

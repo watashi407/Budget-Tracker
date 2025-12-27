@@ -1,62 +1,57 @@
 import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { Button } from '@/presentation/components/ui/button'
 import { Card } from '@/presentation/components/ui/card'
 import { FormField } from '@/presentation/components/FormField'
 import { Wallet, Loader2 } from 'lucide-react'
 
+// Validation schema
+const signupSchema = z.object({
+    fullName: z.string().min(1, 'Name is required'),
+    email: z.string().email('Please enter a valid email'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+})
+
+type SignupForm = z.infer<typeof signupSchema>
+
 /**
  * SignupPage Component
  * Handles new user registration with email, password, and full name.
- * Part of the Presentation layer in Clean Architecture.
+ * Uses react-hook-form for form state management and zod for validation.
  */
 export function SignupPage() {
     const navigate = useNavigate()
     const { signUp, signInWithGoogle } = useAuth()
-    const [fullName, setFullName] = useState('')
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [confirmPassword, setConfirmPassword] = useState('')
-    const [error, setError] = useState('')
-    const [loading, setLoading] = useState(false)
+    const [serverError, setServerError] = useState('')
 
-    /**
-     * Handle Google Sign In
-     */
+    const form = useForm<SignupForm>({
+        resolver: zodResolver(signupSchema),
+        defaultValues: { fullName: '', email: '', password: '', confirmPassword: '' },
+    })
+
+    const { isSubmitting } = form.formState
+
     async function handleGoogleSignIn() {
         try {
-            setLoading(true)
             await signInWithGoogle()
         } catch (error) {
             console.error('[SignupPage] Google sign in error:', error)
-            setLoading(false)
         }
     }
 
-    /**
-     * Handle form submission
-     */
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault()
-        setError('')
-
-        // Validate passwords match
-        if (password !== confirmPassword) {
-            setError('Passwords do not match')
-            return
-        }
-
-        // Validate password length
-        if (password.length < 6) {
-            setError('Password must be at least 6 characters')
-            return
-        }
-
-        setLoading(true)
+    async function onSubmit(data: SignupForm) {
+        setServerError('')
 
         try {
-            await signUp(email, password, fullName)
+            await signUp(data.email, data.password, data.fullName)
             navigate({ to: '/dashboard' })
         } catch (err: unknown) {
             console.error('[SignupPage] Signup error:', err)
@@ -64,9 +59,7 @@ export function SignupPage() {
             if (message.toLowerCase().includes('pwned') || message.toLowerCase().includes('security') || message.toLowerCase().includes('weak')) {
                 message = 'This password has been exposed in a data breach or is too weak. Please choose a stronger, unique password.'
             }
-            setError(message)
-        } finally {
-            setLoading(false)
+            setServerError(message)
         }
     }
 
@@ -140,57 +133,53 @@ export function SignupPage() {
                         </p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {error && (
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        {serverError && (
                             <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
                                 <span className="h-1.5 w-1.5 rounded-full bg-destructive shrink-0" />
-                                {error}
+                                {serverError}
                             </div>
                         )}
 
                         <div className="space-y-4">
                             <FormField
                                 label="Full Name"
-                                name="fullName"
                                 placeholder="John Doe"
-                                value={fullName}
-                                onChange={(e) => setFullName(e.target.value)}
+                                error={form.formState.errors.fullName?.message}
                                 required
-                                disabled={loading}
+                                disabled={isSubmitting}
                                 className="h-12 bg-background/50 border-input/50 focus:bg-background transition-colors"
+                                {...form.register('fullName')}
                             />
                             <FormField
                                 label="Email"
-                                name="email"
                                 type="email"
                                 placeholder="name@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                error={form.formState.errors.email?.message}
                                 required
-                                disabled={loading}
+                                disabled={isSubmitting}
                                 className="h-12 bg-background/50 border-input/50 focus:bg-background transition-colors"
+                                {...form.register('email')}
                             />
                             <FormField
                                 label="Password"
-                                name="password"
                                 type="password"
                                 placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                error={form.formState.errors.password?.message}
                                 required
-                                disabled={loading}
+                                disabled={isSubmitting}
                                 className="h-12 bg-background/50 border-input/50 focus:bg-background transition-colors"
+                                {...form.register('password')}
                             />
                             <FormField
                                 label="Confirm Password"
-                                name="confirmPassword"
                                 type="password"
                                 placeholder="••••••••"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                error={form.formState.errors.confirmPassword?.message}
                                 required
-                                disabled={loading}
+                                disabled={isSubmitting}
                                 className="h-12 bg-background/50 border-input/50 focus:bg-background transition-colors"
+                                {...form.register('confirmPassword')}
                             />
                         </div>
 
@@ -198,9 +187,9 @@ export function SignupPage() {
                             type="submit"
                             className="w-full h-12 text-base font-medium shadow-lg shadow-primary/20"
                             variant="glow"
-                            disabled={loading}
+                            disabled={isSubmitting}
                         >
-                            {loading ? (
+                            {isSubmitting ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     Creating account...
@@ -222,7 +211,7 @@ export function SignupPage() {
                             variant="outline"
                             className="w-full h-12 relative border-input/50 hover:bg-accent/50 hover:text-accent-foreground"
                             onClick={handleGoogleSignIn}
-                            disabled={loading}
+                            disabled={isSubmitting}
                         >
                             <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
                                 <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
