@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link } from '@tanstack/react-router'
 import { NewsService, type NewsItem } from '@/data/services/NewsService'
-import { Sparkles, Calendar, ArrowRight, Clock } from 'lucide-react'
+import { ImageSwipeGallery } from '@/presentation/components/ImageSwipeGallery'
+import { Sparkles, Calendar, ArrowRight, Clock, Expand, ChevronLeft, ChevronRight } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 
 // Track failed image URLs globally to avoid retrying
@@ -10,6 +11,12 @@ const failedImages = new Set<string>()
 export function NewsSection() {
     const [news, setNews] = useState<NewsItem[]>([])
     const [loading, setLoading] = useState(true)
+    const [galleryOpen, setGalleryOpen] = useState(false)
+    const [galleryImages, setGalleryImages] = useState<{ id: string; url: string; fileName: string }[]>([])
+    const [galleryIndex, setGalleryIndex] = useState(0)
+
+    // Track current image index per news item for inline navigation
+    const [imageIndices, setImageIndices] = useState<Record<string, number>>({})
 
     useEffect(() => {
         loadNews()
@@ -19,10 +26,53 @@ export function NewsSection() {
         try {
             const data = await NewsService.getLatestNews(6)
             setNews(data)
+            // Initialize image indices for each news item
+            const indices: Record<string, number> = {}
+            data.forEach(item => {
+                indices[item.id] = 0
+            })
+            setImageIndices(indices)
         } catch (error) {
             console.error('Failed to load news:', error)
         } finally {
             setLoading(false)
+        }
+    }
+
+    // Navigate to next image for a specific news item
+    const goToNextImage = useCallback((itemId: string, maxImages: number, e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setImageIndices(prev => ({
+            ...prev,
+            [itemId]: prev[itemId] < maxImages - 1 ? prev[itemId] + 1 : prev[itemId]
+        }))
+    }, [])
+
+    // Navigate to previous image for a specific news item
+    const goToPrevImage = useCallback((itemId: string, e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setImageIndices(prev => ({
+            ...prev,
+            [itemId]: prev[itemId] > 0 ? prev[itemId] - 1 : prev[itemId]
+        }))
+    }, [])
+
+
+
+    // Open gallery for a news item
+    const openGallery = (item: NewsItem, imageIndex: number = 0, e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (item.images && item.images.length > 0) {
+            setGalleryImages(item.images.map((url, idx) => ({
+                id: `news-${item.id}-img-${idx}`,
+                url,
+                fileName: `${item.title} - Image ${idx + 1}`
+            })))
+            setGalleryIndex(imageIndex)
+            setGalleryOpen(true)
         }
     }
 
@@ -54,24 +104,75 @@ export function NewsSection() {
                         <Link to="/news/$newsId" params={{ newsId: featured.id }}>
                             <article className="group relative bg-card rounded-2xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 cursor-pointer">
                                 <div className="grid md:grid-cols-2 gap-0">
-                                    {featured.images && featured.images.length > 0 && !failedImages.has(featured.images[0]) ? (
-                                        <div className="relative h-64 md:h-full overflow-hidden">
-                                            <img
-                                                src={featured.images[0]}
-                                                alt={featured.title}
-                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                                onError={(e) => {
-                                                    failedImages.add(featured.images[0])
-                                                    e.currentTarget.style.display = 'none'
-                                                    e.currentTarget.parentElement?.classList.add('bg-gradient-to-br', 'from-primary/20', 'to-transparent')
-                                                }}
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                                            {featured.images.length > 1 && (
-                                                <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/50 text-white text-xs rounded-full">
-                                                    +{featured.images.length - 1} more
-                                                </div>
-                                            )}
+                                    {featured.images && featured.images.length > 0 ? (
+                                        <div className="relative h-64 md:h-full overflow-hidden group/image">
+                                            {(() => {
+                                                const currentIndex = imageIndices[featured.id] || 0;
+                                                const currentUrl = featured.images[currentIndex];
+                                                const showImage = !failedImages.has(currentUrl);
+
+                                                if (!showImage) {
+                                                    return (
+                                                        <div className="w-full h-full flex items-center justify-center bg-muted">
+                                                            <Sparkles className="w-8 h-8 text-muted-foreground/30" />
+                                                        </div>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <>
+                                                        <img
+                                                            src={currentUrl}
+                                                            alt={featured.title}
+                                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                            onError={(e) => {
+                                                                failedImages.add(currentUrl);
+                                                                // Force re-render to show fallback
+                                                                e.currentTarget.style.display = 'none';
+                                                            }}
+                                                        />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+
+                                                        {/* Navigation Arrows */}
+                                                        {featured.images.length > 1 && (
+                                                            <>
+                                                                {currentIndex > 0 && (
+                                                                    <button
+                                                                        onClick={(e) => goToPrevImage(featured.id, e)}
+                                                                        className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full opacity-0 group-hover/image:opacity-100 transition-opacity backdrop-blur-sm z-10"
+                                                                    >
+                                                                        <ChevronLeft className="w-5 h-5" />
+                                                                    </button>
+                                                                )}
+                                                                {currentIndex < featured.images.length - 1 && (
+                                                                    <button
+                                                                        onClick={(e) => goToNextImage(featured.id, featured.images.length, e)}
+                                                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full opacity-0 group-hover/image:opacity-100 transition-opacity backdrop-blur-sm z-10"
+                                                                    >
+                                                                        <ChevronRight className="w-5 h-5" />
+                                                                    </button>
+                                                                )}
+                                                            </>
+                                                        )}
+
+                                                        {/* Expand button */}
+                                                        <button
+                                                            onClick={(e) => openGallery(featured, currentIndex, e)}
+                                                            className="absolute top-3 right-3 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full opacity-0 group-hover/image:opacity-100 transition-opacity backdrop-blur-sm z-10"
+                                                            title="View images"
+                                                        >
+                                                            <Expand className="w-4 h-4" />
+                                                        </button>
+
+                                                        {/* Counter */}
+                                                        {featured.images.length > 1 && (
+                                                            <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/50 text-white text-xs rounded-full pointer-events-none">
+                                                                {currentIndex + 1} / {featured.images.length}
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
                                     ) : (
                                         <div className="relative h-64 md:h-full bg-gradient-to-br from-primary/20 via-primary/10 to-transparent flex items-center justify-center">
@@ -111,23 +212,74 @@ export function NewsSection() {
                         {rest.map((item) => (
                             <Link key={item.id} to="/news/$newsId" params={{ newsId: item.id }}>
                                 <article className="group bg-card rounded-xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 cursor-pointer h-full">
-                                    {item.images && item.images.length > 0 && !failedImages.has(item.images[0]) ? (
-                                        <div className="relative h-48 overflow-hidden bg-gradient-to-br from-muted to-muted/50">
-                                            <img
-                                                src={item.images[0]}
-                                                alt={item.title}
-                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                                onError={(e) => {
-                                                    failedImages.add(item.images[0])
-                                                    e.currentTarget.style.display = 'none'
-                                                }}
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-                                            {item.images.length > 1 && (
-                                                <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/50 text-white text-xs rounded-full">
-                                                    +{item.images.length - 1}
-                                                </div>
-                                            )}
+                                    {item.images && item.images.length > 0 ? (
+                                        <div className="relative h-48 overflow-hidden bg-gradient-to-br from-muted to-muted/50 group/image">
+                                            {(() => {
+                                                const currentIndex = imageIndices[item.id] || 0;
+                                                const currentUrl = item.images[currentIndex];
+                                                const showImage = !failedImages.has(currentUrl);
+
+                                                if (!showImage) {
+                                                    return (
+                                                        <div className="w-full h-full flex items-center justify-center">
+                                                            <Sparkles className="w-8 h-8 text-muted-foreground/30" />
+                                                        </div>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <>
+                                                        <img
+                                                            src={currentUrl}
+                                                            alt={item.title}
+                                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                            onError={(e) => {
+                                                                failedImages.add(currentUrl);
+                                                                e.currentTarget.style.display = 'none';
+                                                            }}
+                                                        />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+
+                                                        {/* Navigation Arrows */}
+                                                        {item.images.length > 1 && (
+                                                            <>
+                                                                {currentIndex > 0 && (
+                                                                    <button
+                                                                        onClick={(e) => goToPrevImage(item.id, e)}
+                                                                        className="absolute left-1.5 top-1/2 -translate-y-1/2 p-1.5 bg-black/40 hover:bg-black/60 text-white rounded-full opacity-0 group-hover/image:opacity-100 transition-opacity backdrop-blur-sm z-10"
+                                                                    >
+                                                                        <ChevronLeft className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                )}
+                                                                {currentIndex < item.images.length - 1 && (
+                                                                    <button
+                                                                        onClick={(e) => goToNextImage(item.id, item.images.length, e)}
+                                                                        className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 bg-black/40 hover:bg-black/60 text-white rounded-full opacity-0 group-hover/image:opacity-100 transition-opacity backdrop-blur-sm z-10"
+                                                                    >
+                                                                        <ChevronRight className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                )}
+                                                            </>
+                                                        )}
+
+                                                        {/* Expand button */}
+                                                        <button
+                                                            onClick={(e) => openGallery(item, currentIndex, e)}
+                                                            className="absolute top-2 right-2 p-1.5 bg-black/40 hover:bg-black/60 text-white rounded-full opacity-0 group-hover/image:opacity-100 transition-opacity backdrop-blur-sm z-10"
+                                                            title="View images"
+                                                        >
+                                                            <Expand className="w-3.5 h-3.5" />
+                                                        </button>
+
+                                                        {/* Counter */}
+                                                        {item.images.length > 1 && (
+                                                            <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/50 text-white text-xs rounded-full pointer-events-none">
+                                                                {currentIndex + 1} / {item.images.length}
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
                                     ) : (
                                         <div className="h-32 bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
@@ -158,6 +310,14 @@ export function NewsSection() {
                     </div>
                 )}
             </div>
+
+            {/* Swipe Gallery */}
+            <ImageSwipeGallery
+                images={galleryImages}
+                initialIndex={galleryIndex}
+                open={galleryOpen}
+                onClose={() => setGalleryOpen(false)}
+            />
         </section>
     )
 }
