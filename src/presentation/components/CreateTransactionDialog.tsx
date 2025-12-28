@@ -15,7 +15,7 @@ import { useAuth } from '@/presentation/context/AuthContext'
 import { storageService } from '@/data/services/SupabaseStorageService'
 import { FormField } from '@/presentation/components/FormField'
 import { useToast } from '@/presentation/components/ui/use-toast'
-import { AlertCircle, Paperclip, CheckCircle2 } from 'lucide-react'
+import { AlertCircle, Paperclip } from 'lucide-react'
 
 /**
  * CreateTransactionDialog Component

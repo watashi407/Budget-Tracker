@@ -94,8 +94,8 @@ export function LandingPage() {
                     <div className="flex items-center justify-between h-16">
                         {/* Logo */}
                         <div className="flex items-center gap-3">
-                            <img src="/logo.svg" alt="Watashi Pocket" className="h-10 w-10 rounded-xl shadow-lg shadow-primary/25 object-cover" />
-                            <span className="text-xl font-bold text-foreground">
+                            <img src="/app-icon.png" alt="Watashi Pocket" className="h-10 w-10 rounded-xl object-contain" />
+                            <span className="hidden sm:block text-xl font-bold text-foreground">
                                 Watashi Pocket
                             </span>
                         </div>

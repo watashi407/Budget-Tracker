@@ -76,7 +76,7 @@ export function LoginPage() {
                 {/* Content */}
                 <div className="relative z-10 w-full max-w-lg">
                     <div className="mb-12">
-                        <img src="/logo.svg" alt="Watashi Pocket" className="h-16 w-16 mb-6 rounded-2xl shadow-lg shadow-primary/25 object-cover" />
+                        <img src="/app-icon.png" alt="Watashi Pocket" className="h-16 w-16 mb-6 rounded-2xl object-contain" />
                         <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
                             Welcome back to <br />
                             <span className="text-primary">Watashi Pocket</span>
@@ -115,7 +115,7 @@ export function LoginPage() {
                 <div className="w-full max-w-md space-y-8">
                     {/* Mobile Logo */}
                     <div className="lg:hidden flex flex-col items-center text-center space-y-2 mb-8">
-                        <img src="/logo.svg" alt="Watashi Pocket" className="h-12 w-12 rounded-xl shadow-lg shadow-primary/25 object-cover" />
+                        <img src="/app-icon.png" alt="Watashi Pocket" className="h-12 w-12 rounded-xl object-contain" />
                         <h2 className="text-2xl font-bold">Watashi Pocket</h2>
                     </div>
 
