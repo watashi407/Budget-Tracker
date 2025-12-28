@@ -157,7 +157,9 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
             onOpenChange(false)
             return { success: true, error: null }
         } catch (err: unknown) {
-            return { success: false, error: err instanceof Error ? err.message : 'Failed to create transaction' }
+            console.error('[CreateTransaction] Error:', err)
+            const message = err instanceof Error ? err.message : 'Failed to create transaction'
+            return { success: false, error: message }
         }
     }, { success: false, error: null })
 

@@ -76,7 +76,10 @@ export class SupabaseTransactionRepository implements ITransactionRepository {
             .select()
             .single()
 
-        if (error) throw error
+        if (error) {
+            console.error('[SupabaseTransactionRepository.create] Error:', error)
+            throw new Error(error.message || 'Database error')
+        }
 
         // Update budget spent amount if budget_id is provided
         if (input.budgetId && input.type === 'expense') {
