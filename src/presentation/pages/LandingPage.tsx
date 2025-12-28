@@ -18,7 +18,6 @@ import {
     DialogFooter,
 } from '@/presentation/components/ui/dialog'
 import {
-    Wallet,
     Sparkles,
     ArrowRight,
     ChevronRight,
@@ -95,9 +94,7 @@ export function LandingPage() {
                     <div className="flex items-center justify-between h-16">
                         {/* Logo */}
                         <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary via-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-primary/25">
-                                <Wallet className="h-5 w-5 text-white" />
-                            </div>
+                            <img src="/logo.svg" alt="Watashi Pocket" className="h-10 w-10 rounded-xl shadow-lg shadow-primary/25 object-cover" />
                             <span className="text-xl font-bold text-foreground">
                                 Watashi Pocket
                             </span>

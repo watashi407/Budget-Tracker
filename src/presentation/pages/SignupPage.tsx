@@ -7,7 +7,7 @@ import { useAuth } from '@/presentation/context/AuthContext'
 import { Button } from '@/presentation/components/ui/button'
 import { Card } from '@/presentation/components/ui/card'
 import { FormField } from '@/presentation/components/FormField'
-import { Wallet, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 // Validation schema
 const signupSchema = z.object({
@@ -74,9 +74,7 @@ export function SignupPage() {
                 {/* Content */}
                 <div className="relative z-10 w-full max-w-lg">
                     <div className="mb-12">
-                        <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary via-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-primary/25 mb-6">
-                            <Wallet className="h-8 w-8 text-white" />
-                        </div>
+                        <img src="/logo.svg" alt="Watashi Pocket" className="h-16 w-16 mb-6 rounded-2xl shadow-lg shadow-primary/25 object-cover" />
                         <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
                             Join the <br />
                             <span className="text-primary">Financial Revolution</span>
@@ -120,9 +118,7 @@ export function SignupPage() {
                 <div className="w-full max-w-md space-y-8 py-8">
                     {/* Mobile Logo */}
                     <div className="lg:hidden flex flex-col items-center text-center space-y-2 mb-8">
-                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary via-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-primary/25">
-                            <Wallet className="h-6 w-6 text-white" />
-                        </div>
+                        <img src="/logo.svg" alt="Watashi Pocket" className="h-12 w-12 rounded-xl shadow-lg shadow-primary/25 object-cover" />
                         <h2 className="text-2xl font-bold">Watashi Pocket</h2>
                     </div>
 

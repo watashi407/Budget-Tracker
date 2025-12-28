@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { IAuthRepository } from '@/domain/repositories/IAuthRepository'
 import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
 import type { User } from '@/domain/entities/User'
 
 /**
@@ -62,7 +63,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
             ? 'com.colin404.project1://google-auth'
             : `${window.location.origin}/dashboard`
 
-        const { error } = await supabase.auth.signInWithOAuth({
+        const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
                 redirectTo,
@@ -71,6 +72,10 @@ export class SupabaseAuthRepository implements IAuthRepository {
         })
 
         if (error) throw error
+
+        if (isNative && data?.url) {
+            await Browser.open({ url: data.url })
+        }
     }
 
     /**

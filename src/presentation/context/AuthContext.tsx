@@ -3,6 +3,7 @@ import type { User } from '@/domain/entities/User'
 import { SupabaseAuthRepository } from '@/data/repositories/SupabaseAuthRepository'
 import { supabase } from '@/lib/supabase'
 import { App } from '@capacitor/app'
+import { Browser } from '@capacitor/browser'
 
 /**
  * AuthContext
@@ -84,28 +85,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Helper to handle deep links for mobile auth
+        // Helper to handle deep links for mobile auth
         const handleDeepLink = async () => {
             await App.addListener('appUrlOpen', async (event) => {
                 if (event.url.startsWith('com.colin404.project1://')) {
-                    // Extract the fragment (hash) from the URL
-                    const url = new URL(event.url)
-                    // Mobile URLs might put data in search or hash depending on provider
-                    const params = new URLSearchParams(url.hash.substring(1)) // remove #
-                    const accessToken = params.get('access_token')
-                    const refreshToken = params.get('refresh_token')
+                    try {
+                        const url = new URL(event.url)
 
-                    if (accessToken && refreshToken) {
-                        try {
+                        // Handle PKCE flow (code in search params)
+                        const code = url.searchParams.get('code')
+                        if (code) {
+                            const { error } = await supabase.auth.exchangeCodeForSession(code)
+                            if (error) throw error
+
+                            // Close browser after successful exchange
+                            await Browser.close()
+                            return
+                        }
+
+                        // Handle Implicit flow (access_token in hash)
+                        const hashParams = new URLSearchParams(url.hash.substring(1))
+                        const accessToken = hashParams.get('access_token')
+                        const refreshToken = hashParams.get('refresh_token')
+
+                        if (accessToken && refreshToken) {
                             const { error } = await supabase.auth.setSession({
                                 access_token: accessToken,
                                 refresh_token: refreshToken,
                             })
                             if (error) throw error
 
-                            // Let the auth state listener above handle the rest (user mapping, etc)
-                        } catch (e) {
-                            console.error('Failed to set session from deep link:', e)
+                            // Close browser after successful session set
+                            await Browser.close()
                         }
+                    } catch (e) {
+                        console.error('Failed to handle deep link:', e)
                     }
                 }
             })
