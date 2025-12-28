@@ -26,7 +26,8 @@ import {
     ThumbsUp,
     Lightbulb,
     Rocket,
-    BadgeCheck
+    BadgeCheck,
+    Download
 } from 'lucide-react'
 
 const socialRepository = new SupabaseSocialRepository()
@@ -173,6 +174,12 @@ export function LandingPage() {
                                 <a href="#features">
                                     <Button variant="outline" size="lg" className="text-lg px-8 h-14 border-border/50 hover:border-primary/50">
                                         Learn More
+                                    </Button>
+                                </a>
+                                <a href="/app-release.apk" download>
+                                    <Button variant="outline" size="lg" className="text-lg px-8 h-14 border-primary/50 text-primary hover:bg-primary/10 hover:border-primary gap-2">
+                                        <Download className="h-5 w-5" />
+                                        Download App
                                     </Button>
                                 </a>
                             </div>
