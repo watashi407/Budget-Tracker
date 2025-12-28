@@ -164,22 +164,30 @@ export function LandingPage() {
                             </p>
 
                             {/* CTA Buttons */}
-                            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 animate-slide-up" style={{ animationDelay: '200ms' }}>
-                                <Link to="/signup">
-                                    <Button variant="glow" size="lg" className="text-lg px-8 h-14 gap-2 shadow-lg shadow-primary/25">
-                                        Start Free Today
-                                        <ChevronRight className="h-5 w-5" />
-                                    </Button>
-                                </Link>
-                                <a href="#features">
-                                    <Button variant="outline" size="lg" className="text-lg px-8 h-14 border-border/50 hover:border-primary/50">
-                                        Learn More
-                                    </Button>
-                                </a>
+                            <div className="flex flex-col items-center lg:items-start gap-6 animate-slide-up" style={{ animationDelay: '200ms' }}>
+                                <div className="flex flex-col sm:flex-row items-center gap-4">
+                                    <Link to="/signup">
+                                        <Button variant="glow" size="lg" className="text-lg px-8 h-14 gap-2 shadow-lg shadow-primary/25">
+                                            Start Free Today
+                                            <ChevronRight className="h-5 w-5" />
+                                        </Button>
+                                    </Link>
+                                    <a href="#features">
+                                        <Button variant="outline" size="lg" className="text-lg px-8 h-14 border-border/50 hover:border-primary/50">
+                                            Learn More
+                                        </Button>
+                                    </a>
+                                </div>
+
                                 <a href="/app-release.apk" download>
-                                    <Button variant="outline" size="lg" className="text-lg px-8 h-14 border-primary/50 text-primary hover:bg-primary/10 hover:border-primary gap-2">
-                                        <Download className="h-5 w-5" />
-                                        Download App
+                                    <Button
+                                        variant="outline"
+                                        size="lg"
+                                        className="relative group text-base px-8 h-12 border-primary/30 text-muted-foreground hover:text-foreground bg-background/30 backdrop-blur-sm hover:bg-primary/5 hover:border-primary/50 transition-all duration-300 overflow-hidden gap-2.5 w-full sm:w-auto"
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+                                        <Download className="h-4 w-4 group-hover:scale-110 group-hover:translate-y-0.5 transition-transform" />
+                                        <span>Download Mobile APK</span>
                                     </Button>
                                 </a>
                             </div>
