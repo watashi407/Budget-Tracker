@@ -14,7 +14,8 @@ import { useCurrency } from '@/presentation/context/CurrencyContext'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { storageService } from '@/data/services/SupabaseStorageService'
 import { FormField } from '@/presentation/components/FormField'
-import { AlertCircle, Paperclip } from 'lucide-react'
+import { useToast } from '@/presentation/components/ui/use-toast'
+import { AlertCircle, Paperclip, CheckCircle2 } from 'lucide-react'
 
 /**
  * CreateTransactionDialog Component
@@ -39,6 +40,7 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
     const { createTransaction } = useTransactions()
     const { budgets } = useBudgets()
     const { currency, availableCurrencies } = useCurrency()
+    const { toast } = useToast()
 
     const activeCurrency = availableCurrencies.find(c => c.code === currency)
     const isEmailVerified = user?.emailVerified
@@ -155,6 +157,13 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
             setUploadError(null)
             setFieldErrors({})
             onOpenChange(false)
+
+            // Show success toast
+            toast({
+                title: "Transaction created",
+                description: `${type === 'income' ? 'Income' : 'Expense'} of ${activeCurrency?.symbol || '$'}${parsedAmount.toFixed(2)} added successfully.`,
+            })
+
             return { success: true, error: null }
         } catch (err: unknown) {
             console.error('[CreateTransaction] Error:', err)

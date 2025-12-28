@@ -12,6 +12,7 @@ import { FormField } from '@/presentation/components/FormField'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { storageService } from '@/data/services/SupabaseStorageService'
+import { useToast } from '@/presentation/components/ui/use-toast'
 import { AlertCircle, Paperclip } from 'lucide-react'
 import { BUDGET_CATEGORIES, OTHERS_CATEGORY } from '@/constants/categories'
 
@@ -34,6 +35,7 @@ interface FieldErrors {
 export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogProps) {
     const { user } = useAuth()
     const { createBudget } = useBudgets()
+    const { toast } = useToast()
     const isEmailVerified = user?.emailVerified
 
     // Form state
@@ -167,6 +169,13 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
             setUploadError(null)
             setFieldErrors({})
             onOpenChange(false)
+
+            // Show success toast
+            toast({
+                title: "Budget created",
+                description: `"${name}" budget created successfully.`,
+            })
+
             return { success: true, error: null }
         } catch (err: unknown) {
             return { success: false, error: err instanceof Error ? err.message : 'Failed to create budget' }
