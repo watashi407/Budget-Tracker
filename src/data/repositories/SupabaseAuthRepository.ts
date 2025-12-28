@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { IAuthRepository } from '@/domain/repositories/IAuthRepository'
+import { Capacitor } from '@capacitor/core'
 import type { User } from '@/domain/entities/User'
 
 /**
@@ -56,10 +57,16 @@ export class SupabaseAuthRepository implements IAuthRepository {
      * Sign in with Google OAuth
      */
     async signInWithGoogle(): Promise<void> {
+        const isNative = Capacitor.isNativePlatform()
+        const redirectTo = isNative
+            ? 'com.colin404.project1://google-auth'
+            : `${window.location.origin}/dashboard`
+
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/dashboard`,
+                redirectTo,
+                skipBrowserRedirect: isNative, // Important for mobile to return control to app
             },
         })
 

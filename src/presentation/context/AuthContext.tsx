@@ -2,6 +2,7 @@ import React, { createContext, useEffect, useState } from 'react'
 import type { User } from '@/domain/entities/User'
 import { SupabaseAuthRepository } from '@/data/repositories/SupabaseAuthRepository'
 import { supabase } from '@/lib/supabase'
+import { App } from '@capacitor/app'
 
 /**
  * AuthContext
@@ -82,7 +83,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
         }
 
-        // Listen for auth state changes - this is the SINGLE SOURCE OF TRUTH
+        // Helper to handle deep links for mobile auth
+        const handleDeepLink = async () => {
+            await App.addListener('appUrlOpen', async (event) => {
+                if (event.url.startsWith('com.colin404.project1://')) {
+                    // Extract the fragment (hash) from the URL
+                    const url = new URL(event.url)
+                    // Mobile URLs might put data in search or hash depending on provider
+                    const params = new URLSearchParams(url.hash.substring(1)) // remove #
+                    const accessToken = params.get('access_token')
+                    const refreshToken = params.get('refresh_token')
+
+                    if (accessToken && refreshToken) {
+                        try {
+                            const { error } = await supabase.auth.setSession({
+                                access_token: accessToken,
+                                refresh_token: refreshToken,
+                            })
+                            if (error) throw error
+
+                            // Let the auth state listener above handle the rest (user mapping, etc)
+                        } catch (e) {
+                            console.error('Failed to set session from deep link:', e)
+                        }
+                    }
+                }
+            })
+        }
+
+        handleDeepLink()
+
         const { data } = supabase.auth.onAuthStateChange((event, session) => {
             if (!mounted) return
 
@@ -130,6 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             mounted = false
             clearTimeout(failsafeTimeout)
             data.subscription.unsubscribe()
+            App.removeAllListeners()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])

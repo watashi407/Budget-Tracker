@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Project 1</string>
-    <string name="title_activity_main">Project 1</string>
+    <string name="app_name">Watashi Pocket</string>
+    <string name="title_activity_main">Watashi Pocket</string>
     <string name="package_name">com.colin404.project1</string>
     <string name="custom_url_scheme">com.colin404.project1</string>
 </resources>
