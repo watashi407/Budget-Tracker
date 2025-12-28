@@ -124,7 +124,7 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
                 amount: parsedAmount,
                 category,
                 description,
-                budgetId: budgetId || undefined,
+                budgetId: budgetId && budgetId !== "none" ? budgetId : undefined,
                 date: new Date(dateStr),
             }
 
