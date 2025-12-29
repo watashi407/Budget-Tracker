@@ -1,0 +1,334 @@
+﻿
+> Configure project :app
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+> Configure project :capacitor-cordova-android-plugins
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preReleaseBuild UP-TO-DATE
+> Task :app:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :capacitor-android:preBuild UP-TO-DATE
+> Task :capacitor-android:preReleaseBuild UP-TO-DATE
+> Task :capacitor-android:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :capacitor-android:mergeReleaseNativeLibs NO-SOURCE
+> Task :capacitor-android:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :capacitor-app:preBuild UP-TO-DATE
+> Task :capacitor-app:preReleaseBuild UP-TO-DATE
+> Task :capacitor-app:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :capacitor-app:mergeReleaseNativeLibs NO-SOURCE
+> Task :capacitor-app:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :capacitor-browser:preBuild UP-TO-DATE
+> Task :capacitor-browser:preReleaseBuild UP-TO-DATE
+> Task :capacitor-browser:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :capacitor-browser:mergeReleaseNativeLibs NO-SOURCE
+> Task :capacitor-browser:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:preBuild UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:preReleaseBuild UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:mergeReleaseNativeLibs NO-SOURCE
+> Task :capacitor-cordova-android-plugins:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :app:mergeReleaseNativeLibs NO-SOURCE
+> Task :app:stripReleaseDebugSymbols NO-SOURCE
+> Task :app:extractReleaseNativeSymbolTables NO-SOURCE
+> Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :capacitor-android:generateReleaseResValues UP-TO-DATE
+> Task :capacitor-android:generateReleaseResources UP-TO-DATE
+> Task :capacitor-android:packageReleaseResources UP-TO-DATE
+> Task :capacitor-android:processReleaseNavigationResources UP-TO-DATE
+> Task :capacitor-android:parseReleaseLocalResources UP-TO-DATE
+> Task :capacitor-android:generateReleaseRFile UP-TO-DATE
+> Task :capacitor-android:javaPreCompileRelease UP-TO-DATE
+> Task :capacitor-android:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :capacitor-android:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :capacitor-app:generateReleaseResValues UP-TO-DATE
+> Task :capacitor-app:generateReleaseResources UP-TO-DATE
+> Task :capacitor-app:packageReleaseResources UP-TO-DATE
+> Task :capacitor-app:processReleaseNavigationResources UP-TO-DATE
+> Task :capacitor-app:parseReleaseLocalResources UP-TO-DATE
+> Task :capacitor-app:generateReleaseRFile UP-TO-DATE
+> Task :capacitor-app:javaPreCompileRelease UP-TO-DATE
+> Task :capacitor-app:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :capacitor-app:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :capacitor-browser:generateReleaseResValues UP-TO-DATE
+> Task :capacitor-browser:generateReleaseResources UP-TO-DATE
+> Task :capacitor-browser:packageReleaseResources UP-TO-DATE
+> Task :capacitor-browser:processReleaseNavigationResources UP-TO-DATE
+> Task :capacitor-browser:parseReleaseLocalResources UP-TO-DATE
+> Task :capacitor-browser:generateReleaseRFile UP-TO-DATE
+> Task :capacitor-browser:javaPreCompileRelease UP-TO-DATE
+> Task :capacitor-browser:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :capacitor-browser:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :capacitor-android:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:generateReleaseResValues UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:generateReleaseResources UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:packageReleaseResources UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:processReleaseNavigationResources UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:parseReleaseLocalResources UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:generateReleaseRFile UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:javaPreCompileRelease UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:compileReleaseJavaWithJavac NO-SOURCE
+> Task :capacitor-cordova-android-plugins:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :app:checkReleaseDuplicateClasses UP-TO-DATE
+> Task :app:javaPreCompileRelease UP-TO-DATE
+> Task :capacitor-android:writeReleaseAarMetadata UP-TO-DATE
+> Task :capacitor-app:writeReleaseAarMetadata UP-TO-DATE
+> Task :capacitor-browser:writeReleaseAarMetadata UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:writeReleaseAarMetadata UP-TO-DATE
+> Task :app:checkReleaseAarMetadata UP-TO-DATE
+> Task :app:processReleaseNavigationResources UP-TO-DATE
+> Task :app:compileReleaseNavigationResources UP-TO-DATE
+> Task :app:generateReleaseResValues UP-TO-DATE
+> Task :app:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :app:generateReleaseResources UP-TO-DATE
+> Task :app:packageReleaseResources UP-TO-DATE
+> Task :app:parseReleaseLocalResources UP-TO-DATE
+> Task :app:createReleaseCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksRelease UP-TO-DATE
+> Task :capacitor-android:extractDeepLinksRelease UP-TO-DATE
+> Task :capacitor-android:processReleaseManifest UP-TO-DATE
+> Task :capacitor-app:extractDeepLinksRelease UP-TO-DATE
+> Task :capacitor-app:processReleaseManifest UP-TO-DATE
+> Task :capacitor-browser:extractDeepLinksRelease UP-TO-DATE
+> Task :capacitor-browser:processReleaseManifest UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:extractDeepLinksRelease UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:processReleaseManifest UP-TO-DATE
+> Task :app:processReleaseMainManifest UP-TO-DATE
+> Task :app:processReleaseManifest UP-TO-DATE
+> Task :app:processReleaseManifestForPackage UP-TO-DATE
+> Task :capacitor-android:compileReleaseLibraryResources UP-TO-DATE
+> Task :capacitor-app:compileReleaseLibraryResources UP-TO-DATE
+> Task :capacitor-browser:compileReleaseLibraryResources UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:compileReleaseLibraryResources UP-TO-DATE
+> Task :capacitor-app:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :capacitor-browser:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :app:desugarReleaseFileDependencies UP-TO-DATE
+> Task :app:mergeReleaseStartupProfile UP-TO-DATE
+> Task :app:mergeExtDexRelease UP-TO-DATE
+> Task :capacitor-android:prepareReleaseArtProfile UP-TO-DATE
+> Task :capacitor-app:prepareReleaseArtProfile UP-TO-DATE
+> Task :capacitor-browser:prepareReleaseArtProfile UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:prepareReleaseArtProfile UP-TO-DATE
+> Task :app:mergeReleaseArtProfile UP-TO-DATE
+> Task :capacitor-app:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :capacitor-browser:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :capacitor-android:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :app:mergeReleaseShaders UP-TO-DATE
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :capacitor-android:mergeReleaseShaders
+> Task :capacitor-android:compileReleaseShaders NO-SOURCE
+> Task :capacitor-android:generateReleaseAssets UP-TO-DATE
+> Task :capacitor-android:mergeReleaseAssets
+> Task :capacitor-app:mergeReleaseShaders
+> Task :capacitor-app:compileReleaseShaders NO-SOURCE
+> Task :capacitor-app:generateReleaseAssets UP-TO-DATE
+> Task :capacitor-app:mergeReleaseAssets
+> Task :capacitor-browser:mergeReleaseShaders
+> Task :capacitor-browser:compileReleaseShaders NO-SOURCE
+> Task :capacitor-browser:generateReleaseAssets UP-TO-DATE
+> Task :capacitor-browser:mergeReleaseAssets
+> Task :capacitor-cordova-android-plugins:mergeReleaseShaders
+> Task :capacitor-cordova-android-plugins:compileReleaseShaders NO-SOURCE
+> Task :capacitor-cordova-android-plugins:generateReleaseAssets UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:mergeReleaseAssets
+> Task :app:mergeReleaseResources FAILED
+> Task :app:mergeReleaseAssets
+
+[Incubating] Problems report is available at: file:///C:/Users/hyper/Desktop/basic%20react/project_1/android/build/reports/problems/problems-report.html
+.\gradlew.bat : 
+At line:1 char:134
++ ...  react\project_1\an
+droid"; .\gradlew.bat 
+assembleRelease 2>&1 | 
+Out-F ...
++                        
+        ~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
+    + CategoryInfo       
+       : NotSpecified:   
+  (:String) [], Remote   
+ Exception
+    + FullyQualifiedErro 
+   rId : NativeCommandE  
+  rror
+ 
+FAILURE: Build failed 
+with an exception.
+
+* What went wrong:
+Execution failed for 
+task ':app:mergeReleaseRe
+sources'.
+> Multiple task action 
+failures occurred:
+   > A failure occurred 
+while executing com.andro
+id.build.gradle.internal.
+res.Aapt2CompileRunnable
+      > Android resource 
+compilation failed
+        ERROR: AAPT: com.
+colin404.project1.app-mai
+n-30:/mipmap-mdpi/ic_laun
+cher_round.png: error: 
+failed to read PNG 
+signature: file does not 
+start with PNG signature.
+        C:\Users\hyper\De
+sktop\basic react\project
+_1\android\app\src\main\r
+es\mipmap-mdpi\ic_launche
+r_round.png: error: file 
+failed to compile.
+        
+            
+   > A failure occurred 
+while executing com.andro
+id.build.gradle.internal.
+res.Aapt2CompileRunnable
+      > Android resource 
+compilation failed
+        ERROR: AAPT: com.
+colin404.project1.app-mai
+n-30:/mipmap-xhdpi/ic_lau
+ncher_round.png: error: 
+failed to read PNG 
+signature: file does not 
+start with PNG signature.
+        C:\Users\hyper\De
+sktop\basic react\project
+_1\android\app\src\main\r
+es\mipmap-xhdpi\ic_launch
+er_round.png: error: 
+file failed to compile.
+        
+            
+   > A failure occurred 
+while executing com.andro
+id.build.gradle.internal.
+res.Aapt2CompileRunnable
+      > Android resource 
+compilation failed
+        ERROR: AAPT: com.
+colin404.project1.app-mai
+n-30:/mipmap-mdpi/ic_laun
+cher.png: error: failed 
+to read PNG signature: 
+file does not start with 
+PNG signature.
+        C:\Users\hyper\De
+sktop\basic react\project
+_1\android\app\src\main\r
+es\mipmap-mdpi\ic_launche
+r.png: error: file 
+failed to compile.
+        
+            
+   > A failure occurred 
+while executing com.andro
+id.build.gradle.internal.
+res.Aapt2CompileRunnable
+      > Android resource 
+compilation failed
+        ERROR: AAPT: com.
+colin404.project1.app-mai
+n-30:/mipmap-xhdpi/ic_lau
+ncher.png: error: failed 
+to read PNG signature: 
+file does not start with 
+PNG signature.
+        C:\Users\hyper\De
+sktop\basic react\project
+_1\android\app\src\main\r
+es\mipmap-xhdpi\ic_launch
+er.png: error: file 
+failed to compile.
+        
+            
+   > A failure occurred 
+while executing com.andro
+id.build.gradle.internal.
+res.Aapt2CompileRunnable
+      > Android resource 
+compilation failed
+        ERROR: AAPT: com.
+colin404.project1.app-mai
+n-30:/mipmap-xxxhdpi/ic_l
+auncher.png: error: 
+failed to read PNG 
+signature: file does not 
+start with PNG signature.
+        C:\Users\hyper\De
+sktop\basic react\project
+_1\android\app\src\main\r
+es\mipmap-xxxhdpi\ic_laun
+cher.png: error: file 
+failed to compile.
+        
+            
+   > A failure occurred 
+while executing com.andro
+id.build.gradle.internal.
+res.Aapt2CompileRunnable
+      > Android resource 
+compilation failed
+        ERROR: AAPT: com.
+colin404.project1.app-mai
+n-30:/mipmap-hdpi/ic_laun
+cher.png: error: failed 
+to read PNG signature: 
+file does not start with 
+PNG signature.
+        C:\Users\hyper\De
+sktop\basic react\project
+_1\android\app\src\main\r
+es\mipmap-hdpi\ic_launche
+r.png: error: file 
+failed to compile.
+        
+            
+   > A failure occurred 
+while executing com.andro
+id.build.gradle.internal.
+res.Aapt2CompileRunnable
+      > Android resource 
+compilation failed
+        ERROR: AAPT: com.
+colin404.project1.app-mai
+n-30:/mipmap-xxhdpi/ic_la
+uncher.png: error: 
+failed to read PNG 
+signature: file does not 
+start with PNG signature.
+        C:\Users\hyper\De
+sktop\basic react\project
+_1\android\app\src\main\r
+es\mipmap-xxhdpi\ic_launc
+her.png: error: file 
+failed to compile.
+        
+            
+
+* Try:
+> Run with --stacktrace 
+option to get the stack 
+trace.
+> Run with --info or 
+--debug option to get 
+more log output.
+> Run with --scan to get 
+full insights.
+> Get more help at 
+https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 27s
+102 actionable tasks: 10 executed, 92 up-to-date
