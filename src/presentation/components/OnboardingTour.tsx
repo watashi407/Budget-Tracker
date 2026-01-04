@@ -3,19 +3,20 @@ import { createPortal } from 'react-dom'
 import { useAuth } from '@/presentation/context/AuthContext'
 import { Button } from '@/presentation/components/ui/button'
 import { Card } from '@/presentation/components/ui/card'
-import { X, ChevronRight, Check } from 'lucide-react'
+import { X, ChevronRight, Check, Eye, Play } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
 
 /**
  * OnboardingTour
- * A walkthrough guide for new users.
+ * A walkthrough guide for new users with minimize capability.
  */
 export function OnboardingTour() {
     const { user, completeOnboarding } = useAuth()
     const navigate = useNavigate()
     const [step, setStep] = useState(0)
     const [isVisible, setIsVisible] = useState(false)
+    const [isMinimized, setIsMinimized] = useState(false)
 
     // Wait for user data to load and check if onboarding is needed
     useEffect(() => {
@@ -108,11 +109,36 @@ export function OnboardingTour() {
         await completeOnboarding()
     }
 
+    const handleMinimize = () => {
+        setIsMinimized(true)
+    }
+
+    const handleRestore = () => {
+        setIsMinimized(false)
+    }
+
     if (!isVisible || !user) return null
 
     const currentStep = steps[step]
 
-    // Render Overlay and Modal/Tooltip
+    // Render minimized floating button
+    if (isMinimized) {
+        return createPortal(
+            <div className="fixed bottom-20 right-4 z-50 animate-in slide-in-from-bottom-5 duration-300 md:bottom-6">
+                <Button
+                    onClick={handleRestore}
+                    className="group shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-4 py-2 h-auto"
+                >
+                    <Play className="h-4 w-4 mr-2 group-hover:animate-pulse" />
+                    <span className="font-medium">Continue Tour</span>
+                    <span className="ml-2 text-xs opacity-70">({step + 1}/{steps.length})</span>
+                </Button>
+            </div>,
+            document.body
+        )
+    }
+
+    // Render full overlay and modal
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center isolate pointer-events-auto">
             {/* Backdrop */}
@@ -121,8 +147,6 @@ export function OnboardingTour() {
             {/* Content Card */}
             <Card className={cn(
                 "relative z-10 w-full max-w-sm md:max-w-md mx-4 overflow-hidden border-primary/20 shadow-2xl shadow-primary/10 animate-in zoom-in-95 duration-300 slide-in-from-bottom-5",
-                // Positioning logic could be enhanced here for real tooltip behavior, 
-                // but centering is safer for mobile/responsiveness MVP
                 "bg-zinc-900/95 text-zinc-100"
             )}>
                 {/* Progress Bar */}
@@ -157,14 +181,25 @@ export function OnboardingTour() {
                         {currentStep.description}
                     </p>
 
-                    <div className="flex justify-between items-center">
-                        <Button
-                            variant="ghost"
-                            onClick={handleComplete}
-                            className="text-zinc-500 hover:text-white"
-                        >
-                            Skip Tour
-                        </Button>
+                    <div className="flex justify-between items-center gap-2">
+                        <div className="flex gap-2">
+                            <Button
+                                variant="ghost"
+                                onClick={handleComplete}
+                                className="text-zinc-500 hover:text-white text-sm px-2"
+                            >
+                                Skip
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={handleMinimize}
+                                className="text-zinc-400 hover:text-white border-zinc-700 hover:border-zinc-600 text-sm"
+                            >
+                                <Eye className="h-3.5 w-3.5 mr-1.5" />
+                                <span className="hidden sm:inline">Peek at UI</span>
+                                <span className="sm:hidden">Peek</span>
+                            </Button>
+                        </div>
                         <Button
                             onClick={handleNext}
                             className="bg-primary hover:bg-primary/90 text-primary-foreground min-w-[100px]"
@@ -186,3 +221,4 @@ export function OnboardingTour() {
         document.body
     )
 }
+
