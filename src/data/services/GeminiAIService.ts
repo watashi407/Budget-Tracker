@@ -4,17 +4,46 @@ import type { Budget } from '@/domain/entities/Budget'
 import type { Transaction } from '@/domain/entities/Transaction'
 
 /**
+ * Result interface for receipt scanning
+ * Contains extracted transaction data with confidence score
+ */
+export interface ScanReceiptResult {
+    amount?: number
+    category?: string
+    description?: string
+    date?: string
+    type?: 'income' | 'expense'
+    merchantName?: string
+    confidence: number
+    rawText?: string
+}
+
+/**
+ * Result interface for budget document scanning
+ * Contains extracted budget data with confidence score
+ */
+export interface ScanBudgetResult {
+    name?: string
+    category?: string
+    amount?: number
+    period?: 'daily' | 'weekly' | 'monthly' | 'yearly'
+    confidence: number
+    rawText?: string
+}
+
+/**
  * GeminiAIService
- * Service for interacting with Google's Gemini AI for budget insights and forecasting.
+ * Service for interacting with Google's Gemini AI for budget insights, forecasting, and document scanning.
  * Refactored to use TanStack AI.
  */
 class GeminiAIService {
     private gemini: ReturnType<typeof createGemini> | null = null
+    private apiKey: string | null = null
 
     constructor() {
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY
-        if (apiKey) {
-            this.gemini = createGemini(apiKey)
+        this.apiKey = import.meta.env.VITE_GEMINI_API_KEY || null
+        if (this.apiKey) {
+            this.gemini = createGemini(this.apiKey)
         }
     }
 
@@ -23,6 +52,214 @@ class GeminiAIService {
      */
     isAvailable(): boolean {
         return this.gemini !== null
+    }
+
+    /**
+     * Convert a File to base64 data and extract mime type for vision API
+     */
+    private async fileToBase64(file: File): Promise<{ base64: string; mimeType: string }> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = () => {
+                const dataUrl = reader.result as string
+                // Extract base64 data from data URL (remove "data:image/png;base64," prefix)
+                const base64Match = dataUrl.match(/^data:([^;]+);base64,(.+)$/)
+                if (base64Match) {
+                    resolve({ base64: base64Match[2], mimeType: base64Match[1] })
+                } else {
+                    reject(new Error('Invalid data URL format'))
+                }
+            }
+            reader.onerror = () => reject(new Error('Failed to read file'))
+            reader.readAsDataURL(file)
+        })
+    }
+
+    /**
+     * Call Gemini Vision API directly for multimodal content
+     * Uses the REST API since TanStack AI adapter has issues with multimodal
+     */
+    private async callGeminiVisionAPI(prompt: string, base64Image: string, mimeType: string): Promise<string> {
+        if (!this.apiKey) {
+            throw new Error('Gemini API key not configured')
+        }
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${this.apiKey}`
+
+        const requestBody = {
+            contents: [{
+                parts: [
+                    { text: prompt },
+                    {
+                        inline_data: {
+                            mime_type: mimeType,
+                            data: base64Image
+                        }
+                    }
+                ]
+            }],
+            generationConfig: {
+                temperature: 0.4,
+                topK: 32,
+                topP: 1,
+                maxOutputTokens: 1024,
+            }
+        }
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody)
+        })
+
+        if (!response.ok) {
+            const errorText = await response.text()
+            console.error('Gemini Vision API error:', response.status, errorText)
+            throw new Error(`Gemini API error: ${response.status}`)
+        }
+
+        const data = await response.json()
+
+        // Extract text from response
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+        return text
+    }
+
+    /**
+     * Scan a receipt image and extract transaction data
+     * Uses Gemini's vision capabilities via direct REST API
+     */
+    async scanReceipt(imageFile: File): Promise<ScanReceiptResult> {
+        if (!this.apiKey) {
+            throw new Error('Gemini API key not configured')
+        }
+
+        try {
+            const { base64, mimeType } = await this.fileToBase64(imageFile)
+
+            const prompt = `Analyze this receipt/document image and extract financial transaction data.
+
+Return ONLY a valid JSON object with these fields (use null for fields you cannot determine):
+{
+    "amount": <number or null - the total amount/price>,
+    "category": <string or null - categorize as one of: food, eating-out, transportation, utilities, healthcare, entertainment, shopping, groceries, personal-care, education, work, other>,
+    "description": <string or null - brief description of the purchase/transaction>,
+    "date": <string or null - date in YYYY-MM-DD format>,
+    "type": <"income" or "expense" - determine if this is money received or spent>,
+    "merchantName": <string or null - name of the store/merchant>,
+    "confidence": <number 0-100 - how confident are you in this extraction>,
+    "rawText": <string or null - key text visible on the receipt>
+}
+
+Important:
+- Extract the TOTAL amount, not individual items
+- If it's a receipt from a store, it's likely an "expense"
+- If it's a payslip or deposit slip, it's likely "income"
+- Be conservative with confidence - lower if image is unclear or data is ambiguous`
+
+            const responseText = await this.callGeminiVisionAPI(prompt, base64, mimeType)
+            return this.parseReceiptResult(responseText)
+        } catch (error) {
+            console.error('Error scanning receipt:', error)
+            throw new Error('Failed to scan receipt. Please try again.')
+        }
+    }
+
+    /**
+     * Scan a budget document/screenshot and extract budget data
+     * Uses Gemini's vision capabilities via direct REST API
+     */
+    async scanBudgetDocument(imageFile: File): Promise<ScanBudgetResult> {
+        if (!this.apiKey) {
+            throw new Error('Gemini API key not configured')
+        }
+
+        try {
+            const { base64, mimeType } = await this.fileToBase64(imageFile)
+
+            const prompt = `Analyze this budget document/screenshot and extract budget planning data.
+
+Return ONLY a valid JSON object with these fields (use null for fields you cannot determine):
+{
+    "name": <string or null - suggested budget name>,
+    "category": <string or null - categorize as one of: housing, utilities, food, eating-out, transportation, healthcare, insurance, savings, debt, personal-care, clothing, entertainment, hobbies, education, work, software, family, gifts, donations, business, taxes, miscellaneous>,
+    "amount": <number or null - the budget amount/limit>,
+    "period": <"daily" or "weekly" or "monthly" or "yearly" or null - the budget period>,
+    "confidence": <number 0-100 - how confident are you in this extraction>,
+    "rawText": <string or null - key text visible in the document>
+}
+
+Important:
+- Look for budget limits, spending caps, or allocation amounts
+- The period might be indicated by words like "per month", "weekly", "annual"
+- If you see a category breakdown, extract the most relevant/prominent one
+- Be conservative with confidence - lower if the document is unclear`
+
+            const responseText = await this.callGeminiVisionAPI(prompt, base64, mimeType)
+            return this.parseBudgetResult(responseText)
+        } catch (error) {
+            console.error('Error scanning budget document:', error)
+            throw new Error('Failed to scan document. Please try again.')
+        }
+    }
+
+    /**
+     * Parse JSON response into ScanReceiptResult
+     */
+    private parseReceiptResult(responseText: string): ScanReceiptResult {
+        try {
+            // Extract JSON from response (handle markdown code blocks)
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+            if (!jsonMatch) {
+                console.error('No JSON found in response:', responseText)
+                return { confidence: 0 }
+            }
+
+            const parsed = JSON.parse(jsonMatch[0])
+            return {
+                amount: typeof parsed.amount === 'number' ? parsed.amount : undefined,
+                category: typeof parsed.category === 'string' ? parsed.category : undefined,
+                description: typeof parsed.description === 'string' ? parsed.description : undefined,
+                date: typeof parsed.date === 'string' ? parsed.date : undefined,
+                type: parsed.type === 'income' || parsed.type === 'expense' ? parsed.type : 'expense',
+                merchantName: typeof parsed.merchantName === 'string' ? parsed.merchantName : undefined,
+                confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 50,
+                rawText: typeof parsed.rawText === 'string' ? parsed.rawText : undefined,
+            }
+        } catch (error) {
+            console.error('Failed to parse receipt result:', error, responseText)
+            return { confidence: 0 }
+        }
+    }
+
+    /**
+     * Parse JSON response into ScanBudgetResult
+     */
+    private parseBudgetResult(responseText: string): ScanBudgetResult {
+        try {
+            // Extract JSON from response (handle markdown code blocks)
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+            if (!jsonMatch) {
+                console.error('No JSON found in response:', responseText)
+                return { confidence: 0 }
+            }
+
+            const parsed = JSON.parse(jsonMatch[0])
+            const validPeriods = ['daily', 'weekly', 'monthly', 'yearly']
+            return {
+                name: typeof parsed.name === 'string' ? parsed.name : undefined,
+                category: typeof parsed.category === 'string' ? parsed.category : undefined,
+                amount: typeof parsed.amount === 'number' ? parsed.amount : undefined,
+                period: validPeriods.includes(parsed.period) ? parsed.period : undefined,
+                confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 50,
+                rawText: typeof parsed.rawText === 'string' ? parsed.rawText : undefined,
+            }
+        } catch (error) {
+            console.error('Failed to parse budget result:', error, responseText)
+            return { confidence: 0 }
+        }
     }
 
     /**
@@ -103,13 +340,14 @@ Respond naturally and directly (do not explain what you will do, just do it):`
             })
 
             return this.collectResponse(response)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error in AI chat:', error)
-            if (error.status) console.error('Status:', error.status);
-            if (error.statusText) console.error('StatusText:', error.statusText);
-            if (error.errorDetails) console.error('Details:', error.errorDetails);
+            const err = error as { status?: number; statusText?: string; errorDetails?: string; message?: string }
+            if (err.status) console.error('Status:', err.status);
+            if (err.statusText) console.error('StatusText:', err.statusText);
+            if (err.errorDetails) console.error('Details:', err.errorDetails);
 
-            throw new Error(`Failed to get AI response: ${error.message || 'Unknown error'}`)
+            throw new Error(`Failed to get AI response: ${err.message || 'Unknown error'}`)
         }
     }
 
@@ -200,3 +438,4 @@ Use specific dollar amounts. Be concise and helpful. Start your response with th
 
 // Export singleton instance
 export const geminiAIService = new GeminiAIService()
+

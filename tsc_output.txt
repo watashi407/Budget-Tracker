@@ -1,0 +1,8 @@
+﻿src/data/services/GeminiAIService.ts(115,41): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type 'TextPart<GeminiTextMetadata>'.
+src/data/services/GeminiAIService.ts(116,25): error TS2322: Type '{ type: "image"; source: { type: "data"; value: string; }; metadata: { mimeType: string; }; }' is not assignable to type 'ContentPartForModalities<"text" | "audio" | "video" | "image", GeminiImageMetadata, GeminiAudioMetadata, GeminiVideoMetadata, GeminiDocumentMetadata, GeminiTextMetadata>'.
+  The types of 'metadata.mimeType' are incompatible between these types.
+    Type 'string' is not assignable to type 'GeminiImageMimeType | undefined'.
+src/data/services/GeminiAIService.ts(169,41): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type 'TextPart<GeminiTextMetadata>'.
+src/data/services/GeminiAIService.ts(170,25): error TS2322: Type '{ type: "image"; source: { type: "data"; value: string; }; metadata: { mimeType: string; }; }' is not assignable to type 'ContentPartForModalities<"text" | "audio" | "video" | "image", GeminiImageMetadata, GeminiAudioMetadata, GeminiVideoMetadata, GeminiDocumentMetadata, GeminiTextMetadata>'.
+  The types of 'metadata.mimeType' are incompatible between these types.
+    Type 'string' is not assignable to type 'GeminiImageMimeType | undefined'.

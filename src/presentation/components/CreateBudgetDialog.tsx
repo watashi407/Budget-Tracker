@@ -15,6 +15,8 @@ import { storageService } from '@/data/services/SupabaseStorageService'
 import { useToast } from '@/presentation/components/ui/use-toast'
 import { AlertCircle, Paperclip } from 'lucide-react'
 import { BUDGET_CATEGORIES, OTHERS_CATEGORY } from '@/constants/categories'
+import { AIScannerButton } from '@/presentation/components/AIScannerButton'
+import type { ScanBudgetResult } from '@/data/services/GeminiAIService'
 
 /**
  * CreateBudgetDialog Component
@@ -182,6 +184,39 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
         }
     }, { success: false, error: null })
 
+    /**
+     * Handle AI scan result and populate form fields
+     */
+    const handleScanResult = (result: ScanBudgetResult) => {
+        // Auto-fill name
+        if (result.name) {
+            setName(result.name)
+        }
+        // Auto-fill category - match to predefined categories or use custom
+        if (result.category) {
+            const matchedCategory = BUDGET_CATEGORIES.find(
+                c => c.value.toLowerCase() === result.category?.toLowerCase()
+            )
+            if (matchedCategory) {
+                setSelectedCategory(matchedCategory.value)
+                setCustomCategory('')
+            } else {
+                setSelectedCategory(OTHERS_CATEGORY)
+                setCustomCategory(result.category)
+            }
+        }
+        // Auto-fill amount
+        if (result.amount !== undefined) {
+            setAmount(result.amount.toString())
+        }
+        // Auto-fill period
+        if (result.period) {
+            setPeriod(result.period)
+        }
+        // Clear field errors for auto-filled fields
+        setFieldErrors({})
+    }
+
     // Reset errors when dialog closes
     const handleOpenChange = (isOpen: boolean) => {
         if (!isOpen) {
@@ -196,9 +231,16 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Create Budget</DialogTitle>
+                    <div className="flex items-center justify-between">
+                        <DialogTitle>Create Budget</DialogTitle>
+                        <AIScannerButton
+                            mode="budget"
+                            onScanComplete={(result) => handleScanResult(result as ScanBudgetResult)}
+                            disabled={isPending || !isEmailVerified}
+                        />
+                    </div>
                     <DialogDescription>
-                        Set up a new budget to track your spending in a specific category.
+                        Set up a new budget to track your spending. Use AI to scan documents.
                     </DialogDescription>
                 </DialogHeader>
 

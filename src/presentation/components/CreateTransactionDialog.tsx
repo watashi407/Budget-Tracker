@@ -16,6 +16,8 @@ import { storageService } from '@/data/services/SupabaseStorageService'
 import { FormField } from '@/presentation/components/FormField'
 import { useToast } from '@/presentation/components/ui/use-toast'
 import { AlertCircle, Paperclip } from 'lucide-react'
+import { AIScannerButton } from '@/presentation/components/AIScannerButton'
+import type { ScanReceiptResult } from '@/data/services/GeminiAIService'
 
 /**
  * CreateTransactionDialog Component
@@ -172,6 +174,36 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
         }
     }, { success: false, error: null })
 
+    /**
+     * Handle AI scan result and populate form fields
+     */
+    const handleScanResult = (result: ScanReceiptResult) => {
+        // Auto-fill amount
+        if (result.amount !== undefined) {
+            setAmount(result.amount.toString())
+        }
+        // Auto-fill category
+        if (result.category) {
+            setCategory(result.category)
+        }
+        // Auto-fill description (use merchant name + raw text if available)
+        if (result.description) {
+            setDescription(result.description)
+        } else if (result.merchantName) {
+            setDescription(`Purchase at ${result.merchantName}`)
+        }
+        // Auto-fill date
+        if (result.date) {
+            setDate(result.date)
+        }
+        // Auto-fill type
+        if (result.type) {
+            setType(result.type)
+        }
+        // Clear field errors for auto-filled fields
+        setFieldErrors({})
+    }
+
     // Reset errors when dialog closes
     const handleOpenChange = (isOpen: boolean) => {
         if (!isOpen) {
@@ -186,9 +218,16 @@ export function CreateTransactionDialog({ open, onOpenChange, defaultBudgetId }:
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Add Transaction</DialogTitle>
+                    <div className="flex items-center justify-between">
+                        <DialogTitle>Add Transaction</DialogTitle>
+                        <AIScannerButton
+                            mode="transaction"
+                            onScanComplete={(result) => handleScanResult(result as ScanReceiptResult)}
+                            disabled={isPending || !isEmailVerified}
+                        />
+                    </div>
                     <DialogDescription>
-                        Record a new income or expense transaction.
+                        Record a new income or expense transaction. Use AI to scan receipts.
                     </DialogDescription>
                 </DialogHeader>
 
