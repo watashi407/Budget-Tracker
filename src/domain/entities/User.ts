@@ -9,6 +9,7 @@ export interface User {
     fullName?: string
     avatarUrl?: string
     currency?: string
+    timezone?: string
     role?: 'admin' | 'user'
     emailVerified: boolean
     hasCompletedOnboarding?: boolean

@@ -114,16 +114,17 @@ export class SupabaseAuthRepository implements IAuthRepository {
                 return this.mapUser(user)
             }
 
-            // Fetch profile data (currency, onboarding)
+            // Fetch profile data (currency, timezone, onboarding)
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('currency, has_completed_onboarding, role')
+                .select('currency, timezone, has_completed_onboarding, role')
                 .eq('id', session.user.id)
                 .single()
 
             return this.mapUser(
                 session.user,
                 profile?.currency,
+                profile?.timezone,
                 profile?.has_completed_onboarding,
                 profile?.role as 'admin' | 'user'
             )
@@ -134,13 +135,14 @@ export class SupabaseAuthRepository implements IAuthRepository {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private mapUser(user: any, currency?: string, hasCompletedOnboarding?: boolean, role?: 'admin' | 'user'): User {
+    private mapUser(user: any, currency?: string, timezone?: string, hasCompletedOnboarding?: boolean, role?: 'admin' | 'user'): User {
         return {
             id: user.id,
             email: user.email!,
             fullName: user.user_metadata.full_name,
             avatarUrl: user.user_metadata.avatar_url,
             currency: currency || 'USD',
+            timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
             role: role || 'user',
             emailVerified: user.email_confirmed_at !== null && user.email_confirmed_at !== undefined,
             hasCompletedOnboarding: hasCompletedOnboarding,
@@ -172,13 +174,14 @@ export class SupabaseAuthRepository implements IAuthRepository {
             if (authError) throw authError
         }
 
-        // Update profiles table (for currency and other profile fields)
+        // Update profiles table (for currency, timezone and other profile fields)
         const profileUpdates: Record<string, unknown> = {
             updated_at: new Date().toISOString(),
         }
         if (updates.fullName !== undefined) profileUpdates.full_name = updates.fullName
         if (updates.avatarUrl !== undefined) profileUpdates.avatar_url = updates.avatarUrl
         if (updates.currency !== undefined) profileUpdates.currency = updates.currency
+        if (updates.timezone !== undefined) profileUpdates.timezone = updates.timezone
 
         const { error: profileError } = await supabase
             .from('profiles')
@@ -193,13 +196,14 @@ export class SupabaseAuthRepository implements IAuthRepository {
 
         const { data: profile } = await supabase
             .from('profiles')
-            .select('currency, has_completed_onboarding, role')
+            .select('currency, timezone, has_completed_onboarding, role')
             .eq('id', user.id)
             .single()
 
         return this.mapUser(
             user,
             profile?.currency,
+            profile?.timezone,
             profile?.has_completed_onboarding,
             profile?.role as 'admin' | 'user'
         )

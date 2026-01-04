@@ -9,7 +9,8 @@ import { Label } from '@/presentation/components/ui/label'
 import { useToast } from '@/presentation/components/ui/use-toast'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
-import { Loader2 } from 'lucide-react'
+import { useTimezone } from '@/presentation/context/TimezoneContext'
+import { Loader2, Globe } from 'lucide-react'
 
 // Validation schemas
 const profileSchema = z.object({
@@ -28,8 +29,9 @@ type ProfileForm = z.infer<typeof profileSchema>
 type PasswordForm = z.infer<typeof passwordSchema>
 
 export default function SettingsPage() {
-    const { user, updateProfile, updatePassword } = useAuth()
+    const { user, updateProfile } = useAuth()
     const { currency, setCurrency, availableCurrencies } = useCurrency()
+    const { timezone, setTimezone, availableTimezones } = useTimezone()
     const { toast } = useToast()
 
     // Profile form
@@ -84,6 +86,28 @@ export default function SettingsPage() {
         }
     }
 
+    async function handleTimezoneChange(newTimezone: string) {
+        if (!user) return
+
+        setTimezone(newTimezone)
+
+        try {
+            await updateProfile(user.id, { timezone: newTimezone })
+            const tz = availableTimezones.find(t => t.value === newTimezone)
+            toast({
+                title: "Timezone updated",
+                description: `Timezone changed to ${tz?.label || newTimezone}. Date filtering will use this timezone.`,
+            })
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to save timezone preference. Please try again.",
+                variant: "destructive",
+            })
+            console.error(error)
+        }
+    }
+
     async function handleUpdatePassword(data: PasswordForm) {
         try {
             await updatePassword(data.password)
@@ -101,6 +125,8 @@ export default function SettingsPage() {
             console.error(error)
         }
     }
+
+    const { updatePassword } = useAuth()
 
     return (
         <div className="container mx-auto py-10 space-y-8 max-w-2xl px-4">
@@ -159,7 +185,7 @@ export default function SettingsPage() {
                         Customize your application experience. Changes sync across all devices.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                     <div className="grid gap-2" id="settings-currency">
                         <Label htmlFor="currency">Currency</Label>
                         <Select value={currency} onValueChange={handleCurrencyChange}>
@@ -176,6 +202,28 @@ export default function SettingsPage() {
                         </Select>
                         <p className="text-[0.8rem] text-muted-foreground">
                             This will be used to display all monetary values in the app.
+                        </p>
+                    </div>
+
+                    <div className="grid gap-2" id="settings-timezone">
+                        <Label htmlFor="timezone" className="flex items-center gap-2">
+                            <Globe className="w-4 h-4" />
+                            Timezone
+                        </Label>
+                        <Select value={timezone} onValueChange={handleTimezoneChange}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select timezone" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {availableTimezones.map((tz) => (
+                                    <SelectItem key={tz.value} value={tz.value}>
+                                        {tz.label} ({tz.offset})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <p className="text-[0.8rem] text-muted-foreground">
+                            Used for date filtering in transactions and budgets.
                         </p>
                     </div>
                 </CardContent>

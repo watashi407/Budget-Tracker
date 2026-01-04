@@ -2,6 +2,7 @@ import { useTransition, useState, useMemo } from 'react'
 import { Receipt, Search, Calendar as CalendarIcon, Mail } from 'lucide-react'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
+import { useTimezone } from '@/presentation/context/TimezoneContext'
 import { useAuth } from '@/presentation/context/AuthContext'
 import type { Transaction } from '@/domain/entities/Transaction'
 
@@ -36,6 +37,7 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
     const { transactions: fetchedTransactions, deleteTransaction, updateTransaction, loading } = useTransactions(budgetId)
     const { budgets } = useBudgets()
     const { formatCurrency } = useCurrency()
+    const { parseDate } = useTimezone()
     const [isPending, startTransition] = useTransition()
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<{ id: string; description: string } | null>(null)
@@ -46,7 +48,17 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
 
     // Search States
     const [searchText, setSearchText] = useState('')
-    const [searchDate, setSearchDate] = useState('')
+
+    // Date range filter - default to last 30 days
+    const getDefaultFromDate = () => {
+        const date = new Date()
+        date.setDate(date.getDate() - 30)
+        return date.toISOString().split('T')[0]
+    }
+    const getDefaultToDate = () => new Date().toISOString().split('T')[0]
+
+    const [dateFrom, setDateFrom] = useState(getDefaultFromDate())
+    const [dateTo, setDateTo] = useState(getDefaultToDate())
 
     // Pagination States
     const [currentPage, setCurrentPage] = useState(1)
@@ -54,8 +66,16 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
 
     const transactions = initialTransactions || fetchedTransactions
 
-    // Filter Logic
+    // Filter Logic - using timezone context for date range
     const filteredTransactions = useMemo(() => {
+        const fromDate = dateFrom ? parseDate(dateFrom) : null
+        const toDate = dateTo ? parseDate(dateTo) : null
+
+        // Set toDate to end of day for inclusive comparison
+        if (toDate) {
+            toDate.setHours(23, 59, 59, 999)
+        }
+
         return transactions.filter(t => {
             // Text Search (Description, Category, Budget Name)
             const searchLower = searchText.toLowerCase()
@@ -67,15 +87,21 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
 
             if (!matchesText) return false
 
-            // Date Search
-            if (searchDate) {
-                const tDate = new Date(t.date).toISOString().split('T')[0]
-                if (tDate !== searchDate) return false
-            }
+            // Date Range Filter
+            const tDate = parseDate(t.date)
+
+            // If no date range set, show all
+            if (!fromDate && !toDate) return true
+
+            // Check from date
+            if (fromDate && tDate < fromDate) return false
+
+            // Check to date
+            if (toDate && tDate > toDate) return false
 
             return true
         })
-    }, [transactions, searchText, searchDate, budgets])
+    }, [transactions, searchText, dateFrom, dateTo, budgets, parseDate])
 
     // Pagination Logic
     const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage)
@@ -90,7 +116,34 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
     // Reset to page 1 when filters change
     useMemo(() => {
         setCurrentPage(1)
-    }, [searchText, searchDate, itemsPerPage])
+    }, [searchText, dateFrom, dateTo, itemsPerPage])
+
+    // Quick filter presets
+    const setPreset = (preset: 'today' | 'week' | 'month' | 'all') => {
+        const today = new Date()
+        switch (preset) {
+            case 'today':
+                setDateFrom(today.toISOString().split('T')[0])
+                setDateTo(today.toISOString().split('T')[0])
+                break
+            case 'week':
+                const weekAgo = new Date()
+                weekAgo.setDate(weekAgo.getDate() - 7)
+                setDateFrom(weekAgo.toISOString().split('T')[0])
+                setDateTo(today.toISOString().split('T')[0])
+                break
+            case 'month':
+                const monthAgo = new Date()
+                monthAgo.setDate(monthAgo.getDate() - 30)
+                setDateFrom(monthAgo.toISOString().split('T')[0])
+                setDateTo(today.toISOString().split('T')[0])
+                break
+            case 'all':
+                setDateFrom('')
+                setDateTo('')
+                break
+        }
+    }
 
     function handleDeleteClick(id: string, description: string) {
         if (!isEmailVerified) {
@@ -132,28 +185,53 @@ export function TransactionList({ budgetId, limit, initialTransactions, showPagi
 
     return (
         <div className="space-y-4">
-            {/* Search Controls can be placed here or passed as props if strict UI control is needed. 
-                For now, placing them inside for self-containment if no limit is set (i.e. full list view) 
-                or if the user wants to search even in dashboard widgets.
-            */}
-            <div className="flex flex-col sm:flex-row gap-2">
-                <div className="relative flex-1">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search transactions, categories, budgets..."
-                        className="pl-9"
-                        value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
-                    />
+            {/* Search Controls with Date Range Picker */}
+            <div className="flex flex-col gap-3">
+                <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search transactions, categories, budgets..."
+                            className="pl-9"
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                        />
+                    </div>
+                    {/* Date Range Picker */}
+                    <div className="flex items-center gap-2 bg-muted/50 border border-border/50 rounded-lg px-3 py-1">
+                        <CalendarIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <Input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            className="w-[120px] h-8 text-xs bg-transparent border-0 p-0 focus-visible:ring-0"
+                            title="From date"
+                        />
+                        <span className="text-muted-foreground text-xs">to</span>
+                        <Input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            className="w-[120px] h-8 text-xs bg-transparent border-0 p-0 focus-visible:ring-0"
+                            title="To date"
+                        />
+                    </div>
                 </div>
-                <div className="relative w-full sm:w-auto">
-                    <CalendarIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        type="date"
-                        className="pl-9 w-full sm:w-[150px]"
-                        value={searchDate}
-                        onChange={(e) => setSearchDate(e.target.value)}
-                    />
+                {/* Quick Presets */}
+                <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-xs text-muted-foreground mr-2">Quick:</span>
+                    <button onClick={() => setPreset('today')} className="text-xs px-2 py-1 rounded bg-muted/50 hover:bg-muted transition-colors">
+                        Today
+                    </button>
+                    <button onClick={() => setPreset('week')} className="text-xs px-2 py-1 rounded bg-muted/50 hover:bg-muted transition-colors">
+                        Week
+                    </button>
+                    <button onClick={() => setPreset('month')} className="text-xs px-2 py-1 rounded bg-muted/50 hover:bg-muted transition-colors">
+                        Month
+                    </button>
+                    <button onClick={() => setPreset('all')} className="text-xs px-2 py-1 rounded bg-muted/50 hover:bg-muted transition-colors">
+                        All Time
+                    </button>
                 </div>
             </div>
 

@@ -3,45 +3,94 @@ import { useAuth } from '@/presentation/context/AuthContext'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
+import { useTimezone } from '@/presentation/context/TimezoneContext'
 import { useGlobalActions } from '@/presentation/context/GlobalActionsContext'
 import { Button } from '@/presentation/components/ui/button'
+import { Input } from '@/presentation/components/ui/input'
 
 import { EditBudgetDialog } from '@/presentation/components/EditBudgetDialog'
 import { BudgetList } from '@/presentation/components/BudgetList'
 import { TransactionList } from '@/presentation/components/TransactionList'
 import { ExportReportDialog } from '@/presentation/components/ExportReportDialog'
 import { SpendingChart } from '@/presentation/components/SpendingChart'
-import { PlusCircle, TrendingUp, TrendingDown, Activity, Download } from 'lucide-react'
+import { PlusCircle, TrendingUp, TrendingDown, Activity, Download, Calendar } from 'lucide-react'
 import type { Budget } from '@/domain/entities/Budget'
 
 
-type DateFilter = 'ALL' | 'MTD' | 'YTD'
 export function DashboardPage() {
     const { user } = useAuth()
     const { budgets } = useBudgets()
     const { transactions } = useTransactions()
     const { formatCurrency } = useCurrency()
+    const { parseDate } = useTimezone()
     const { openTransactionDialog, openBudgetDialog } = useGlobalActions()
 
     const [showExportDialog, setShowExportDialog] = useState(false)
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
-    const [dateFilter, setDateFilter] = useState<DateFilter>('MTD')
 
-    // Filter Logic
+    // Date range filter state - default to last 30 days
+    const getDefaultFromDate = () => {
+        const date = new Date()
+        date.setDate(date.getDate() - 30)
+        return date.toISOString().split('T')[0]
+    }
+    const getDefaultToDate = () => new Date().toISOString().split('T')[0]
+
+    const [dateFrom, setDateFrom] = useState(getDefaultFromDate())
+    const [dateTo, setDateTo] = useState(getDefaultToDate())
+
+    // Filter Logic - using timezone context for date parsing
     const filteredTransactions = useMemo(() => {
-        const now = new Date()
+        const fromDate = dateFrom ? parseDate(dateFrom) : null
+        const toDate = dateTo ? parseDate(dateTo) : null
+
+        // Set toDate to end of day for inclusive comparison
+        if (toDate) {
+            toDate.setHours(23, 59, 59, 999)
+        }
+
         return transactions.filter(t => {
-            const tDate = new Date(t.date)
-            if (dateFilter === 'ALL') return true
-            if (dateFilter === 'MTD') {
-                return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear()
-            }
-            if (dateFilter === 'YTD') {
-                return tDate.getFullYear() === now.getFullYear()
-            }
+            const tDate = parseDate(t.date)
+
+            // If no date range set, show all
+            if (!fromDate && !toDate) return true
+
+            // Check from date
+            if (fromDate && tDate < fromDate) return false
+
+            // Check to date
+            if (toDate && tDate > toDate) return false
+
             return true
         })
-    }, [transactions, dateFilter])
+    }, [transactions, dateFrom, dateTo, parseDate])
+
+    // Quick filter presets
+    const setPreset = (preset: 'today' | 'week' | 'month' | 'all') => {
+        const today = new Date()
+        switch (preset) {
+            case 'today':
+                setDateFrom(today.toISOString().split('T')[0])
+                setDateTo(today.toISOString().split('T')[0])
+                break
+            case 'week':
+                const weekAgo = new Date()
+                weekAgo.setDate(weekAgo.getDate() - 7)
+                setDateFrom(weekAgo.toISOString().split('T')[0])
+                setDateTo(today.toISOString().split('T')[0])
+                break
+            case 'month':
+                const monthAgo = new Date()
+                monthAgo.setDate(monthAgo.getDate() - 30)
+                setDateFrom(monthAgo.toISOString().split('T')[0])
+                setDateTo(today.toISOString().split('T')[0])
+                break
+            case 'all':
+                setDateFrom('')
+                setDateTo('')
+                break
+        }
+    }
 
     // Memoize expensive calculations
     const totalBudget = useMemo(() =>
@@ -63,18 +112,23 @@ export function DashboardPage() {
         [filteredTransactions]
     )
 
-    // Forecast Logic (Simple linear projection)
+    // Forecast Logic (Simple linear projection) - only works for month view
     const forecast = useMemo(() => {
         const now = new Date()
         const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
         const dayOfMonth = now.getDate()
 
-        if (dateFilter === 'MTD' && dayOfMonth > 0) {
+        // Only show forecast if viewing roughly current month
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+        const isMonthView = dateFrom && new Date(dateFrom) >= thirtyDaysAgo
+
+        if (isMonthView && dayOfMonth > 0) {
             const dailyAvg = totalExpenses / dayOfMonth
             return dailyAvg * daysInMonth
         }
         return 0
-    }, [totalExpenses, dateFilter])
+    }, [totalExpenses, dateFrom])
 
     return (
         <div className="space-y-8">
@@ -86,30 +140,39 @@ export function DashboardPage() {
                     <p className="text-muted-foreground font-mono text-xs mt-1">OPERATOR: {user?.fullName || user?.email}</p>
                 </div>
                 <div className="flex flex-wrap gap-3 items-center">
-                    <div className="flex items-center gap-1 bg-muted/50 border border-border/50 rounded-xl p-1.5 mr-2">
-                        <Button
-                            variant={dateFilter === 'MTD' ? 'secondary' : 'ghost'}
-                            size="sm"
-                            onClick={() => setDateFilter('MTD')}
-                            className="text-xs h-7"
-                        >
-                            MTD
+                    {/* Date Range Picker */}
+                    <div className="flex items-center gap-2 bg-muted/50 border border-border/50 rounded-xl p-2">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <Input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            className="w-[130px] h-7 text-xs bg-transparent border-0 p-0 focus-visible:ring-0"
+                            title="From date"
+                        />
+                        <span className="text-muted-foreground text-xs">to</span>
+                        <Input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            className="w-[130px] h-7 text-xs bg-transparent border-0 p-0 focus-visible:ring-0"
+                            title="To date"
+                        />
+                    </div>
+
+                    {/* Quick Presets */}
+                    <div className="flex items-center gap-1 bg-muted/50 border border-border/50 rounded-xl p-1">
+                        <Button variant="ghost" size="sm" onClick={() => setPreset('today')} className="text-xs h-7 px-2">
+                            Today
                         </Button>
-                        <Button
-                            variant={dateFilter === 'YTD' ? 'secondary' : 'ghost'}
-                            size="sm"
-                            onClick={() => setDateFilter('YTD')}
-                            className="text-xs h-7"
-                        >
-                            YTD
+                        <Button variant="ghost" size="sm" onClick={() => setPreset('week')} className="text-xs h-7 px-2">
+                            Week
                         </Button>
-                        <Button
-                            variant={dateFilter === 'ALL' ? 'secondary' : 'ghost'}
-                            size="sm"
-                            onClick={() => setDateFilter('ALL')}
-                            className="text-xs h-7"
-                        >
-                            ALL
+                        <Button variant="ghost" size="sm" onClick={() => setPreset('month')} className="text-xs h-7 px-2">
+                            Month
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setPreset('all')} className="text-xs h-7 px-2">
+                            All
                         </Button>
                     </div>
 
@@ -150,10 +213,10 @@ export function DashboardPage() {
                         <Activity className="w-5 h-5 text-secondary" />
                     </div>
                     <div className="axis-header text-secondary">
-                        {dateFilter === 'MTD' ? 'FORECAST (EOM)' : 'TOTAL SPENT'}
+                        {forecast > 0 ? 'FORECAST (EOM)' : 'TOTAL SPENT'}
                     </div>
                     <div className="text-3xl font-mono font-bold text-foreground tracking-tighter mt-3">
-                        {formatCurrency(dateFilter === 'MTD' && forecast > 0 ? forecast : totalExpenses)}
+                        {formatCurrency(forecast > 0 ? forecast : totalExpenses)}
                     </div>
                     <div className="mt-5 h-1.5 w-full bg-border/30 overflow-hidden rounded-full">
                         <div
@@ -161,7 +224,7 @@ export function DashboardPage() {
                             style={{ width: `${Math.min((totalExpenses / (totalBudget || 1)) * 100, 100)}%` }}
                         />
                     </div>
-                    {dateFilter === 'MTD' && (
+                    {forecast > 0 && (
                         <p className="text-[10px] font-mono text-muted-foreground mt-3 text-right">
                             CURRENT: {formatCurrency(totalExpenses)}
                         </p>
@@ -173,7 +236,7 @@ export function DashboardPage() {
                     <div className="absolute top-0 right-0 p-3 opacity-50 group-hover:opacity-100 transition-opacity">
                         <TrendingUp className="w-5 h-5 text-emerald-500" />
                     </div>
-                    <div className="axis-header text-emerald-500">INCOME ({dateFilter})</div>
+                    <div className="axis-header text-emerald-500">INCOME</div>
                     <div className="text-3xl font-mono font-bold text-foreground tracking-tighter mt-3">
                         {formatCurrency(totalIncome)}
                     </div>
@@ -188,7 +251,7 @@ export function DashboardPage() {
                     <div className="absolute top-0 right-0 p-3 opacity-50 group-hover:opacity-100 transition-opacity">
                         <TrendingDown className="w-5 h-5 text-rose-500" />
                     </div>
-                    <div className="axis-header text-rose-500">EXPENSES ({dateFilter})</div>
+                    <div className="axis-header text-rose-500">EXPENSES</div>
                     <div className="text-3xl font-mono font-bold text-foreground tracking-tighter mt-3">
                         {formatCurrency(totalExpenses)}
                     </div>
@@ -224,7 +287,7 @@ export function DashboardPage() {
                 <div className="flex items-center justify-between mb-4 border-b border-border/50 pb-2">
                     <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
                         <span className="w-1 h-4 bg-white inline-block" />
-                        TRANSACTION LOG ({dateFilter})
+                        TRANSACTION LOG ({filteredTransactions.length} entries)
                     </h2>
                     <Button onClick={openTransactionDialog} variant="ghost" size="sm" className="text-xs font-mono text-muted-foreground hover:text-primary">
                         + ADD ENTRY
