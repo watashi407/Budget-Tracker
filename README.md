@@ -23,11 +23,18 @@ This will create:
 - Triggers for automatic timestamp updates
 
 ### 3. Environment Variables
-The `.env` file is already configured with your Supabase credentials:
+Copy the `.env.example` file to `.env` and fill in your credentials:
+```bash
+cp .env.example .env
 ```
-VITE_SUPABASE_URL=https://vsfiksmbacwstzttopag.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-```
+
+Required variables:
+- `VITE_SUPABASE_URL` - Your Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` - Your Supabase anonymous key
+- `VITE_GEMINI_API_KEY` - (Optional) Gemini API key for AI features
+
+> ⚠️ **Security Note**: Never commit `.env` files or API keys to version control.
+
 
 ## Installation
 

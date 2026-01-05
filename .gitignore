@@ -25,3 +25,18 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Build artifacts (prevent APK/secret leaks)
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# Local environment overrides
+.env.local
+.env.*.local
+
+# Architecture planning docs (private)
+docs/erp_architecture_plan.md
+docs/erp_architecture_plan.pdf
+docs/microservices_architecture_plan.md
