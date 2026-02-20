@@ -8,28 +8,15 @@ function AuthCallbackPage() {
 
     useEffect(() => {
         let cancelled = false
-        let unsubscribe: (() => void) | null = null
 
         const waitForSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession()
-            if (session?.user) return true
+            for (let i = 0; i < 24; i += 1) {
+                const { data: { session } } = await supabase.auth.getSession()
+                if (session?.user) return true
+                await new Promise((resolve) => setTimeout(resolve, 250))
+            }
 
-            return await new Promise<boolean>((resolve) => {
-                const timeout = setTimeout(() => {
-                    unsubscribe?.()
-                    resolve(false)
-                }, 6000)
-
-                const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-                    if (nextSession?.user) {
-                        clearTimeout(timeout)
-                        unsubscribe?.()
-                        resolve(true)
-                    }
-                })
-
-                unsubscribe = () => data.subscription.unsubscribe()
-            })
+            return false
         }
 
         const finishOAuth = async () => {
@@ -40,15 +27,22 @@ function AuthCallbackPage() {
             )
 
             if (hasProviderError) {
-                if (!cancelled) navigate({ to: '/login' })
+                if (!cancelled) navigate({ to: '/login', replace: true })
                 return
             }
 
-            // Supabase client already has detectSessionInUrl enabled, so avoid
-            // manual exchange here and wait for session propagation.
+            const code = url.searchParams.get('code')
+            if (code) {
+                const { error } = await supabase.auth.exchangeCodeForSession(code)
+                if (error) {
+                    if (!cancelled) navigate({ to: '/login', replace: true })
+                    return
+                }
+            }
+
             const hasSession = await waitForSession()
             if (!cancelled) {
-                navigate({ to: hasSession ? '/dashboard' : '/login' })
+                navigate({ to: hasSession ? '/dashboard' : '/login', replace: true })
             }
         }
 
@@ -56,7 +50,6 @@ function AuthCallbackPage() {
 
         return () => {
             cancelled = true
-            unsubscribe?.()
         }
     }, [navigate])
 

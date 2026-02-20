@@ -1,8 +1,8 @@
-import React, { createContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { User } from '@/domain/entities/User'
 import { SupabaseAuthRepository } from '@/data/repositories/SupabaseAuthRepository'
 import { supabase } from '@/lib/supabase'
-import { NATIVE_GOOGLE_OAUTH_REDIRECT_URI } from '@/lib/appUrls'
+import { NATIVE_GOOGLE_OAUTH_REDIRECT_URI, WEB_OAUTH_CALLBACK_PATH } from '@/lib/appUrls'
 import { App } from '@capacitor/app'
 import { Browser } from '@capacitor/browser'
 
@@ -30,6 +30,21 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const authRepository = new SupabaseAuthRepository()
+const OAUTH_BOOTSTRAP_MAX_ATTEMPTS = 40
+const OAUTH_BOOTSTRAP_INTERVAL_MS = 250
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mapSessionUser = (supabaseUser: any): User => ({
+    id: supabaseUser.id,
+    email: supabaseUser.email!,
+    fullName: supabaseUser.user_metadata?.full_name,
+    avatarUrl: supabaseUser.user_metadata?.avatar_url,
+    emailVerified: supabaseUser.email_confirmed_at !== null && supabaseUser.email_confirmed_at !== undefined,
+    createdAt: new Date(supabaseUser.created_at),
+    updatedAt: new Date(supabaseUser.updated_at || supabaseUser.created_at),
+})
 
 /**
  * AuthProvider component
@@ -38,217 +53,219 @@ const authRepository = new SupabaseAuthRepository()
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
     const [loading, setLoading] = useState(true)
+    const mountedRef = useRef(true)
+
+    const isOAuthCallbackPath = typeof window !== 'undefined'
+        && window.location.pathname === WEB_OAUTH_CALLBACK_PATH
+
+    const enrichUserFromProfile = useCallback(async (userId: string) => {
+        try {
+            const { data: profileData } = await supabase
+                .from('profiles')
+                .select('currency, has_completed_onboarding, role')
+                .eq('id', userId)
+                .maybeSingle()
+
+            if (!mountedRef.current) return
+
+            setUser((prev) => prev
+                ? {
+                    ...prev,
+                    currency: profileData?.currency || prev.currency || 'USD',
+                    hasCompletedOnboarding: profileData?.has_completed_onboarding,
+                    role: (profileData?.role as 'admin' | 'user') || 'user',
+                }
+                : null)
+        } catch {
+            // Ignore profile enrichment errors.
+        }
+    }, [])
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const applySessionUser = useCallback((supabaseUser: any) => {
+        if (!mountedRef.current) return
+        setUser(mapSessionUser(supabaseUser))
+        void enrichUserFromProfile(supabaseUser.id)
+    }, [enrichUserFromProfile])
+
+    const waitForSessionAfterCallback = useCallback(async () => {
+        for (let i = 0; i < OAUTH_BOOTSTRAP_MAX_ATTEMPTS; i += 1) {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session?.user) {
+                applySessionUser(session.user)
+                return true
+            }
+            await sleep(OAUTH_BOOTSTRAP_INTERVAL_MS)
+        }
+
+        return false
+    }, [applySessionUser])
 
     useEffect(() => {
-        let mounted = true
+        mountedRef.current = true
 
-        // Failsafe: If loading takes too long, force it to false
         const failsafeTimeout = setTimeout(() => {
-            if (mounted && loading) {
+            if (mountedRef.current) {
                 setLoading(false)
             }
-        }, 8000)
+        }, isOAuthCallbackPath ? 20000 : 8000)
 
-        // Helper to map Supabase user to our User type
-        // emailVerified starts as undefined - will be set by profiles.verified
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mapSessionUser = (supabaseUser: any): User => ({
-            id: supabaseUser.id,
-            email: supabaseUser.email!,
-            fullName: supabaseUser.user_metadata?.full_name,
-            avatarUrl: supabaseUser.user_metadata?.avatar_url,
-            emailVerified: supabaseUser.email_confirmed_at !== null && supabaseUser.email_confirmed_at !== undefined,
-            createdAt: new Date(supabaseUser.created_at),
-            updatedAt: new Date(supabaseUser.updated_at || supabaseUser.created_at),
-        })
+        void App.addListener('appUrlOpen', async (event) => {
+            if (!event.url.startsWith(NATIVE_GOOGLE_OAUTH_REDIRECT_URI)) return
 
-        // Async function to update user with currency and role from profiles table (non-blocking)
-        const updateWithServerData = async (userId: string) => {
             try {
-                // Get currency, onboarding, and role from profiles table
-                const { data: profileData } = await supabase
-                    .from('profiles')
-                    .select('currency, has_completed_onboarding, role')
-                    .eq('id', userId)
-                    .maybeSingle()
+                const url = new URL(event.url)
+                const code = url.searchParams.get('code')
 
-                if (mounted) {
-                    setUser(prev => prev ? {
-                        ...prev,
-                        currency: profileData?.currency || prev.currency || 'USD',
-                        hasCompletedOnboarding: profileData?.has_completed_onboarding,
-                        role: (profileData?.role as 'admin' | 'user') || 'user',
-                    } : null)
+                if (code) {
+                    const { error } = await supabase.auth.exchangeCodeForSession(code)
+                    if (error) throw error
+                    await Browser.close()
+                    return
                 }
-            } catch {
-                // Ignore errors
+
+                const hashParams = new URLSearchParams(url.hash.substring(1))
+                const accessToken = hashParams.get('access_token')
+                const refreshToken = hashParams.get('refresh_token')
+
+                if (accessToken && refreshToken) {
+                    const { error } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken,
+                    })
+                    if (error) throw error
+                    await Browser.close()
+                }
+            } catch (e) {
+                console.error('Failed to handle deep link:', e)
             }
-        }
-
-        // Helper to handle deep links for mobile auth
-        // Helper to handle deep links for mobile auth
-        const handleDeepLink = async () => {
-            await App.addListener('appUrlOpen', async (event) => {
-                if (event.url.startsWith(NATIVE_GOOGLE_OAUTH_REDIRECT_URI)) {
-                    try {
-                        const url = new URL(event.url)
-
-                        // Handle PKCE flow (code in search params)
-                        const code = url.searchParams.get('code')
-                        if (code) {
-                            const { error } = await supabase.auth.exchangeCodeForSession(code)
-                            if (error) throw error
-
-                            // Close browser after successful exchange
-                            await Browser.close()
-                            return
-                        }
-
-                        // Handle Implicit flow (access_token in hash)
-                        const hashParams = new URLSearchParams(url.hash.substring(1))
-                        const accessToken = hashParams.get('access_token')
-                        const refreshToken = hashParams.get('refresh_token')
-
-                        if (accessToken && refreshToken) {
-                            const { error } = await supabase.auth.setSession({
-                                access_token: accessToken,
-                                refresh_token: refreshToken,
-                            })
-                            if (error) throw error
-
-                            // Close browser after successful session set
-                            await Browser.close()
-                        }
-                    } catch (e) {
-                        console.error('Failed to handle deep link:', e)
-                    }
-                }
-            })
-        }
-
-        handleDeepLink()
+        })
 
         const { data } = supabase.auth.onAuthStateChange((event, session) => {
-            if (!mounted) return
+            if (!mountedRef.current) return
 
-            switch (event) {
-                case 'INITIAL_SESSION':
-                    if (session?.user) {
-                        setUser(mapSessionUser(session.user))
-                        updateWithServerData(session.user.id) // Non-blocking
-                    } else {
-                        setUser(null)
-                    }
+            if (event === 'SIGNED_OUT') {
+                setUser(null)
+                setLoading(false)
+                return
+            }
+
+            if (session?.user) {
+                applySessionUser(session.user)
+            }
+
+            if (event === 'INITIAL_SESSION') {
+                // On callback path, keep loading true until callback exchange settles.
+                if (!isOAuthCallbackPath || !!session?.user) {
                     setLoading(false)
-                    break
+                }
+                return
+            }
 
-                case 'SIGNED_IN':
-                    if (session?.user) {
-                        setUser(mapSessionUser(session.user))
-                        updateWithServerData(session.user.id) // Non-blocking
-                        setLoading(false)
-                    }
-                    break
-
-                case 'TOKEN_REFRESHED':
-                    if (session?.user) {
-                        setUser(mapSessionUser(session.user))
-                        updateWithServerData(session.user.id) // Non-blocking
-                    }
-                    break
-
-                case 'SIGNED_OUT':
-                    setUser(null)
-                    setLoading(false)
-                    break
-
-                case 'USER_UPDATED':
-                    if (session?.user) {
-                        setUser(mapSessionUser(session.user))
-                        updateWithServerData(session.user.id) // Non-blocking
-                    }
-                    break
+            if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+                setLoading(false)
             }
         })
 
+        const bootstrapAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession()
+
+            if (session?.user) {
+                applySessionUser(session.user)
+                if (mountedRef.current) setLoading(false)
+                return
+            }
+
+            if (isOAuthCallbackPath) {
+                const hasSession = await waitForSessionAfterCallback()
+                if (mountedRef.current && hasSession) {
+                    setLoading(false)
+                    return
+                }
+            }
+
+            if (mountedRef.current) setLoading(false)
+        }
+
+        void bootstrapAuth()
+
         return () => {
-            mounted = false
+            mountedRef.current = false
             clearTimeout(failsafeTimeout)
             data.subscription.unsubscribe()
             App.removeAllListeners()
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [applySessionUser, isOAuthCallbackPath, waitForSessionAfterCallback])
 
     /**
      * Sign in with email and password
      */
-    async function signIn(email: string, password: string) {
+    const signIn = useCallback(async (email: string, password: string) => {
         try {
-            const user = await authRepository.signIn(email, password)
-            setUser(user)
+            const signedInUser = await authRepository.signIn(email, password)
+            setUser(signedInUser)
             setLoading(false)
         } catch (error) {
             setLoading(false)
             throw error
         }
-    }
+    }, [])
 
     /**
      * Sign up with email and password
      */
-    async function signUp(email: string, password: string, fullName?: string) {
-        const user = await authRepository.signUp(email, password, fullName)
-        setUser(user)
-    }
+    const signUp = useCallback(async (email: string, password: string, fullName?: string) => {
+        const signedUpUser = await authRepository.signUp(email, password, fullName)
+        setUser(signedUpUser)
+    }, [])
 
     /**
      * Sign out current user
      */
-    async function signOut() {
+    const signOut = useCallback(async () => {
         await authRepository.signOut()
         setUser(null)
-    }
+    }, [])
 
     /**
      * Send password reset email
      */
-    async function resetPassword(email: string) {
+    const resetPassword = useCallback(async (email: string) => {
         await authRepository.resetPassword(email)
-    }
+    }, [])
 
     /**
      * Update user profile
      */
-    async function updateProfile(userId: string, updates: Partial<User>) {
+    const updateProfile = useCallback(async (userId: string, updates: Partial<User>) => {
         const updatedUser = await authRepository.updateProfile(userId, updates)
         setUser(updatedUser)
-    }
+    }, [])
 
     /**
      * Update user password
      */
-    async function updatePassword(password: string) {
+    const updatePassword = useCallback(async (password: string) => {
         await authRepository.updatePassword(password)
-    }
+    }, [])
 
     /**
      * Sign in with Google
      */
-    async function signInWithGoogle() {
+    const signInWithGoogle = useCallback(async () => {
         await authRepository.signInWithGoogle()
-    }
+    }, [])
 
     /**
      * Complete onboarding
      */
-    async function completeOnboarding() {
+    const completeOnboarding = useCallback(async () => {
         if (!user) return
         await authRepository.completeOnboarding(user.id)
-        setUser(prev => prev ? { ...prev, hasCompletedOnboarding: true } : null)
-    }
+        setUser((prev) => (prev ? { ...prev, hasCompletedOnboarding: true } : null))
+    }, [user])
 
-    const value: AuthContextType = {
+    const value = useMemo<AuthContextType>(() => ({
         user,
         loading,
         isAdmin: user?.role === 'admin',
@@ -260,7 +277,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updatePassword,
         signInWithGoogle,
         completeOnboarding,
-    }
+    }), [
+        user,
+        loading,
+        signIn,
+        signUp,
+        signOut,
+        resetPassword,
+        updateProfile,
+        updatePassword,
+        signInWithGoogle,
+        completeOnboarding,
+    ])
 
     return <AuthContext value={value}>{children}</AuthContext>
 }

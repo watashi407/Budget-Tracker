@@ -21,8 +21,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         storageKey: 'watashi-pocket-auth',
         // Auto-refresh the token before it expires
         autoRefreshToken: true,
-        // Detect session from URL hash (for OAuth redirects)
-        detectSessionInUrl: true,
+        // OAuth callback is handled explicitly in /auth/callback route.
+        detectSessionInUrl: false,
         // Flow type - PKCE is recommended for SPAs
         flowType: 'pkce',
     },
