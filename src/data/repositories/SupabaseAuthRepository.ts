@@ -61,7 +61,7 @@ export class SupabaseAuthRepository implements IAuthRepository {
         const isNative = Capacitor.isNativePlatform()
         const redirectTo = isNative
             ? 'com.colin404.project1://google-auth'
-            : `${window.location.origin}/dashboard`
+            : `${window.location.origin}/auth/callback`
 
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
