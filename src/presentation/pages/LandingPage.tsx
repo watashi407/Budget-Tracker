@@ -10,6 +10,10 @@ import { NewsSection } from '@/presentation/components/NewsSection'
 import { FeatureCard } from '@/presentation/components/FeatureCard'
 import { LANDING_FEATURES } from '@/constants/landingPageData'
 import {
+    ANDROID_APK_DOWNLOAD_FILENAME,
+    ANDROID_APK_DOWNLOAD_PATH,
+} from '@/lib/appUrls'
+import {
     Dialog,
     DialogContent,
     DialogHeader,
@@ -176,7 +180,7 @@ export function LandingPage() {
                                     </a>
                                 </div>
 
-                                <a href="/app-release.apk" download>
+                                <a href={ANDROID_APK_DOWNLOAD_PATH} download={ANDROID_APK_DOWNLOAD_FILENAME}>
                                     <Button
                                         variant="outline"
                                         size="lg"
@@ -184,7 +188,7 @@ export function LandingPage() {
                                     >
                                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
                                         <Download className="h-4 w-4 group-hover:scale-110 group-hover:translate-y-0.5 transition-transform" />
-                                        <span>Download Mobile APK</span>
+                                        <span>Download Android APK (Latest)</span>
                                     </Button>
                                 </a>
                             </div>

@@ -23,7 +23,9 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="com.colin404.project1" />
+                <data
+                    android:scheme="com.colin404.project1"
+                    android:host="google-auth" />
             </intent-filter>
         </activity>
 

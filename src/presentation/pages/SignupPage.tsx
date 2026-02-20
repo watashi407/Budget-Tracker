@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -29,7 +29,7 @@ type SignupForm = z.infer<typeof signupSchema>
  */
 export function SignupPage() {
     const navigate = useNavigate()
-    const { signUp, signInWithGoogle } = useAuth()
+    const { signUp, signInWithGoogle, user } = useAuth()
     const [serverError, setServerError] = useState('')
 
     const form = useForm<SignupForm>({
@@ -38,6 +38,13 @@ export function SignupPage() {
     })
 
     const { isSubmitting } = form.formState
+
+    // Redirect to dashboard when user is authenticated
+    useEffect(() => {
+        if (user) {
+            navigate({ to: '/dashboard' })
+        }
+    }, [user, navigate])
 
     async function handleGoogleSignIn() {
         try {

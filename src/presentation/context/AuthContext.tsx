@@ -2,6 +2,7 @@ import React, { createContext, useEffect, useState } from 'react'
 import type { User } from '@/domain/entities/User'
 import { SupabaseAuthRepository } from '@/data/repositories/SupabaseAuthRepository'
 import { supabase } from '@/lib/supabase'
+import { NATIVE_GOOGLE_OAUTH_REDIRECT_URI } from '@/lib/appUrls'
 import { App } from '@capacitor/app'
 import { Browser } from '@capacitor/browser'
 
@@ -88,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Helper to handle deep links for mobile auth
         const handleDeepLink = async () => {
             await App.addListener('appUrlOpen', async (event) => {
-                if (event.url.startsWith('com.colin404.project1://')) {
+                if (event.url.startsWith(NATIVE_GOOGLE_OAUTH_REDIRECT_URI)) {
                     try {
                         const url = new URL(event.url)
 
