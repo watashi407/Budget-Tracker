@@ -2,6 +2,8 @@ import { createGemini } from '@tanstack/ai-gemini'
 import { chat } from '@tanstack/ai'
 import type { Budget } from '@/domain/entities/Budget'
 import type { Transaction } from '@/domain/entities/Transaction'
+import { aiApiKeyService, type AIProvider, type AIProviderConfig } from '@/data/services/AIApiKeyService'
+import { supabase } from '@/lib/supabase'
 
 /**
  * Result interface for receipt scanning
@@ -33,25 +35,35 @@ export interface ScanBudgetResult {
 
 /**
  * GeminiAIService
- * Service for interacting with Google's Gemini AI for budget insights, forecasting, and document scanning.
- * Refactored to use TanStack AI.
+ * Service for interacting with configured AI providers for budget insights, forecasting, and document scanning.
  */
 class GeminiAIService {
-    private gemini: ReturnType<typeof createGemini> | null = null
-    private apiKey: string | null = null
-
-    constructor() {
-        this.apiKey = import.meta.env.VITE_GEMINI_API_KEY || null
-        if (this.apiKey) {
-            this.gemini = createGemini(this.apiKey)
-        }
-    }
-
     /**
      * Check if AI service is available
      */
     isAvailable(): boolean {
-        return this.gemini !== null
+        return aiApiKeyService.getStatus().hasKey
+    }
+
+    private getApiKey(provider?: AIProvider): string {
+        const apiKey = aiApiKeyService.getApiKey(provider)
+        if (!apiKey) {
+            throw new Error('AI API key not configured')
+        }
+        return apiKey
+    }
+
+    private getGeminiAdapter(apiKey: string): ReturnType<typeof createGemini> {
+        return createGemini(apiKey)
+    }
+
+    private getProviderConfig(): AIProviderConfig {
+        const config = aiApiKeyService.getConfig()
+        if (!config.apiKey) {
+            throw new Error(`${config.provider === 'nvidia' ? 'NVIDIA' : 'Gemini'} API key not configured`)
+        }
+
+        return config
     }
 
     /**
@@ -75,16 +87,89 @@ class GeminiAIService {
         })
     }
 
-    /**
-     * Call Gemini Vision API directly for multimodal content
-     * Uses the REST API since TanStack AI adapter has issues with multimodal
-     */
-    private async callGeminiVisionAPI(prompt: string, base64Image: string, mimeType: string): Promise<string> {
-        if (!this.apiKey) {
-            throw new Error('Gemini API key not configured')
+    private async callTextAI(prompt: string): Promise<string> {
+        const status = aiApiKeyService.getStatus()
+        if (status.source === 'supabase') {
+            return this.callSupabaseAI(prompt)
         }
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${this.apiKey}`
+        const config = this.getProviderConfig()
+
+        if (config.provider === 'nvidia') {
+            await this.migrateNvidiaTokenToSupabase(config)
+            return this.callSupabaseAI(prompt)
+        }
+
+        const response = await chat({
+            adapter: this.getGeminiAdapter(config.apiKey ?? this.getApiKey(config.provider)),
+            model: 'gemini-2.0-flash',
+            messages: [{ role: 'user', content: prompt }]
+        })
+
+        return this.collectResponse(response)
+    }
+
+    private async callVisionAI(prompt: string, base64Image: string, mimeType: string): Promise<string> {
+        const status = aiApiKeyService.getStatus()
+        if (status.source === 'supabase') {
+            return this.callSupabaseAI(prompt, { base64: base64Image, mimeType })
+        }
+
+        const config = this.getProviderConfig()
+
+        if (config.provider === 'nvidia') {
+            await this.migrateNvidiaTokenToSupabase(config)
+            return this.callSupabaseAI(prompt, { base64: base64Image, mimeType })
+        }
+
+        return this.callGeminiVisionAPI(prompt, base64Image, mimeType, config.apiKey ?? this.getApiKey(config.provider), config.visionModel)
+    }
+
+    private async migrateNvidiaTokenToSupabase(config: AIProviderConfig): Promise<void> {
+        if (!config.apiKey) {
+            throw new Error('NVIDIA API key not configured')
+        }
+
+        await aiApiKeyService.saveRemoteConfig({
+            provider: 'nvidia',
+            apiKey: config.apiKey,
+            textModel: config.textModel,
+            visionModel: config.visionModel,
+        })
+    }
+
+    private async callSupabaseAI(prompt: string, image?: { base64: string; mimeType: string }): Promise<string> {
+        const { data, error } = await supabase.functions.invoke<{ text: string }>('ai', {
+            body: {
+                action: 'chat',
+                prompt,
+                image,
+            },
+        })
+
+        if (error) {
+            throw new Error(error.message || 'Failed to call Supabase AI function')
+        }
+
+        if (!data?.text) {
+            throw new Error('AI response was empty')
+        }
+
+        return data.text
+    }
+
+    /**
+     * Call Gemini Vision API directly for multimodal content.
+     * Uses the REST API since TanStack AI adapter has issues with multimodal.
+     */
+    private async callGeminiVisionAPI(
+        prompt: string,
+        base64Image: string,
+        mimeType: string,
+        apiKey: string,
+        model: string
+    ): Promise<string> {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`
 
         const requestBody = {
             contents: [{
@@ -132,10 +217,6 @@ class GeminiAIService {
      * Uses Gemini's vision capabilities via direct REST API
      */
     async scanReceipt(imageFile: File): Promise<ScanReceiptResult> {
-        if (!this.apiKey) {
-            throw new Error('Gemini API key not configured')
-        }
-
         try {
             const { base64, mimeType } = await this.fileToBase64(imageFile)
 
@@ -159,7 +240,7 @@ Important:
 - If it's a payslip or deposit slip, it's likely "income"
 - Be conservative with confidence - lower if image is unclear or data is ambiguous`
 
-            const responseText = await this.callGeminiVisionAPI(prompt, base64, mimeType)
+            const responseText = await this.callVisionAI(prompt, base64, mimeType)
             return this.parseReceiptResult(responseText)
         } catch (error) {
             console.error('Error scanning receipt:', error)
@@ -172,10 +253,6 @@ Important:
      * Uses Gemini's vision capabilities via direct REST API
      */
     async scanBudgetDocument(imageFile: File): Promise<ScanBudgetResult> {
-        if (!this.apiKey) {
-            throw new Error('Gemini API key not configured')
-        }
-
         try {
             const { base64, mimeType } = await this.fileToBase64(imageFile)
 
@@ -197,7 +274,7 @@ Important:
 - If you see a category breakdown, extract the most relevant/prominent one
 - Be conservative with confidence - lower if the document is unclear`
 
-            const responseText = await this.callGeminiVisionAPI(prompt, base64, mimeType)
+            const responseText = await this.callVisionAI(prompt, base64, mimeType)
             return this.parseBudgetResult(responseText)
         } catch (error) {
             console.error('Error scanning budget document:', error)
@@ -266,20 +343,10 @@ Important:
      * Get budget insights based on current budgets and transactions
      */
     async getBudgetInsights(budgets: Budget[], transactions: Transaction[]): Promise<string> {
-        if (!this.gemini) {
-            throw new Error('Gemini API key not configured')
-        }
-
         const prompt = this.buildInsightsPrompt(budgets, transactions)
 
         try {
-            const response = await chat({
-                adapter: this.gemini,
-                model: 'gemini-2.0-flash',
-                messages: [{ role: 'user', content: prompt }]
-            })
-
-            return this.collectResponse(response)
+            return await this.callTextAI(prompt)
         } catch (error) {
             console.error('Error getting budget insights:', error)
             throw new Error('Failed to get AI insights')
@@ -290,20 +357,10 @@ Important:
      * Get spending forecast based on historical data
      */
     async getSpendingForecast(budgets: Budget[], transactions: Transaction[]): Promise<string> {
-        if (!this.gemini) {
-            throw new Error('Gemini API key not configured')
-        }
-
         const prompt = this.buildForecastPrompt(budgets, transactions)
 
         try {
-            const response = await chat({
-                adapter: this.gemini,
-                model: 'gemini-2.0-flash',
-                messages: [{ role: 'user', content: prompt }]
-            })
-
-            return this.collectResponse(response)
+            return await this.callTextAI(prompt)
         } catch (error) {
             console.error('Error getting spending forecast:', error)
             throw new Error('Failed to get spending forecast')
@@ -314,10 +371,6 @@ Important:
      * Chat with AI about budget questions
      */
     async chat(message: string, budgets: Budget[], transactions: Transaction[]): Promise<string> {
-        if (!this.gemini) {
-            throw new Error('Gemini API key not configured')
-        }
-
         const financialData = this.buildContextPrompt(budgets, transactions)
 
         // Build a combined prompt that won't cause echoing
@@ -330,16 +383,10 @@ ${financialData}
 
 User says: "${message}"
 
-Respond naturally and directly (do not explain what you will do, just do it):`
+        Respond naturally and directly (do not explain what you will do, just do it):`
 
         try {
-            const response = await chat({
-                adapter: this.gemini,
-                model: 'gemini-2.0-flash',
-                messages: [{ role: 'user', content: combinedPrompt }]
-            })
-
-            return this.collectResponse(response)
+            return await this.callTextAI(combinedPrompt)
         } catch (error: unknown) {
             console.error('Error in AI chat:', error)
             const err = error as { status?: number; statusText?: string; errorDetails?: string; message?: string }

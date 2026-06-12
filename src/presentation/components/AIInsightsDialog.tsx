@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { geminiAIService } from '@/data/services/GeminiAIService'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
+import { useAIConfiguration } from '@/presentation/hooks/useAIConfiguration'
 import { MarkdownRenderer } from '@/presentation/components/MarkdownRenderer'
 import { Sparkles, Send, TrendingUp, AlertCircle, Bot, User, Loader2, MessageSquare } from 'lucide-react'
 
@@ -23,6 +24,7 @@ interface AIInsightsDialogProps {
 export function AIInsightsDialog({ open, onOpenChange }: AIInsightsDialogProps) {
     const { budgets } = useBudgets()
     const { transactions } = useTransactions()
+    const aiConfiguration = useAIConfiguration()
 
     const [insights, setInsights] = useState<string>('')
     const [forecast, setForecast] = useState<string>('')
@@ -32,7 +34,8 @@ export function AIInsightsDialog({ open, onOpenChange }: AIInsightsDialogProps) 
     const [error, setError] = useState('')
     const [activeTab, setActiveTab] = useState<'insights' | 'chat'>('insights')
 
-    const isAIAvailable = geminiAIService.isAvailable()
+    const isAIAvailable = aiConfiguration.hasKey
+    const providerLabel = aiConfiguration.provider === 'nvidia' ? 'NVIDIA NIM' : 'Gemini AI'
 
     /**
      * Get budget insights from AI
@@ -99,7 +102,7 @@ export function AIInsightsDialog({ open, onOpenChange }: AIInsightsDialogProps) 
                         AI Budget Assistant
                     </DialogTitle>
                     <DialogDescription>
-                        Get personalized insights and forecasts powered by Gemini AI
+                        Get personalized insights and forecasts powered by {providerLabel}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -107,9 +110,9 @@ export function AIInsightsDialog({ open, onOpenChange }: AIInsightsDialogProps) 
                     <div className="flex items-start gap-3 p-4 bg-warning/10 border border-warning/20 rounded-lg">
                         <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
                         <div>
-                            <p className="text-sm font-medium text-warning">Gemini API Key Required</p>
+                            <p className="text-sm font-medium text-warning">AI API Token Required</p>
                             <p className="text-sm text-muted-foreground mt-1">
-                                Add your Gemini API key to the <code className="bg-muted px-1.5 py-0.5 rounded text-xs">VITE_GEMINI_API_KEY</code> environment variable to enable AI features.
+                                Add an AI API token in Settings under Bring Your Own AI Key, or configure a provider environment token.
                             </p>
                         </div>
                     </div>

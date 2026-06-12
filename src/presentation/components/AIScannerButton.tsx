@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { Button } from '@/presentation/components/ui/button'
 import { geminiAIService, type ScanReceiptResult, type ScanBudgetResult } from '@/data/services/GeminiAIService'
+import { useAIConfiguration } from '@/presentation/hooks/useAIConfiguration'
 import { Scan, Loader2, AlertCircle, CheckCircle2, Camera } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/presentation/components/ui/use-toast'
@@ -44,8 +45,9 @@ export function AIScannerButton({
     const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'success' | 'error'>('idle')
     const fileInputRef = useRef<HTMLInputElement>(null)
     const { toast } = useToast()
+    const aiConfiguration = useAIConfiguration()
 
-    const isAIAvailable = geminiAIService.isAvailable()
+    const isAIAvailable = aiConfiguration.hasKey
 
     /**
      * Validate the selected image file
@@ -142,7 +144,7 @@ export function AIScannerButton({
         if (!isAIAvailable) {
             toast({
                 title: 'AI Not Available',
-                description: 'Please configure your Gemini API key to use AI scanning.',
+                description: 'Add an AI API token in Settings to use AI scanning.',
             })
             return
         }
