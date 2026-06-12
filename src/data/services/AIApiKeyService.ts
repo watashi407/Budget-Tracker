@@ -159,6 +159,9 @@ class AIApiKeyService {
         })
 
         if (error || !data) {
+            if (error) {
+                console.warn(this.getFriendlyFunctionError(error))
+            }
             return null
         }
 
@@ -183,7 +186,7 @@ class AIApiKeyService {
         })
 
         if (error || !data) {
-            throw new Error(error?.message || 'Failed to save AI settings')
+            throw new Error(error ? this.getFriendlyFunctionError(error) : 'Failed to save AI settings')
         }
 
         this.clearLocalProviderApiKey(options.provider)
@@ -200,7 +203,7 @@ class AIApiKeyService {
         })
 
         if (error || !data) {
-            throw new Error(error?.message || 'Failed to remove AI token')
+            throw new Error(error ? this.getFriendlyFunctionError(error) : 'Failed to remove AI token')
         }
 
         this.clearLocalProviderApiKey(provider)
@@ -267,6 +270,25 @@ class AIApiKeyService {
         window.localStorage.setItem(REMOTE_STATUS_STORAGE_KEY, JSON.stringify(status))
         window.localStorage.setItem(ACTIVE_PROVIDER_STORAGE_KEY, status.provider)
         window.dispatchEvent(new Event(AI_API_KEY_CHANGED_EVENT))
+    }
+
+    getFriendlyFunctionError(error: unknown): string {
+        const message = error instanceof Error ? error.message : String(error)
+
+        if (
+            message.includes('Failed to send a request to the Edge Function') ||
+            message.includes('FunctionsFetchError') ||
+            message.includes('NOT_FOUND') ||
+            message.includes('404')
+        ) {
+            return 'Supabase AI Edge Function is not deployed. Deploy supabase/functions/ai and set AI_TOKEN_ENCRYPTION_KEY before saving BYOK tokens.'
+        }
+
+        if (message.includes('Unauthorized') || message.includes('401')) {
+            return 'Please sign in again before saving AI settings.'
+        }
+
+        return message || 'Supabase AI Edge Function failed.'
     }
 
     private canUseStorage(): boolean {
