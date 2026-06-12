@@ -1,3 +1,4 @@
+import { useState, type FormEvent } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -10,7 +11,9 @@ import { useToast } from '@/presentation/components/ui/use-toast'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/presentation/components/ui/select'
 import { useCurrency } from '@/presentation/context/CurrencyContext'
 import { useTimezone } from '@/presentation/context/TimezoneContext'
-import { Loader2, Globe } from 'lucide-react'
+import { AI_PROVIDER_OPTIONS, aiApiKeyService, type AIProvider } from '@/data/services/AIApiKeyService'
+import { useAIConfiguration } from '@/presentation/hooks/useAIConfiguration'
+import { AlertCircle, CheckCircle2, Eye, EyeOff, Globe, KeyRound, Loader2, Trash2 } from 'lucide-react'
 
 // Validation schemas
 const profileSchema = z.object({
@@ -29,10 +32,16 @@ type ProfileForm = z.infer<typeof profileSchema>
 type PasswordForm = z.infer<typeof passwordSchema>
 
 export default function SettingsPage() {
-    const { user, updateProfile } = useAuth()
+    const { user, updateProfile, updatePassword } = useAuth()
     const { currency, setCurrency, availableCurrencies } = useCurrency()
     const { timezone, setTimezone, availableTimezones } = useTimezone()
+    const aiStatus = useAIConfiguration()
     const { toast } = useToast()
+    const [aiApiKeyInput, setAiApiKeyInput] = useState('')
+    const [showAiApiKey, setShowAiApiKey] = useState(false)
+    const [isSavingAiSettings, setIsSavingAiSettings] = useState(false)
+    const [nvidiaTextModel, setNvidiaTextModel] = useState(aiStatus.textModel)
+    const [nvidiaVisionModel, setNvidiaVisionModel] = useState(aiStatus.visionModel)
 
     // Profile form
     const profileForm = useForm<ProfileForm>({
@@ -126,7 +135,220 @@ export default function SettingsPage() {
         }
     }
 
-    const { updatePassword } = useAuth()
+    async function handleSaveAiApiKey(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault()
+
+        const apiKey = aiApiKeyInput.trim()
+        if (!apiKey && !aiStatus.hasKey) {
+            toast({
+                title: "API token required",
+                description: `Paste a ${aiProviderLabel} API token before saving.`,
+                variant: "destructive",
+            })
+            return
+        }
+
+        setIsSavingAiSettings(true)
+        try {
+            await aiApiKeyService.saveRemoteConfig({
+                provider: aiStatus.provider,
+                apiKey: apiKey || undefined,
+                textModel: aiStatus.provider === 'nvidia' ? nvidiaTextModel : aiStatus.textModel,
+                visionModel: aiStatus.provider === 'nvidia' ? nvidiaVisionModel : aiStatus.visionModel,
+            })
+
+            if (aiStatus.provider === 'nvidia') {
+                aiApiKeyService.setNvidiaModels(nvidiaTextModel, nvidiaVisionModel)
+            }
+
+            setAiApiKeyInput('')
+            setShowAiApiKey(false)
+            toast({
+                title: apiKey ? "BYOK saved securely" : "AI settings saved",
+                description: `${aiProviderLabel} token is encrypted in Supabase and will power all AI features.`,
+            })
+        } catch (error) {
+            toast({
+                title: "AI settings failed",
+                description: error instanceof Error ? error.message : "Failed to save AI settings.",
+                variant: "destructive",
+            })
+        } finally {
+            setIsSavingAiSettings(false)
+        }
+    }
+
+    async function handleClearAiApiKey() {
+        setIsSavingAiSettings(true)
+        try {
+            if (aiStatus.source === 'supabase') {
+                await aiApiKeyService.clearRemoteConfig(aiStatus.provider)
+            } else {
+                aiApiKeyService.clearByokApiKey(aiStatus.provider)
+            }
+
+            setAiApiKeyInput('')
+            toast({
+                title: "BYOK token removed",
+                description: "The saved AI token has been removed.",
+            })
+        } catch (error) {
+            toast({
+                title: "Remove failed",
+                description: error instanceof Error ? error.message : "Failed to remove AI token.",
+                variant: "destructive",
+            })
+        } finally {
+            setIsSavingAiSettings(false)
+        }
+    }
+
+    function handleAIProviderChange(provider: string) {
+        aiApiKeyService.setProvider(provider as AIProvider)
+        const nextStatus = aiApiKeyService.getStatus()
+        if (nextStatus.provider === 'nvidia') {
+            setNvidiaTextModel(nextStatus.textModel)
+            setNvidiaVisionModel(nextStatus.visionModel)
+        }
+        setAiApiKeyInput('')
+        setShowAiApiKey(false)
+    }
+
+    const aiProviderLabel = AI_PROVIDER_OPTIONS.find(option => option.value === aiStatus.provider)?.label || 'AI'
+    const aiSourceLabel = aiStatus.source === 'byok'
+        ? 'BYOK token'
+        : aiStatus.source === 'supabase'
+            ? 'Encrypted Supabase token'
+        : aiStatus.source === 'environment'
+            ? 'Environment token'
+            : 'Not configured'
+    const canSaveAISettings = !isSavingAiSettings && (Boolean(aiApiKeyInput.trim()) || (aiStatus.provider === 'nvidia' && aiStatus.hasKey))
+    const byokSettingsCard = (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <KeyRound className="h-5 w-5 text-primary" />
+                    Bring Your Own AI Key
+                </CardTitle>
+                <CardDescription>
+                    Choose the AI provider and token used across every AI feature in the app.
+                </CardDescription>
+            </CardHeader>
+            <form onSubmit={handleSaveAiApiKey}>
+                <CardContent className="space-y-5">
+                    <div className="grid gap-2">
+                        <Label htmlFor="aiProvider">AI provider</Label>
+                        <Select value={aiStatus.provider} onValueChange={handleAIProviderChange}>
+                            <SelectTrigger id="aiProvider">
+                                <SelectValue placeholder="Select AI provider" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {AI_PROVIDER_OPTIONS.map((provider) => (
+                                    <SelectItem key={provider.value} value={provider.value}>
+                                        {provider.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="rounded-lg border bg-muted/30 p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-start gap-3">
+                                <div className="mt-0.5">
+                                    {aiStatus.hasKey ? (
+                                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                    ) : (
+                                        <AlertCircle className="h-5 w-5 text-warning" />
+                                    )}
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium">{aiProviderLabel}: {aiSourceLabel}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {aiStatus.maskedKey
+                                            ? `Active token: ${aiStatus.maskedKey}`
+                                            : "Add a token to enable AI assistant, insights, forecasts, and document scanning."}
+                                    </p>
+                                </div>
+                            </div>
+                            {aiStatus.hasByokKey && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-2"
+                                    onClick={handleClearAiApiKey}
+                                    disabled={isSavingAiSettings}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                    Remove
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="aiApiKey">{aiProviderLabel} API token</Label>
+                        <div className="relative">
+                            <Input
+                                id="aiApiKey"
+                                type={showAiApiKey ? 'text' : 'password'}
+                                value={aiApiKeyInput}
+                                onChange={(event) => setAiApiKeyInput(event.target.value)}
+                                placeholder={aiStatus.hasByokKey ? 'Enter a new token to replace the saved one' : `Paste your ${aiProviderLabel} API token`}
+                                autoComplete="off"
+                                className="pr-11"
+                            />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-1 top-1 h-8 w-8"
+                                onClick={() => setShowAiApiKey((isVisible) => !isVisible)}
+                                aria-label={showAiApiKey ? 'Hide API token' : 'Show API token'}
+                            >
+                                {showAiApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                        <p className="text-[0.8rem] text-muted-foreground">
+                            BYOK is stored locally in this browser and takes priority over the app environment token.
+                        </p>
+                    </div>
+
+                    {aiStatus.provider === 'nvidia' && (
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid gap-2">
+                                <Label htmlFor="nvidiaTextModel">NVIDIA text model</Label>
+                                <Input
+                                    id="nvidiaTextModel"
+                                    value={nvidiaTextModel}
+                                    onChange={(event) => setNvidiaTextModel(event.target.value)}
+                                    placeholder="nvidia/llama-3.3-nemotron-super-49b-v1"
+                                    autoComplete="off"
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="nvidiaVisionModel">NVIDIA vision model</Label>
+                                <Input
+                                    id="nvidiaVisionModel"
+                                    value={nvidiaVisionModel}
+                                    onChange={(event) => setNvidiaVisionModel(event.target.value)}
+                                    placeholder="nvidia/nemotron-nano-12b-v2-vl"
+                                    autoComplete="off"
+                                />
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+                <CardFooter>
+                    <Button type="submit" disabled={!canSaveAISettings} className="gap-2">
+                        {isSavingAiSettings ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+                        Save AI Settings
+                    </Button>
+                </CardFooter>
+            </form>
+        </Card>
+    )
 
     return (
         <div className="container mx-auto py-10 space-y-8 max-w-2xl px-4">
@@ -136,6 +358,8 @@ export default function SettingsPage() {
                     Manage your account settings and preferences.
                 </p>
             </div>
+
+            {byokSettingsCard}
 
             {/* Profile Form */}
             <Card>

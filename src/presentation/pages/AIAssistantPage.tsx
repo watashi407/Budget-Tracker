@@ -6,12 +6,14 @@ import { Separator } from '@/presentation/components/ui/separator'
 import { geminiAIService } from '@/data/services/GeminiAIService'
 import { useBudgets } from '@/presentation/hooks/useBudgets'
 import { useTransactions } from '@/presentation/hooks/useTransactions'
+import { useAIConfiguration } from '@/presentation/hooks/useAIConfiguration'
 import { MarkdownRenderer } from '@/presentation/components/MarkdownRenderer'
 import { Sparkles, Send, TrendingUp, AlertCircle, Bot, User, Loader2, MessageSquare } from 'lucide-react'
 
 export function AIAssistantPage() {
     const { budgets } = useBudgets()
     const { transactions } = useTransactions()
+    const aiConfiguration = useAIConfiguration()
 
     const [insights, setInsights] = useState<string>('')
     const [forecast, setForecast] = useState<string>('')
@@ -21,7 +23,8 @@ export function AIAssistantPage() {
     const [error, setError] = useState('')
     const [activeTab, setActiveTab] = useState<'insights' | 'chat'>('chat')
 
-    const isAIAvailable = geminiAIService.isAvailable()
+    const isAIAvailable = aiConfiguration.hasKey
+    const providerLabel = aiConfiguration.provider === 'nvidia' ? 'NVIDIA NIM' : 'Gemini AI'
 
     async function getInsights() {
         setLoading(true)
@@ -79,7 +82,7 @@ export function AIAssistantPage() {
                         AI ASSISTANT
                     </h1>
                     <p className="text-muted-foreground font-mono text-xs mt-1">
-                        Powered by Gemini AI • {budgets.length} budgets • {transactions.length} transactions in context
+                        Powered by {providerLabel} • {budgets.length} budgets • {transactions.length} transactions in context
                     </p>
                 </div>
             </div>
@@ -90,9 +93,9 @@ export function AIAssistantPage() {
                         <AlertCircle className="w-6 h-6 text-warning" />
                     </div>
                     <div>
-                        <h3 className="font-semibold text-warning mb-1">Gemini API Key Required</h3>
+                        <h3 className="font-semibold text-warning mb-1">AI API Token Required</h3>
                         <p className="text-sm text-muted-foreground">
-                            Add your Gemini API key to the <code className="bg-muted px-1.5 py-0.5 rounded text-xs">VITE_GEMINI_API_KEY</code> environment variable to enable AI features.
+                            Add an AI API token in Settings under Bring Your Own AI Key, or configure a provider environment token.
                         </p>
                     </div>
                 </div>
