@@ -148,7 +148,7 @@ class GeminiAIService {
         })
 
         if (error) {
-            throw new Error(error.message || 'Failed to call Supabase AI function')
+            throw new Error(aiApiKeyService.getFriendlyFunctionError(error))
         }
 
         if (!data?.text) {
