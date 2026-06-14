@@ -29,6 +29,8 @@ supabase/.temp/
 
 # Build artifacts (prevent APK/secret leaks)
 *.apk
+!public/downloads/
+!public/downloads/watashi-pocket-android-latest.apk
 *.aab
 *.keystore
 *.jks
